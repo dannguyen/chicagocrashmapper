@@ -17,7 +17,7 @@ export default {
       strict: false
     }),
     paths: {
-      base: dev ? '' : '/chicago-intersects'
+      base: dev ? '' : '/chicago-intersect-mapper'
     }
   }
 };
