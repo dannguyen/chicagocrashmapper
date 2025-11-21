@@ -6,7 +6,6 @@ export interface Intersection {
 
 export function escapeRegExp(str: string): string {
   return RegExp.escape(str);
-//  return str.replace(/[.*+?^${}()|[\\]/g, '\\$&');
 }
 
 export function getSearchTokens(query: string): string[] {
