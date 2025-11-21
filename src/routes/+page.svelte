@@ -38,26 +38,23 @@
   let debounceTimer: ReturnType<typeof setTimeout>;
   const intersectionsFilePath: string = resolve('/chicago-intersections.json');
   const databaseFilePath: string = resolve('/database.sqlite');
-  // Fetch data on mount
-  onMount(async () => {
-    await initMap();
-    await initDatabase();
 
-    try {
-      const response = await fetch(intersectionsFilePath);
-      intersections = await response.json();
-      dataLoaded = true;
-    } catch (error) {
-      console.error('Error loading intersections data:', error);
-    }
-  });
 
-  async function initDatabase(){
-    database.db = await initDb(databaseFilePath);
-    if (database.db) {
-      registerGeospatialFunctions(database.db);
-    }
+  function enumerateIncidents(items: any[]){
+    let returnItems: Incident[] = [];
+    items.forEach(item => {
+      let i = {longitude: item.longitude, latitude: item.latitude,
+        title: `${item.injuries_fatal} fatalities on ${item.street_no} ${item.street_direction} ${item.street_name}`,
+        category: item.prim_contributory_cause,
+        distance: item.distance.toFixed(0),
+        date: item.crash_date
+      };
+      returnItems.push(i);
+    });
+
+    return returnItems;
   }
+
 
   function findNearby(intersection:Intersection) {
       if (!database.db) return;
@@ -96,20 +93,81 @@
 
     }
 
+  function handleInput() {
+    showAutocomplete = true;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      searchQuery = inputValue;
+    }, 300);
+  }
 
-  function enumerateIncidents(items: any[]){
-    let returnItems: Incident[] = [];
-    items.forEach(item => {
-      let i = {longitude: item.longitude, latitude: item.latitude,
-        title: `${item.injuries_fatal} fatalities on ${item.street_no} ${item.street_direction} ${item.street_name}`,
-        category: item.prim_contributory_cause,
-        distance: item.distance.toFixed(0),
-        date: item.crash_date
-      };
-      returnItems.push(i);
-    });
+  function handleInputBlur() {
+    // Small delay to allow click event on results to register
+    setTimeout(() => {
+        showAutocomplete = false;
+    }, 200);
+  }
 
-    return returnItems;
+  function handleInputFocus() {
+    if (inputValue.trim()) {
+        showAutocomplete = true;
+    }
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter' && intersectionResults.length > 0) {
+      selectIntersection(intersectionResults[0]);
+      showAutocomplete = false; // Hide autocomplete after selection
+      event.preventDefault(); // Prevent form submission if input is part of a form
+    }
+  }
+
+
+  async function initDatabase(){
+    database.db = await initDb(databaseFilePath);
+    if (database.db) {
+      registerGeospatialFunctions(database.db);
+    }
+  }
+
+
+  async function initMap() {
+    L = (await import('leaflet')).default;
+
+    // Chicago center coordinates
+    const chicagoCenter: [number, number] = [41.8781, -87.6298];
+    map = L.map('map').setView(chicagoCenter, 11);
+    nearbyLayerGroup = L.layerGroup().addTo(map);
+
+    // Use OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(map);
+  }
+
+
+  function selectIntersection(intersection: Intersection) {
+    selectedIntersection = intersection;
+    inputValue = intersection.intersection;
+    searchQuery = intersection.intersection;
+    showAutocomplete = false;
+
+    // Update map
+    if (map) {
+      map.setView([intersection.latitude, intersection.longitude], 17);
+
+      if (marker) {
+        marker.setLatLng([intersection.latitude, intersection.longitude]);
+      } else {
+        marker = L.marker([intersection.latitude, intersection.longitude]).addTo(map);
+      }
+
+      marker.bindPopup(intersection.intersection).openPopup();
+
+      // Find nearby records from the SQLite database
+      findNearby(intersection);
+    }
   }
 
   function updateNearbyMarkers(items: Incident[]) {
@@ -139,83 +197,31 @@
     });
   }
 
+  // Fetch data on mount
+  onMount(async () => {
+    await initMap();
+    await initDatabase();
 
-  async function initMap() {
-    L = (await import('leaflet')).default;
+    try {
+      const response = await fetch(intersectionsFilePath);
+      intersections = await response.json();
+      dataLoaded = true;
+    } catch (error) {
+      console.error('Error loading intersections data:', error);
+    }
+  });
 
-    // Chicago center coordinates
-    const chicagoCenter: [number, number] = [41.8781, -87.6298];
-    map = L.map('map').setView(chicagoCenter, 11);
-    nearbyLayerGroup = L.layerGroup().addTo(map);
 
-    // Use OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
-    }).addTo(map);
-  }
 
   let intersectionResults = $derived.by(() => {
     if (!dataLoaded) return [];
     return filterIntersections(intersections, searchQuery);
   });
 
-  function handleInput() {
-    showAutocomplete = true;
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      searchQuery = inputValue;
-    }, 300);
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter' && intersectionResults.length > 0) {
-      selectIntersection(intersectionResults[0]);
-      showAutocomplete = false; // Hide autocomplete after selection
-      event.preventDefault(); // Prevent form submission if input is part of a form
-    }
-  }
-
-  function selectIntersection(intersection: Intersection) {
-    selectedIntersection = intersection;
-    inputValue = intersection.intersection;
-    searchQuery = intersection.intersection;
-    showAutocomplete = false;
-
-    // Update map
-    if (map) {
-      map.setView([intersection.latitude, intersection.longitude], 17);
-
-      if (marker) {
-        marker.setLatLng([intersection.latitude, intersection.longitude]);
-      } else {
-        marker = L.marker([intersection.latitude, intersection.longitude]).addTo(map);
-      }
-
-      marker.bindPopup(intersection.intersection).openPopup();
-
-      // Find nearby records from the SQLite database
-      findNearby(intersection);
-    }
-  }
-
-  function handleInputFocus() {
-    if (inputValue.trim()) {
-        showAutocomplete = true;
-    }
-  }
-
-  function handleInputBlur() {
-    // Small delay to allow click event on results to register
-    setTimeout(() => {
-        showAutocomplete = false;
-    }, 200);
-  }
-
 </script>
 
 <main class="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
-  <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+  <div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md p-6">
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
     Chicago Vehicle Crash Finder
   <i class="fa-regular fa-thumbs-up"></i>
@@ -280,9 +286,9 @@
             </tr>
           </thead>
           <tbody>
-            {#each incidents as item}
+            {#each incidents as item, index}
             <tr>
-                <td>{item.title}</td>
+                <td>{index + 1}. {item.title}</td>
                 <td>{item.date}</td>
                 <td>{item.category}</td>
                 <td>{item.distance}</td>
