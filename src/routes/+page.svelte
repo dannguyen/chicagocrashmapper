@@ -12,21 +12,28 @@
 
 	import { initDb, registerGeospatialFunctions, type DatabaseConnection } from '$lib/dbUtils';
 
-	let searchQuery = $state<string>('');
-	let inputValue = $state<string>('');
-	let locations: Location[] = [];
-	let incidents: Incident[] = $state([]);
-	let dataLoaded = $state<boolean>(false);
-	let selectedLocation = $state<Location | null>(null);
-	let map: any;
-	let marker: any;
-	let nearbyLayerGroup: any;
-	let L: any;
+	const databasePath: string = resolve('/database.sqlite');
 	let database: DatabaseConnection = { db: null };
+
+	const locationsPath: string = resolve('/locations.json');
+	let locationsArray: Location[] = $state.raw([]);
+	let locationCount: number = $derived(locationsArray.length);
+
+	const defaultGeoCenter: [number, number] = [41.8781, -87.6298];
+	let isDataLoaded = $state<boolean>(false);
+
+	let inputValue = $state<string>('');
+	let searchQuery = $state<string>('');
 	let showAutocomplete = $state<boolean>(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
-	const locationsFilePath: string = resolve('/locations.json');
-	const databaseFilePath: string = resolve('/database.sqlite');
+
+	let incidents: Incident[] = $state([]);
+	let selectedLocation = $state<Location | null>(null);
+
+	let map: any;
+	let marker: any;
+	let markerLayerGroup: any;
+	let L: any;
 
 	function enumerateIncidents(items: any[]) {
 		let returnItems: Incident[] = [];
@@ -45,7 +52,7 @@
 		return returnItems;
 	}
 
-	function findNearby(location: Location) {
+	function findNearbyIncidents(location: Location) {
 		if (!database.db) return;
 		const iLat = location.latitude;
 		const iLon = location.longitude;
@@ -110,7 +117,7 @@
 	}
 
 	async function initDatabase() {
-		database.db = await initDb(databaseFilePath);
+		database.db = await initDb(databasePath);
 		if (database.db) {
 			registerGeospatialFunctions(database.db);
 		}
@@ -120,9 +127,8 @@
 		L = (await import('leaflet')).default;
 
 		// Chicago center coordinates
-		const chicagoCenter: [number, number] = [41.8781, -87.6298];
-		map = L.map('map').setView(chicagoCenter, 11);
-		nearbyLayerGroup = L.layerGroup().addTo(map);
+		map = L.map('map').setView(defaultGeoCenter, 11);
+		markerLayerGroup = L.layerGroup().addTo(map);
 
 		// Use OpenStreetMap
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -150,22 +156,20 @@
 
 			marker.bindPopup(location.name).openPopup();
 
-			// Find nearby records from the SQLite database
-			findNearby(location);
+			findNearbyIncidents(location);
 		}
 	}
 
 	function updateNearbyMarkers(items: Incident[]) {
-		if (!map || !L || !nearbyLayerGroup) return;
+		if (!map || !L || !markerLayerGroup) return;
 
-		nearbyLayerGroup.clearLayers();
+		markerLayerGroup.clearLayers();
 
 		items.forEach((item, index) => {
 			const lat = item.latitude;
 			const lon = item.longitude;
 
 			if (!isNaN(lat) && !isNaN(lon)) {
-				// Limit to 9 markers (1-9)
 				const markerHtml = `<div class="flex items-center justify-center w-6 h-6 bg-purple-700 text-white font-bold rounded-full border-2 border-white shadow-md">${index + 1}</div>`;
 				const customIcon = L.divIcon({
 					html: markerHtml,
@@ -179,7 +183,7 @@
 					.bindPopup(
 						`<b>${item.title}</b><br>Distance: ${item.distance} feet<br>Date: ${item.date}`
 					)
-					.addTo(nearbyLayerGroup);
+					.addTo(markerLayerGroup);
 			}
 		});
 	}
@@ -190,29 +194,33 @@
 		await initDatabase();
 
 		try {
-			const response = await fetch(locationsFilePath);
-			locations = await response.json();
-			dataLoaded = true;
+			const response = await fetch(locationsPath);
+			locationsArray = await response.json();
+			isDataLoaded = true;
 		} catch (error) {
 			console.error('Error loading locations data:', error);
 		}
 	});
 
 	let locationResults = $derived.by(() => {
-		if (!dataLoaded) return [];
-		return filterLocationsBySearchString(locations, searchQuery);
+		if (!isDataLoaded) return [];
+		return filterLocationsBySearchString(locationsArray, searchQuery);
 	});
 </script>
 
-<main class="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
-	<div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md p-6">
-		<h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+<main class="main-container">
+	<div class="container">
+		<h1>
 			Chicago Vehicle Crash Finder
 			<i class="fa-regular fa-thumbs-up"></i>
 		</h1>
 
+		<section class="deck">
+			Locations: {locationCount}
+		</section>
+
 		<!-- Search Container -->
-		<div class="relative mb-6 z-[1000]">
+		<div class="search-container">
 			<input
 				type="text"
 				bind:value={inputValue}
@@ -221,21 +229,16 @@
 				oninput={handleInput}
 				onkeydown={handleKeydown}
 				placeholder="Enter location name..."
-				class="w-full p-3 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+				id="search-input-field"
 				autocomplete="off"
 			/>
 
 			{#if showAutocomplete && locationResults.length > 0}
-				<div
-					class="absolute w-full max-h-72 overflow-y-auto bg-white border border-gray-300 border-t-0 rounded-b-md shadow-lg z-[1001]"
-				>
+				<div class="location-results-list">
 					{#each locationResults as result}
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="p-3 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-0"
-							onclick={() => selectLocation(result)}
-						>
+						<div class="location-item" onclick={() => selectLocation(result)}>
 							{@html highlightFilteredText(result.name, searchQuery)}
 						</div>
 					{/each}
@@ -245,48 +248,46 @@
 
 		<!-- Result Container -->
 		<div class="block">
-			<div id="map" class="h-96 w-full rounded-md border border-gray-300 mb-4 z-0"></div>
+			<div id="map"></div>
 
 			{#if selectedLocation}
-				<div class="bg-gray-50 p-4 border border-gray-200 rounded-md">
-					<div class="font-mono text-sm text-gray-700">
+				<div class="selected-location">
+					<div class="selected-location-info">
 						<div>{selectedLocation.name}</div>
 
 						<div>
-							Latitude: <span class="text-blue-600 font-bold"
-								>{selectedLocation.latitude.toFixed(5)}</span
-							>
+							Latitude: {selectedLocation.latitude}
 						</div>
 						<div>
-							Longitude: <span class="text-blue-600 font-bold"
-								>{selectedLocation.longitude.toFixed(5)}</span
-							>
+							Longitude: {selectedLocation.longitude}
 						</div>
 					</div>
 				</div>
 			{/if}
 
 			{#if incidents.length > 0}
-				<table>
-					<thead>
-						<tr>
-							<th>Incident</th>
-							<th>Date</th>
-							<th>Category</th>
-							<th>Distance</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each incidents as item, index}
+				<section class="incidents-list">
+					<table>
+						<thead>
 							<tr>
-								<td>{index + 1}. {item.title}</td>
-								<td>{item.date}</td>
-								<td>{item.category}</td>
-								<td>{item.distance}</td>
+								<th>Incident</th>
+								<th>Date</th>
+								<th>Category</th>
+								<th>Distance</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{#each incidents as item, index}
+								<tr>
+									<td>{index + 1}. {item.title}</td>
+									<td>{item.date}</td>
+									<td>{item.category}</td>
+									<td>{item.distance}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</section>
 			{/if}
 		</div>
 	</div>
@@ -299,5 +300,44 @@
 	:global(#map) {
 		height: 400px;
 		z-index: 0; /* Ensure map stays below autocomplete */
+		@apply h-96 w-full rounded-md border border-gray-300 mb-4 z-0;
+	}
+
+	h1 {
+		@apply text-3xl font-bold text-center text-gray-800 mb-6;
+	}
+
+	.incidents-list {
+	}
+	.main-container {
+		@apply min-h-screen bg-gray-100 p-4 md:p-8 font-sans;
+	}
+
+	.container {
+		@apply max-w-5xl mx-auto bg-white rounded-lg shadow-md p-6;
+	}
+
+	.location-results-list {
+		@apply absolute w-full max-h-72 overflow-y-auto bg-white border border-gray-300 border-t-0 rounded-b-md shadow-lg z-[1001];
+	}
+
+	.location-results-list .location-item {
+		@apply p-3 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-0;
+	}
+
+	#search-input-field {
+		@apply w-full p-3 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
+	}
+
+	.search-container {
+		@apply relative mb-6 z-[1000];
+	}
+
+	.selected-location {
+		@apply bg-gray-50 p-4 border border-gray-200 rounded-md;
+	}
+
+	.selected-location-info {
+		@apply font-mono text-sm text-gray-700;
 	}
 </style>
