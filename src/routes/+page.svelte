@@ -1,30 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import {
-		escapeRegExp,
-		highlightText,
-		filterIntersections,
-		type Intersection
-	} from '$lib/searchUtils';
-	import { initDb, registerGeospatialFunctions, type DatabaseConnection } from '$lib/dbUtils';
 
-	interface Incident {
-		longitude: number;
-		latitude: number;
-		title: string;
-		date: string;
-		category: string;
-		subcategory: string;
-		distance: number;
-	}
+	import { type Incident } from '$lib/incident';
+
+	import {
+		highlightFilteredText,
+		filterLocationsBySearchString,
+		type Location
+	} from '$lib/location';
+
+	import { initDb, registerGeospatialFunctions, type DatabaseConnection } from '$lib/dbUtils';
 
 	let searchQuery = $state<string>('');
 	let inputValue = $state<string>('');
-	let intersections: Intersection[] = [];
+	let locations: Location[] = [];
 	let incidents: Incident[] = $state([]);
 	let dataLoaded = $state<boolean>(false);
-	let selectedIntersection = $state<Intersection | null>(null);
+	let selectedLocation = $state<Location | null>(null);
 	let map: any;
 	let marker: any;
 	let nearbyLayerGroup: any;
@@ -32,7 +25,7 @@
 	let database: DatabaseConnection = { db: null };
 	let showAutocomplete = $state<boolean>(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
-	const intersectionsFilePath: string = resolve('/chicago-intersections.json');
+	const locationsFilePath: string = resolve('/locations.json');
 	const databaseFilePath: string = resolve('/database.sqlite');
 
 	function enumerateIncidents(items: any[]) {
@@ -52,10 +45,10 @@
 		return returnItems;
 	}
 
-	function findNearby(intersection: Intersection) {
+	function findNearby(location: Location) {
 		if (!database.db) return;
-		const iLat = intersection.latitude;
-		const iLon = intersection.longitude;
+		const iLat = location.latitude;
+		const iLon = location.longitude;
 
 		// Query for 5 closest records
 		const stmt = database.db.prepare(`
@@ -109,8 +102,8 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter' && intersectionResults.length > 0) {
-			selectIntersection(intersectionResults[0]);
+		if (event.key === 'Enter' && locationResults.length > 0) {
+			selectLocation(locationResults[0]);
 			showAutocomplete = false; // Hide autocomplete after selection
 			event.preventDefault(); // Prevent form submission if input is part of a form
 		}
@@ -139,26 +132,26 @@
 		}).addTo(map);
 	}
 
-	function selectIntersection(intersection: Intersection) {
-		selectedIntersection = intersection;
-		inputValue = intersection.intersection;
-		searchQuery = intersection.intersection;
+	function selectLocation(location: Location) {
+		selectedLocation = location;
+		inputValue = location.name;
+		searchQuery = location.name;
 		showAutocomplete = false;
 
 		// Update map
 		if (map) {
-			map.setView([intersection.latitude, intersection.longitude], 17);
+			map.setView([location.latitude, location.longitude], 17);
 
 			if (marker) {
-				marker.setLatLng([intersection.latitude, intersection.longitude]);
+				marker.setLatLng([location.latitude, location.longitude]);
 			} else {
-				marker = L.marker([intersection.latitude, intersection.longitude]).addTo(map);
+				marker = L.marker([location.latitude, location.longitude]).addTo(map);
 			}
 
-			marker.bindPopup(intersection.intersection).openPopup();
+			marker.bindPopup(location.name).openPopup();
 
 			// Find nearby records from the SQLite database
-			findNearby(intersection);
+			findNearby(location);
 		}
 	}
 
@@ -197,17 +190,17 @@
 		await initDatabase();
 
 		try {
-			const response = await fetch(intersectionsFilePath);
-			intersections = await response.json();
+			const response = await fetch(locationsFilePath);
+			locations = await response.json();
 			dataLoaded = true;
 		} catch (error) {
-			console.error('Error loading intersections data:', error);
+			console.error('Error loading locations data:', error);
 		}
 	});
 
-	let intersectionResults = $derived.by(() => {
+	let locationResults = $derived.by(() => {
 		if (!dataLoaded) return [];
-		return filterIntersections(intersections, searchQuery);
+		return filterLocationsBySearchString(locations, searchQuery);
 	});
 </script>
 
@@ -227,23 +220,23 @@
 				onblur={handleInputBlur}
 				oninput={handleInput}
 				onkeydown={handleKeydown}
-				placeholder="Enter intersection name..."
+				placeholder="Enter location name..."
 				class="w-full p-3 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 				autocomplete="off"
 			/>
 
-			{#if showAutocomplete && intersectionResults.length > 0}
+			{#if showAutocomplete && locationResults.length > 0}
 				<div
 					class="absolute w-full max-h-72 overflow-y-auto bg-white border border-gray-300 border-t-0 rounded-b-md shadow-lg z-[1001]"
 				>
-					{#each intersectionResults as result}
+					{#each locationResults as result}
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="p-3 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-0"
-							onclick={() => selectIntersection(result)}
+							onclick={() => selectLocation(result)}
 						>
-							{@html highlightText(result.intersection, searchQuery)}
+							{@html highlightFilteredText(result.name, searchQuery)}
 						</div>
 					{/each}
 				</div>
@@ -254,19 +247,19 @@
 		<div class="block">
 			<div id="map" class="h-96 w-full rounded-md border border-gray-300 mb-4 z-0"></div>
 
-			{#if selectedIntersection}
+			{#if selectedLocation}
 				<div class="bg-gray-50 p-4 border border-gray-200 rounded-md">
 					<div class="font-mono text-sm text-gray-700">
-						<div>{selectedIntersection.intersection}</div>
+						<div>{selectedLocation.name}</div>
 
 						<div>
 							Latitude: <span class="text-blue-600 font-bold"
-								>{selectedIntersection.latitude.toFixed(5)}</span
+								>{selectedLocation.latitude.toFixed(5)}</span
 							>
 						</div>
 						<div>
 							Longitude: <span class="text-blue-600 font-bold"
-								>{selectedIntersection.longitude.toFixed(5)}</span
+								>{selectedLocation.longitude.toFixed(5)}</span
 							>
 						</div>
 					</div>

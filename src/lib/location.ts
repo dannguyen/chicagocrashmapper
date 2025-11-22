@@ -1,7 +1,8 @@
-export interface Intersection {
-	intersection: string;
+export interface Location {
+	name: string;
 	longitude: number;
 	latitude: number;
+	id: string;
 }
 
 export function escapeRegExp(str: string): string {
@@ -15,7 +16,7 @@ export function getSearchTokens(query: string): string[] {
 		.filter((token) => token !== 'AND' && token.replace(/\W+/g, '').trim() !== '');
 }
 
-export function highlightText(text: string, query: string): string {
+export function highlightFilteredText(text: string, query: string): string {
 	const tokens = getSearchTokens(query);
 
 	if (!tokens || tokens.length === 0) {
@@ -29,23 +30,23 @@ export function highlightText(text: string, query: string): string {
 	return text.replace(regex, '<span class="bg-yellow-300">$1</span>');
 }
 
-export function filterIntersections(
-	intersections: Intersection[],
+export function filterLocationsBySearchString(
+	locations: Location[],
 	query: string,
 	limit: number = 25
-): Intersection[] {
+): Location[] {
 	if (!query.trim()) return [];
 
 	const tokens = getSearchTokens(query);
 
 	if (tokens.length === 0) return [];
 
-	const results: Intersection[] = [];
+	const results: Location[] = [];
 
-	for (const intersection of intersections) {
-		const name = intersection.intersection;
+	for (const loc of locations) {
+		const name = loc.name;
 		if (tokens.every((token) => name.includes(token))) {
-			results.push(intersection);
+			results.push(loc);
 			if (results.length >= limit) break;
 		}
 	}
