@@ -2,7 +2,9 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 
-	import { type Incident } from '$lib/incident';
+	import {
+		enumerateIncidents,
+		type Incident } from '$lib/incident';
 
 	import {
 		highlightFilteredText,
@@ -35,22 +37,7 @@
 	let markerLayerGroup: any;
 	let L: any;
 
-	function enumerateIncidents(items: any[]) {
-		let returnItems: Incident[] = [];
-		items.forEach((item) => {
-			let i = {
-				longitude: item.longitude,
-				latitude: item.latitude,
-				title: `${item.injuries_fatal} fatalities on ${item.street_no} ${item.street_direction} ${item.street_name}`,
-				category: item.prim_contributory_cause,
-				distance: item.distance.toFixed(0),
-				date: item.crash_date
-			};
-			returnItems.push(i);
-		});
 
-		return returnItems;
-	}
 
 	function findNearbyIncidents(location: Location) {
 		if (!database.db) return;
@@ -280,7 +267,7 @@
 							{#each incidents as item, index}
 								<tr>
 									<td>{index + 1}. {item.title}</td>
-									<td>{item.date}</td>
+									<td>{item.date.toDateString()}</td>
 									<td>{item.category}</td>
 									<td>{item.distance}</td>
 								</tr>
