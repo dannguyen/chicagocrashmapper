@@ -5,7 +5,7 @@
 	import type { Location } from '$lib/location';
 
 	function onLocationSelectGlobal(location: Location) {
-		appState.selectedLocation = location;
+		appState.selectLocation(location);
 	}
 </script>
 

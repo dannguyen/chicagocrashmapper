@@ -3,7 +3,6 @@
 	import { base } from '$app/paths';
 	import { ensureDatabase } from '$lib/appInit';
 	import { getAllNeighborhoodStats, type NeighborhoodStat } from '$lib/db';
-	import { appState } from '$lib/components/AppState.svelte';
 
 	let stats: NeighborhoodStat[] = $state([]);
 	let loading = $state(true);

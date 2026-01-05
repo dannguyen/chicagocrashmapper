@@ -1,21 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { slide } from 'svelte/transition';
-	import { assets } from '$app/paths';
 
 	import { appState } from '$lib/components/AppState.svelte';
-	import { prettifyDate } from '$lib/transformHelpers';
-
-	import { reifyIncidents } from '$lib/incident';
-	import type { Location } from '$lib/location'; // Use type import since Location is not instantiated directly
-
-	import {
-		queryIncidentsMostRecentNearLocation,
-		queryIncidentsInsideLocation,
-		queryLocationById,
-		DatabaseConnection // Keep for type, but not instantiated locally
-	} from '$lib/db';
+	import { queryLocationById } from '$lib/db';
 	import type { Incident } from '$lib/incident';
+	import type { Location } from '$lib/location';
 	import IncidentList from '$lib/components/IncidentList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 
@@ -29,37 +19,11 @@
 	let lastSearchedLocation: Location | null = null;
 
 	function setIncidentDetail(item: Incident | null) {
-		appState.selectedIncident = item;
-	}
-
-	function findIncidentsByLocation(location: Location) {
-		if (!appState.database) return;
-		lastSearchedLocation = location;
-
-		let results;
-		if (location.isShape) {
-			results = queryIncidentsInsideLocation(
-				appState.database,
-				location,
-				appState.maxDaysAgo,
-				appState.selectedDate
-			);
-		} else {
-			results = queryIncidentsMostRecentNearLocation(
-				appState.database,
-				location,
-				appState.maxDistance,
-				appState.maxDaysAgo,
-				appState.selectedDate
-			);
-		}
-		appState.incidents = reifyIncidents(results);
-		appState.selectedIncident = null; // Clear selected incident when new search occurs
+		appState.selectIncident(item);
 	}
 
 	function onLocationSelect(location: Location) {
-		appState.selectedLocation = location;
-		findIncidentsByLocation(location);
+		appState.selectLocationAndSearch(location);
 	}
 
 	function scheduleIncidentSearch() {
@@ -68,16 +32,14 @@
 			clearTimeout(searchTimeout);
 		}
 		searchTimeout = setTimeout(() => {
-			if (appState.selectedLocation) {
-				findIncidentsByLocation(appState.selectedLocation);
-			}
+			appState.refreshSearch();
 		}, searchDelayMs);
 	}
 
 	function handleMaxDistanceChange(event: Event) {
 		const value = parseFloat((event.target as HTMLInputElement).value);
 		if (!isNaN(value) && value >= 1) {
-			appState.maxDistance = value;
+			appState.setMaxDistance(value);
 			scheduleIncidentSearch();
 		}
 	}
@@ -85,7 +47,7 @@
 	function handleMaxDaysAgoChange(event: Event) {
 		const value = parseInt((event.target as HTMLInputElement).value, 10);
 		if (!isNaN(value) && value >= 1) {
-			appState.maxDaysAgo = value;
+			appState.setMaxDaysAgo(value);
 			scheduleIncidentSearch();
 		}
 	}
@@ -93,7 +55,7 @@
 	function handleSelectedDateChange(event: Event) {
 		const value = (event.target as HTMLInputElement).value;
 		if (value) {
-			appState.selectedDate = new Date(value);
+			appState.setSelectedDate(new Date(value));
 			scheduleIncidentSearch();
 		}
 	}
@@ -113,7 +75,7 @@
 		// Only do an immediate fetch when the selected location itself changes
 		if (loc && loc !== lastSearchedLocation) {
 			lastSearchedLocation = loc;
-			findIncidentsByLocation(loc);
+			appState.searchIncidentsByLocation(loc);
 		} else if (!loc) {
 			lastSearchedLocation = null;
 		}
@@ -128,9 +90,7 @@
 				}
 			} else {
 				// Reset state if no location is specified (e.g. home page)
-				appState.selectedLocation = null;
-				appState.incidents = [];
-				appState.selectedIncident = null;
+				appState.clearLocation();
 			}
 		}
 	});

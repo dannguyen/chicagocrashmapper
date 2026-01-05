@@ -14,6 +14,6 @@ export async function ensureDatabase(): Promise<DatabaseConnection> {
 	const databasePath = `${assets}/database.sqlite`;
 	const conn = new DatabaseConnection(databasePath);
 	await conn.init();
-	appState.database = conn;
+	appState.setDatabase(conn);
 	return conn;
 }

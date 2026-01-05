@@ -30,7 +30,7 @@ import { appState } from '$lib/components/AppState.svelte';
 
 describe('ensureDatabase', () => {
 	beforeEach(() => {
-		appState.database = null as any;
+		appState.setDatabase(null as any);
 		vi.clearAllMocks();
 	});
 
@@ -49,7 +49,7 @@ describe('ensureDatabase', () => {
 
 	it('returns existing connection without recreating', async () => {
 		const existing = { db: { existing: true } } as any;
-		appState.database = existing;
+		appState.setDatabase(existing);
 
 		const conn = await ensureDatabase();
 

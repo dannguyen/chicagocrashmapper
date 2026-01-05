@@ -7,7 +7,6 @@
 		getTopIntersectionsByRecentIncidents,
 		type IntersectionStat
 	} from '$lib/db';
-	import { appState } from '$lib/components/AppState.svelte';
 
 	let topByCount: IntersectionStat[] = $state([]);
 	let topByRecency: IntersectionStat[] = $state([]);
