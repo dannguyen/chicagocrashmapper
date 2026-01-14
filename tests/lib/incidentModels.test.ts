@@ -87,6 +87,31 @@ describe('Person', () => {
 		expect(babyboy.noun).toBe('boy');
 		expect(babyboy.description).toBe('baby (or age unknown) boy');
 	});
+
+	it('derives isDriver from person_type', () => {
+		const driver = new Person({ person_type: 'DRIVER' });
+		expect(driver.isDriver).toBe(true);
+
+		const passenger = new Person({ person_type: 'PASSENGER' });
+		expect(passenger.isDriver).toBe(false);
+	});
+
+	it('treats driver age 0/1 or missing as ageUnknown', () => {
+		const infantDriver = new Person({ person_type: 'DRIVER', age: '0' });
+		expect(infantDriver.ageUnknown).toBe(true);
+
+		const youngDriver = new Person({ person_type: 'DRIVER', age: '1' });
+		expect(youngDriver.ageUnknown).toBe(true);
+
+		const agelessDriver = new Person({ person_type: 'DRIVER' });
+		expect(agelessDriver.ageUnknown).toBe(true);
+
+		const olderDriver = new Person({ person_type: 'DRIVER', age: '2' });
+		expect(olderDriver.ageUnknown).toBe(false);
+
+		const infantPassenger = new Person({ person_type: 'PASSENGER', age: '0' });
+		expect(infantPassenger.ageUnknown).toBe(false);
+	});
 });
 
 describe('Vehicle', () => {
@@ -157,6 +182,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			injuries_fatal: 0,
 			injuries_incapacitating: 1,
 			crash_date: '2024-01-01',
+			first_crash_type: 'UNKNOWN',
 			vehicles: '[{"vehicle_id":"V1","passengers":[{"person_id":"P1"}]}]',
 			non_passengers: '[{"person_id":"NP1"}]'
 		});
@@ -176,6 +202,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
 			crash_date: '2024-01-02',
+			first_crash_type: 'UNKNOWN',
 			vehicles: [{ vehicle_id: 'V2', passengers: [{ person_id: 'P2' }] }],
 			non_passengers: [{ person_id: 'NP2' }]
 		});
@@ -204,6 +231,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			injuries_fatal: 0,
 			injuries_incapacitating: 2,
 			crash_date: '2024-02-01',
+			first_crash_type: 'UNKNOWN',
 			crash_type: '',
 			street_no: null,
 			street_direction: 'N',
@@ -213,5 +241,21 @@ describe('Incident vehicles and non_passengers parsing', () => {
 
 		expect(incident.title).toBe('2 seriously injured near  N Unknown Street');
 		expect(incident.distance).toBe(1235);
+	});
+
+	it('builds title from injury counts and location fields', () => {
+		const incident = new Incident({
+			longitude: -87.7,
+			latitude: 41.9,
+			injuries_fatal: 1,
+			injuries_incapacitating: 0,
+			crash_date: '2024-03-01',
+			first_crash_type: 'UNKNOWN',
+			street_no: '1200',
+			street_direction: 'S',
+			street_name: 'State'
+		});
+
+		expect(incident.title).toBe('1 killed near 1200 S State');
 	});
 });

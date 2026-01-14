@@ -108,11 +108,7 @@ export class Person {
 	}
 
 	get ageUnknown(): boolean {
-		if (this.isDriver && this.age <= 1) {
-			return true;
-		} else {
-			return false;
-		}
+		return this.isDriver && (this.age == null || this.age <= 1);
 	}
 }
 
@@ -177,12 +173,14 @@ export interface IncidentRecord {
 export class Incident {
 	longitude: number;
 	latitude: number;
-	title: string;
 	date: Date;
 	category: string;
 	distance?: number;
 	injuries_incapacitating: number;
 	injuries_fatal: number;
+	street_no?: string | null;
+	street_direction?: string | null;
+	street_name?: string | null;
 	vehicles: Vehicle[];
 	non_passengers: Person[];
 	primary_cause: string;
@@ -194,28 +192,17 @@ export class Incident {
 		this.latitude = record.latitude;
 		this.injuries_fatal = record.injuries_fatal;
 		this.injuries_incapacitating = record.injuries_incapacitating;
-
-		// Construct title from raw fields, providing fallback for undefined values
-		this.title =
-			[
-				record.injuries_fatal > 0 ? `${record.injuries_fatal} killed` : null,
-				record.injuries_incapacitating > 0
-					? `${record.injuries_incapacitating} seriously injured`
-					: null
-			]
-				.filter((d) => d !== null)
-				.join(', ') +
-			` near ` +
-			`${normalizeString(record.street_no) ?? ''} ${normalizeString(record.street_direction) ?? ''} ` +
-			`${normalizeString(record.street_name) ?? 'Unknown Street'}`;
+		this.street_no = normalizeString(record.street_no);
+		this.street_direction = normalizeString(record.street_direction);
+		this.street_name = normalizeString(record.street_name);
 		this.date = new Date(Date.parse(record.crash_date));
 		this.category = normalizeString(record.first_crash_type) ?? 'Unknown Category';
 		// Ensure distance is a number and handle undefined or null values
 		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
 		this.vehicles = parseVehicles(record.vehicles);
 		this.non_passengers = parsePeople(record.non_passengers);
-		this.primary_cause = normalizeString(record.prim_contributory_cause);
-		this.secondary_cause = normalizeString(record.sec_contributory_cause);
+		this.primary_cause = normalizeString(record.prim_contributory_cause) ?? 'UNKNOWN';
+		this.secondary_cause = normalizeString(record.sec_contributory_cause) ?? 'UNKNOWN';
 	}
 
 	get cause(): string {
@@ -228,6 +215,21 @@ export class Incident {
 		} else {
 			return this.secondary_cause;
 		}
+	}
+
+	get title(): string {
+		const headline = [
+			this.injuries_fatal > 0 ? `${this.injuries_fatal} killed` : null,
+			this.injuries_incapacitating > 0 ? `${this.injuries_incapacitating} seriously injured` : null
+		]
+			.filter((d) => d !== null)
+			.join(', ');
+		return (
+			headline +
+			` near ` +
+			`${this.street_no ?? ''} ${this.street_direction ?? ''} ` +
+			`${this.street_name ?? 'Unknown Street'}`
+		);
 	}
 	get isFatal(): boolean {
 		return this.injuries_fatal > 0;
