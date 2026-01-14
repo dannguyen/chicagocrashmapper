@@ -21,8 +21,10 @@ describe('Person', () => {
 		expect(person.age).toBe(30);
 		expect(person.city).toBe('Chicago');
 		expect(person.state).toBe('IL');
-		expect(person.injury).toBe('FATAL');
+		expect(person.injury_classification).toBe('FATAL');
 		expect(person.injury_level).toBe('fatal');
+		expect(person.injury).toBe('a fatal injury');
+
 		expect(person.isKilled).toBe(true);
 		expect(person.isInjured).toBe(true);
 	});
@@ -142,7 +144,8 @@ describe('Vehicle', () => {
 		expect(vehicle.passengers).toHaveLength(2);
 		expect(vehicle.passengers[0]).toBeInstanceOf(Person);
 		expect(vehicle.passengers[0].person_id).toBe('P1');
-		expect(vehicle.passengers[1].injury).toBe('INCAPACITATING INJURY');
+		expect(vehicle.passengers[1].injury_classification).toBe('INCAPACITATING INJURY');
+		expect(vehicle.passengers[1].injury).toBe('an incapacitating injury');
 	});
 
 	it('defaults passengers to empty array when not provided', () => {

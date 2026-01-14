@@ -27,7 +27,7 @@ export class Person {
 	age: number | null;
 	city: string | null;
 	state: string | null;
-	injury: string | null;
+	injury_classification: string | null;
 
 	constructor(record: PersonRecord = {}) {
 		this.person_id = normalizeString(record.person_id);
@@ -38,7 +38,7 @@ export class Person {
 		this.age = parsedAge == null || Number.isNaN(parsedAge) ? null : parsedAge;
 		this.city = normalizeString(record.city);
 		this.state = normalizeString(record.state);
-		this.injury = normalizeString(record.injury_classification);
+		this.injury_classification = normalizeString(record.injury_classification);
 	}
 
 	get noun(): string {
@@ -73,15 +73,15 @@ export class Person {
 	}
 
 	get injury_level(): string {
-		if (this.injury === 'FATAL') {
+		if (this.injury_classification === 'FATAL') {
 			return 'fatal';
-		} else if (this.injury === 'INCAPACITATING INJURY') {
+		} else if (this.injury_classification === 'INCAPACITATING INJURY') {
 			return 'incapacitating';
-		} else if (this.injury === 'NONINCAPACITATING INJURY') {
+		} else if (this.injury_classification === 'NONINCAPACITATING INJURY') {
 			return 'non-incapacitating';
-		} else if (this.injury === 'NO INDICATION OF INJURY') {
+		} else if (this.injury_classification === 'NO INDICATION OF INJURY') {
 			return 'none';
-		} else if (this.injury === 'REPORTED, NOT EVIDENT') {
+		} else if (this.injury_classification === 'REPORTED, NOT EVIDENT') {
 			return 'unclear';
 		} else {
 			return 'unknown';
@@ -90,6 +90,14 @@ export class Person {
 
 	get isInjured(): boolean {
 		return ['fatal', 'incapacitating', 'non-incapacitating', 'unclear'].includes(this.injury_level);
+	}
+
+	get injury(): string {
+		if (['a', 'e', 'i', 'o', 'u'].includes(this.injury_level[0])) {
+			return `an ${this.injury_level} injury`;
+		} else {
+			return `a ${this.injury_level} injury`;
+		}
 	}
 
 	get isUninjured(): boolean {

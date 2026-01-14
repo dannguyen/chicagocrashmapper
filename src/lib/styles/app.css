@@ -1,1 +1,25 @@
 @import 'tailwindcss';
+
+.incident-list {
+	@apply pl-4 list-disc text-gray-700;
+}
+
+.incident-list--dense {
+	@apply space-y-1;
+}
+
+.incident-list--spaced {
+	@apply space-y-2;
+}
+
+.incident-sublist {
+	@apply pl-6 list-disc text-gray-600 mt-1 space-y-1;
+}
+
+.incident-item-label {
+	@apply font-semibold text-gray-800;
+}
+
+.incident-item-role {
+	@apply text-gray-500;
+}

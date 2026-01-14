@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { slide } from 'svelte/transition';
 	import { Incident } from '$lib/incident';
 	import { type Location } from '$lib/location';
+	import PeopleList from '$lib/components/PeopleList.svelte';
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
 
 	let { incident, selectedLocation, distanceUnits } = $props<{
@@ -11,130 +11,99 @@
 	}>();
 </script>
 
-<div id="incident-detail">
-	{#if incident}
-		<div class="incident-date" data-value={incident.date}>
-			{incident.prettyDate}
-
-			<em>
-				({currentAgeSimplified(incident.date)})
-			</em>
-		</div>
-		<h2>{incident.title}</h2>
-
-		<div class="incident-category">
-			Category: {incident.category}
-		</div>
-		<div class="incident-cause">
-			Cause: {incident.cause}
-		</div>
-
-		{#if selectedLocation?.isPoint}
-			<div class="incident-distance">
-				{prettifyInteger(incident.distance as number)}
-				{distanceUnits} away
+{#if incident}
+	<article class="incident-detail">
+		<header class="incident-header">
+			<div class="incident-date">
+				<time datetime={incident.date.toISOString()}>
+					{incident.prettyDate}
+				</time>
+				<em>({currentAgeSimplified(incident.date)})</em>
 			</div>
+			<h3 class="incident-title">{incident.title}</h3>
+		</header>
+
+		<dl class="incident-meta">
+			<div class="incident-meta-row">
+				<dt>Category</dt>
+				<dd>{incident.category}</dd>
+			</div>
+			<div class="incident-meta-row">
+				<dt>Cause</dt>
+				<dd>{incident.cause}</dd>
+			</div>
+			{#if selectedLocation?.isPoint}
+				<div class="incident-meta-row">
+					<dt>Distance</dt>
+					<dd>
+						{prettifyInteger(incident.distance as number)}
+						{distanceUnits} away
+					</dd>
+				</div>
+			{/if}
+		</dl>
+
+		{#if incident.non_passengers.length > 0}
+			<section class="incident-people">
+				<h4 class="section-title">People involved</h4>
+				<PeopleList people={incident.non_passengers} />
+			</section>
 		{/if}
 
-		{#if incident.non_passengers}
-			<ul class="non-passengers">
-				{#each incident.non_passengers as po}
-					<li class="person">
-						{po.description}
-						({po.person_type})
-						{#if po.isInjured}
-							suffered <span class="injury injury-{po.injury_level}">
-								a {po.injury_level} injury
-							</span>
-						{:else if po.isUninjured}
-							was <span class="injury injury-uninjured"> uninjured </span>
-						{:else}
-							suffered <span class="injury injury-unknown"> an unknown/unclear injury </span>
-						{/if}
-					</li>
-				{/each}
-			</ul>
+		{#if incident.vehicles.length > 0}
+			<section class="incident-vehicles-section">
+				<h4 class="section-title">Vehicles involved</h4>
+				<ul class="incident-vehicles incident-list incident-list--spaced">
+					{#each incident.vehicles as vh}
+						<li class="vehicle">
+							<span class="incident-item-label">{vh.description}</span>
+							{#if vh.passengers.length > 0}
+								<PeopleList people={vh.passengers} listClass="incident-sublist" />
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</section>
 		{/if}
-
-		{#if incident.vehicles}
-			<h3>Vehicles Involved</h3>
-			<ul class="incident-vehicles">
-				{#each incident.vehicles as vh}
-					<li class="vehicle">
-						{vh.description}
-						<ul class="vehicle-passengers">
-							{#each vh.passengers as po}
-								<li class="person">
-									{po.description}
-									({po.person_type})
-
-									{#if po.isInjured}
-										suffered <span class="injury injury-{po.injury_level}">
-											a {po.injury_level} injury
-										</span>
-									{:else if po.isUninjured}
-										was <span class="injury injury-uninjured"> uninjured </span>
-									{:else}
-										suffered <span class="injury injury-unknown"> an unknown/unclear injury </span>
-									{/if}
-								</li>
-							{/each}
-						</ul>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	{/if}
-</div>
+	</article>
+{/if}
 
 <style lang="postcss">
 	@reference "$lib/styles/app.css";
 
-	.meta-line {
-		@apply flex gap-2;
-	}
-
-	#incident-detail {
-		@apply w-full;
-	}
-
-	.incident-detail :global(b) {
-		@apply text-gray-900;
+	.incident-detail {
+		@apply w-full text-gray-900;
 	}
 
 	.incident-date {
-		@apply mb-1;
+		@apply text-sm text-gray-600 flex flex-wrap gap-2;
 	}
 
-	.incident-category {
-		@apply mb-1;
+	.incident-title {
+		@apply text-lg font-semibold text-gray-900;
 	}
 
-	.incident-distance {
-		@apply text-purple-700 font-semibold;
+	.incident-meta {
+		@apply mt-2 mb-3 text-sm text-gray-700;
 	}
 
-	.incident-vehicles {
-		@apply pl-4 list-disc text-gray-700 mt-2;
+	.incident-meta-row {
+		@apply flex flex-wrap gap-2;
+	}
+
+	.incident-meta-row dt {
+		@apply font-semibold text-gray-800;
+	}
+
+	.incident-meta-row dd {
+		@apply m-0;
+	}
+
+	.section-title {
+		@apply text-sm font-semibold text-gray-800 mt-3 mb-1;
 	}
 
 	.incident-vehicles .vehicle {
-		@apply mb-1;
-	}
-
-	.injury-fatal {
-		@apply ml-1 text-red-700;
-	}
-
-	.injury-incapacitating {
-		@apply ml-1 text-orange-700;
-	}
-
-	.vehicle-passengers {
-		@apply pl-6 list-disc text-gray-600 mt-1;
-	}
-
-	.vehicle-passengers .person .injury {
-		@apply font-semibold;
+		@apply text-sm;
 	}
 </style>
