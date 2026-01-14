@@ -89,8 +89,8 @@
 					onLocationSelect(loc);
 				}
 			} else {
-				// Reset state if no location is specified (e.g. home page)
-				appState.clearLocation();
+				// Default home view: show the most recent fatal crashes citywide.
+				appState.loadRecentFatalIncidents(10);
 			}
 		}
 	});
@@ -158,7 +158,9 @@
 							</div>
 						{:else}
 							<div class="meta-line">
-								<span class="meta-label">No location selected.</span>
+								<span class="meta-label">
+									Showing {appState.incidents.length} most recent fatal crashes citywide.
+								</span>
 							</div>
 						{/if}
 					</div>

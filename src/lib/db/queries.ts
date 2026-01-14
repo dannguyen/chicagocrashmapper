@@ -1,184 +1,37 @@
-import initSqlite from '@sqlite.org/sqlite-wasm';
+/**
+ * Database query functions for locations, incidents, and statistics
+ */
+
 import wellknown from 'wellknown';
-import { resolve } from '$app/paths';
-import { Location } from './location';
-import type { IncidentRecord } from './incident';
-import { base, assets } from '$app/paths';
+import { Location } from '$lib/location';
+import type { IncidentRecord } from '$lib/incident';
+import type { DatabaseConnection } from './connection';
+import type { LocationRecord, NeighborhoodStat, IntersectionStat, maxLimit } from './types';
+import { haversineDistanceFeet } from './spatial';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DbInstance = any;
+// Re-export maxLimit for use in queries
+export { maxLimit } from './types';
 
-export interface LocationRecord {
-	name: string;
-	category: string;
-	latitude: number;
-	longitude: number;
-	id: string;
-	the_geom: string;
-}
-
-export const maxLimit: number = 1000;
-
+/**
+ * Normalize date input to ISO date string (YYYY-MM-DD)
+ */
 function normalizeDateInput(date: Date | string | null | undefined): string {
 	const d = date ? new Date(date) : new Date();
 	return d.toISOString().split('T')[0];
 }
 
-function haversineDistanceFeet(lat1: number, lon1: number, lat2: number, lon2: number): number {
-	const toRad = (x: number) => (x * Math.PI) / 180;
-	const R = 3.28084 * 6371e3; // feet
-
-	const φ1 = toRad(lat1);
-	const φ2 = toRad(lat2);
-	const Δφ = toRad(lat2 - lat1);
-	const Δλ = toRad(lon2 - lon1);
-
-	const a =
-		Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-		Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-	return R * c;
+/**
+ * Helper to calculate distance in feet between two lat/lon points
+ */
+function getDistanceInFeet(lat1: number, lon1: number, lat2: number, lon2: number): number {
+	return haversineDistanceFeet(lat1, lon1, lat2, lon2);
 }
 
-export class DatabaseConnection {
-	db: DbInstance | null = null;
-	url: string;
-
-	constructor(dbUrl: string) {
-		this.url = dbUrl;
-	}
-
-	async init(): Promise<void> {
-		const sqlite3 = await initSqlite({
-			locateFile: (name) => `${assets}/${name}`
-		});
-
-		const capi = sqlite3.capi;
-		const wasm = sqlite3.wasm;
-
-		const buf = await fetch(this.url).then((r) => r.arrayBuffer());
-		const bytes = new Uint8Array(buf);
-
-		// allocate WASM memory and copy DB bytes in
-		const p = wasm.allocFromTypedArray(bytes);
-
-		// create empty DB
-		const db = new sqlite3.oo1.DB();
-
-		// deserialize bytes into DB
-		const rc = capi.sqlite3_deserialize(
-			db.pointer as number,
-			'main',
-			p,
-			bytes.length,
-			bytes.length,
-			capi.SQLITE_DESERIALIZE_FREEONCLOSE | capi.SQLITE_DESERIALIZE_READONLY
-		);
-
-		if (rc) throw new Error('deserialize failed');
-
-		registerGeospatialFunctions(db);
-
-		this.db = db;
-	}
-
-	getDatabaseSummary(): { type: string; count: number }[] {
-		if (!this.db) return [];
-
-		const results = this.db.exec({
-			sql: `
-				SELECT
-					'Locations' AS type
-					, COUNT(1) AS count
-				FROM locations
-				UNION ALL
-				SELECT
-					'Incidents' AS type
-					, COUNT(1) AS count
-				FROM incidents
-			`,
-			rowMode: 'object'
-		});
-
-		return results as { type: string; count: number }[];
-	}
-}
-
-export async function initDb(dbUrl: string): Promise<DatabaseConnection> {
-	const conn = new DatabaseConnection(dbUrl);
-	await conn.init();
-	return conn;
-}
-
-export function registerGeospatialFunctions(db: DbInstance): void {
-	db.createFunction({
-		name: 'HAVERSINE_DISTANCE',
-		arity: 4,
-		deterministic: true,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		xFunc: (ctxPtr: any, lat1: number, lon1: number, lat2: number, lon2: number) => {
-			return haversineDistanceFeet(lat1, lon1, lat2, lon2);
-		}
-	});
-
-	db.createFunction({
-		name: 'MakePoint',
-		arity: 3,
-		deterministic: true,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		xFunc: (_: any, x: number, y: number, srid: number) => {
-			return `POINT (${x} ${y})`;
-		}
-	});
-
-	let lastGeomWkt = '';
-	let lastGeom: any = null;
-
-	db.createFunction({
-		name: 'ST_Contains',
-		arity: 2,
-		deterministic: true,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		xFunc: (_: any, geomWkt: string, pointWkt: string) => {
-			if (!geomWkt || !pointWkt) return 0;
-
-			// Simple Memoization for the polygon geometry
-			if (geomWkt !== lastGeomWkt) {
-				try {
-					lastGeom = wellknown.parse(geomWkt);
-					lastGeomWkt = geomWkt;
-				} catch (e) {
-					return 0;
-				}
-			}
-			if (!lastGeom) return 0;
-
-			// Parse Point (manual parse is faster than wellknown for simple points)
-			// pointWkt is "POINT (x y)"
-			const match = pointWkt.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i);
-			if (!match) return 0;
-			const x = parseFloat(match[1]);
-			const y = parseFloat(match[2]);
-			const point = { type: 'Point', coordinates: [x, y] };
-
-			if (lastGeom.type === 'Polygon') {
-				return pointInPolygon(point.coordinates, lastGeom.coordinates) ? 1 : 0;
-			} else if (lastGeom.type === 'MultiPolygon') {
-				return pointInMultiPolygon(point.coordinates, lastGeom.coordinates) ? 1 : 0;
-			}
-
-			return 0;
-		}
-	});
-}
-
-// Helper functions for point in polygon check
+/**
+ * Helper function for point-in-polygon check using ray-casting algorithm
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function pointInPolygon(point: any, vs: any) {
-	// ray-casting algorithm based on
-	// https://github.com/substack/point-in-polygon
-	// vs = [ [ [x,y], [x,y]... ], [hole]... ]
+function pointInPolygon(point: any, vs: any): boolean {
 	const x = point[0],
 		y = point[1];
 
@@ -209,14 +62,17 @@ function pointInPolygon(point: any, vs: any) {
 			const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
 			if (intersect) insideHole = !insideHole;
 		}
-		if (insideHole) return false; // Inside a hole means outside the polygon
+		if (insideHole) return false;
 	}
 
 	return true;
 }
 
+/**
+ * Check if a point is inside a MultiPolygon
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function pointInMultiPolygon(point: any, coords: any) {
+function pointInMultiPolygon(point: any, coords: any): boolean {
 	for (let i = 0; i < coords.length; i++) {
 		if (pointInPolygon(point, coords[i])) {
 			return true;
@@ -225,6 +81,13 @@ function pointInMultiPolygon(point: any, coords: any) {
 	return false;
 }
 
+// ============================================================================
+// Location Queries
+// ============================================================================
+
+/**
+ * Search locations by name using tokenized search
+ */
 export function queryLocationsByName(
 	conn: DatabaseConnection,
 	searchString: string,
@@ -265,6 +128,9 @@ export function queryLocationsByName(
 	return (results as LocationRecord[]).map((row) => new Location(row));
 }
 
+/**
+ * Query a single location by ID
+ */
 export function queryLocationById(conn: DatabaseConnection, id: string): Location | null {
 	if (!conn.db) return null;
 
@@ -282,6 +148,9 @@ export function queryLocationById(conn: DatabaseConnection, id: string): Locatio
 	return results.length > 0 ? new Location(results[0] as LocationRecord) : null;
 }
 
+/**
+ * Query locations by category
+ */
 export function queryLocationsByCategory(conn: DatabaseConnection, category: string): Location[] {
 	if (!conn.db) return [];
 
@@ -299,14 +168,14 @@ export function queryLocationsByCategory(conn: DatabaseConnection, category: str
 	return (results as LocationRecord[]).map((row) => new Location(row));
 }
 
-export interface NeighborhoodStat {
-	id: string;
-	name: string;
-	totalIncidents: number;
-	mostRecent: string | null;
-	avgPerYear: number;
-}
+// ============================================================================
+// Statistics
+// ============================================================================
 
+/**
+ * Get statistics for all neighborhoods
+ * Note: This performs an in-memory spatial join and may be slow
+ */
 export function getAllNeighborhoodStats(conn: DatabaseConnection): NeighborhoodStat[] {
 	if (!conn.db) return [];
 
@@ -397,19 +266,10 @@ export function getAllNeighborhoodStats(conn: DatabaseConnection): NeighborhoodS
 	});
 }
 
-export interface IntersectionStat {
-	id: string;
-	name: string;
-	count?: number;
-	mostRecentDate?: string;
-	distance?: number;
-}
-
-// Helper to calculate distance in feet between two lat/lon points
-function getDistanceInFeet(lat1: number, lon1: number, lat2: number, lon2: number): number {
-	return haversineDistanceFeet(lat1, lon1, lat2, lon2);
-}
-
+/**
+ * Get top 10 intersections by incident count (within 500 feet)
+ * Note: This performs an in-memory spatial join and may be slow
+ */
 export function getTopIntersectionsByIncidentCount(conn: DatabaseConnection): IntersectionStat[] {
 	if (!conn.db) return [];
 
@@ -446,6 +306,10 @@ export function getTopIntersectionsByIncidentCount(conn: DatabaseConnection): In
 	return stats.sort((a, b) => b.count - a.count).slice(0, 10);
 }
 
+/**
+ * Get top 10 intersections by most recent incidents
+ * Note: This performs an in-memory spatial join and may be slow
+ */
 export function getTopIntersectionsByRecentIncidents(conn: DatabaseConnection): IntersectionStat[] {
 	if (!conn.db) return [];
 
@@ -494,12 +358,46 @@ export function getTopIntersectionsByRecentIncidents(conn: DatabaseConnection): 
 	return results;
 }
 
+// ============================================================================
+// Incident Queries
+// ============================================================================
+
+/**
+ * Query most recent fatal incidents citywide.
+ */
+export function queryMostRecentFatalIncidents(
+	conn: DatabaseConnection,
+	limit: number = 10
+): IncidentRecord[] {
+	if (!conn.db) return [];
+
+	const results = conn.db.exec({
+		sql: `
+			SELECT *
+				, NULL as distance
+			FROM incidents
+			WHERE injuries_fatal > 0
+			ORDER BY crash_date desc
+			LIMIT :limit
+			;`,
+		bind: {
+			':limit': limit
+		},
+		rowMode: 'object'
+	});
+
+	return results as IncidentRecord[];
+}
+
+/**
+ * Query incidents inside a shape location (e.g., neighborhood, ward)
+ */
 export function queryIncidentsInsideLocation(
 	conn: DatabaseConnection,
 	location: Location,
 	maxDaysAgo: number = 90,
 	selectedDate: Date | string = new Date(),
-	limit: number = maxLimit
+	limit: number = 1000
 ): IncidentRecord[] {
 	if (!conn.db) return [];
 	const pastOffset = `-${maxDaysAgo} days`;
@@ -532,13 +430,16 @@ export function queryIncidentsInsideLocation(
 	return results as IncidentRecord[];
 }
 
+/**
+ * Query incidents near a point location (e.g., intersection, address)
+ */
 export function queryIncidentsMostRecentNearLocation(
 	conn: DatabaseConnection,
 	location: Location,
 	maxDistance: number = 5280,
 	maxDaysAgo: number = 90,
 	selectedDate: Date | string = new Date(),
-	limit: number = maxLimit
+	limit: number = 1000
 ): IncidentRecord[] {
 	if (!conn.db) return [];
 	const pastOffset = `-${maxDaysAgo} days`;
@@ -571,12 +472,15 @@ export function queryIncidentsMostRecentNearLocation(
 	return results as IncidentRecord[];
 }
 
+/**
+ * Query nearest incidents to a location
+ * @deprecated Use queryIncidentsMostRecentNearLocation instead
+ */
 export function queryIncidentsNearestToLocation(
-	// to be deprecated soon...
 	conn: DatabaseConnection,
 	location: Location,
 	maxDistance: number = 5280,
-	limit: number = maxLimit
+	limit: number = 1000
 ): IncidentRecord[] {
 	if (!conn.db) return [];
 

@@ -13,7 +13,6 @@
 
 <div id="incident-detail">
 	{#if incident}
-		<h3>{incident.title}</h3>
 		<div class="incident-date" data-value={incident.date}>
 			{incident.prettyDate}
 
@@ -21,10 +20,15 @@
 				({currentAgeSimplified(incident.date)})
 			</em>
 		</div>
+		<h2>{incident.title}</h2>
 
 		<div class="incident-category">
-			{incident.category}
+			Category: {incident.category}
 		</div>
+		<div class="incident-cause">
+			Cause: {incident.cause}
+		</div>
+
 		{#if selectedLocation?.isPoint}
 			<div class="incident-distance">
 				{prettifyInteger(incident.distance as number)}
@@ -32,7 +36,28 @@
 			</div>
 		{/if}
 
+		{#if incident.non_passengers}
+			<ul class="non-passengers">
+				{#each incident.non_passengers as po}
+					<li class="person">
+						{po.description}
+						({po.person_type})
+						{#if po.isInjured}
+							suffered <span class="injury injury-{po.injury_level}">
+								a {po.injury_level} injury
+							</span>
+						{:else if po.isUninjured}
+							was <span class="injury injury-uninjured"> uninjured </span>
+						{:else}
+							suffered <span class="injury injury-unknown"> an unknown/unclear injury </span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
 		{#if incident.vehicles}
+			<h3>Vehicles Involved</h3>
 			<ul class="incident-vehicles">
 				{#each incident.vehicles as vh}
 					<li class="vehicle">
@@ -41,6 +66,7 @@
 							{#each vh.passengers as po}
 								<li class="person">
 									{po.description}
+									({po.person_type})
 
 									{#if po.isInjured}
 										suffered <span class="injury injury-{po.injury_level}">

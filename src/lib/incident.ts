@@ -1,7 +1,13 @@
 import { prettifyDate } from '$lib/transformHelpers';
 
-function normalizeString(value: string | null | undefined): string | null {
-	return value != null && value.trim() === '' ? null : (value ?? null);
+function normalizeString(value: any): string | null {
+	if (value === undefined) {
+		return null;
+	} else if (Number.isFinite(value)) {
+		return value;
+	} else {
+		return value != null && value.trim() === '' ? null : (value ?? null);
+	}
 }
 
 export interface PersonRecord {
@@ -36,20 +42,24 @@ export class Person {
 	}
 
 	get noun(): string {
-		if (this.sex === 'M') {
+		if (this.ageUnknown === true) {
+			return 'person';
+		} else if (this.sex === 'M') {
 			return this.age != null && this.age >= 18 ? 'man' : 'boy';
 		} else if (this.sex === 'F') {
 			return this.age != null && this.age >= 18 ? 'woman' : 'girl';
 		} else if (this.age != null && this.age < 1) {
-			return 'baby';
+			return 'baby (or age unknown)';
 		} else {
 			return 'person';
 		}
 	}
 
 	get ageLabel(): string {
-		if (this.age != null && this.age < 1) {
-			return 'baby';
+		if (this.ageUnknown === true) {
+			return 'age unknown';
+		} else if (this.age != null && this.age < 1) {
+			return 'baby (or age unknown)';
 		} else if (this.age != null && this.age > 0) {
 			return `${this.age}-year-old`;
 		} else {
@@ -88,6 +98,21 @@ export class Person {
 
 	get isKilled(): boolean {
 		return this.injury_level === 'fatal';
+	}
+
+	get category(): string | null {
+		return this.person_type;
+	}
+	get isDriver(): boolean {
+		return this.category === 'DRIVER';
+	}
+
+	get ageUnknown(): boolean {
+		if (this.isDriver && this.age <= 1) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 
@@ -138,13 +163,14 @@ export interface IncidentRecord {
 	injuries_incapacitating: number;
 	vehicles?: VehicleRecord[] | string | null;
 	non_passengers?: PersonRecord[] | string | null;
+	first_crash_type: string;
 	crash_type?: string;
 	street_no?: string | null;
 	street_direction?: string;
 	street_name?: string;
 	crash_date: string;
 	prim_contributory_cause?: string;
-	subcategory?: string;
+	sec_contributory_cause?: string;
 	distance?: number;
 }
 
@@ -154,12 +180,13 @@ export class Incident {
 	title: string;
 	date: Date;
 	category: string;
-	subcategory?: string;
 	distance?: number;
 	injuries_incapacitating: number;
 	injuries_fatal: number;
 	vehicles: Vehicle[];
 	non_passengers: Person[];
+	primary_cause: string;
+	secondary_cause: string;
 
 	// Constructor now takes raw database row
 	constructor(record: IncidentRecord) {
@@ -178,18 +205,30 @@ export class Incident {
 			]
 				.filter((d) => d !== null)
 				.join(', ') +
-			` in ${normalizeString(record.crash_type) ?? 'Unknown'} on ` +
+			` near ` +
 			`${normalizeString(record.street_no) ?? ''} ${normalizeString(record.street_direction) ?? ''} ` +
 			`${normalizeString(record.street_name) ?? 'Unknown Street'}`;
 		this.date = new Date(Date.parse(record.crash_date));
-		this.category = normalizeString(record.prim_contributory_cause) ?? 'Unknown Category';
-		this.subcategory = normalizeString(record.subcategory) ?? undefined;
+		this.category = normalizeString(record.first_crash_type) ?? 'Unknown Category';
 		// Ensure distance is a number and handle undefined or null values
 		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
 		this.vehicles = parseVehicles(record.vehicles);
 		this.non_passengers = parsePeople(record.non_passengers);
+		this.primary_cause = normalizeString(record.prim_contributory_cause);
+		this.secondary_cause = normalizeString(record.sec_contributory_cause);
 	}
 
+	get cause(): string {
+		if (
+			this.primary_cause === 'UNABLE TO DETERMINE' ||
+			this.primary_cause === 'NOT APPLICABLE' ||
+			this.primary_cause === this.secondary_cause
+		) {
+			return this.primary_cause;
+		} else {
+			return this.secondary_cause;
+		}
+	}
 	get isFatal(): boolean {
 		return this.injuries_fatal > 0;
 	}

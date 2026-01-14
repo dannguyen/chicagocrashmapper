@@ -47,7 +47,7 @@ describe('Person', () => {
 
 	it('derives ageLabel', () => {
 		const baby = new Person({ age: '0' });
-		expect(baby.ageLabel).toBe('baby');
+		expect(baby.ageLabel).toBe('baby (or age unknown)');
 
 		const kid = new Person({ age: '1' });
 		expect(kid.ageLabel).toBe('1-year-old');
@@ -63,7 +63,7 @@ describe('Person', () => {
 		const baby = new Person({ sex: 'M', age: '0' });
 		expect(baby.age).toBe(0);
 		expect(baby.noun).toBe('boy');
-		expect(baby.description).toBe('baby boy');
+		expect(baby.description).toBe('baby (or age unknown) boy');
 
 		const man = new Person({ sex: 'M', age: '30' });
 		expect(man.noun).toBe('man');
@@ -77,15 +77,15 @@ describe('Person', () => {
 		expect(neutral.noun).toBe('person');
 		expect(neutral.description).toBe('20-year-old person');
 
-		const infant = new Person({ age: '0.5' });
+		const infant = new Person({ age: '0.5', sex: 'X' });
 		expect(infant.age).toBe(0.5);
-		expect(infant.noun).toBe('baby');
-		expect(infant.description).toBe('baby');
+		expect(infant.noun).toBe('baby (or age unknown)');
+		expect(infant.description).toBe('baby (or age unknown)');
 
 		const babyboy = new Person({ age: '0.9', sex: 'M' });
 		expect(babyboy.age).toBe(0.9);
 		expect(babyboy.noun).toBe('boy');
-		expect(babyboy.description).toBe('baby boy');
+		expect(babyboy.description).toBe('baby (or age unknown) boy');
 	});
 });
 
@@ -190,7 +190,8 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			injuries_incapacitating: 0,
 			crash_date: '2024-01-03',
 			vehicles: 'not-json',
-			non_passengers: 'also-bad'
+			non_passengers: 'also-bad',
+			first_crash_type: 'whatever'
 		});
 		expect(incidentBadJson.vehicles).toEqual([]);
 		expect(incidentBadJson.non_passengers).toEqual([]);
@@ -210,7 +211,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			distance: 1234.56
 		});
 
-		expect(incident.title).toBe('2 seriously injured in Unknown on  N Unknown Street');
+		expect(incident.title).toBe('2 seriously injured near  N Unknown Street');
 		expect(incident.distance).toBe(1235);
 	});
 });

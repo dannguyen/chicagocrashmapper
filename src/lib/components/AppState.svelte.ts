@@ -2,7 +2,11 @@ import type { Location } from '$lib/location';
 import type { Incident } from '$lib/incident';
 import type { DatabaseConnection } from '$lib/db';
 import { reifyIncidents } from '$lib/incident';
-import { queryIncidentsMostRecentNearLocation, queryIncidentsInsideLocation } from '$lib/db';
+import {
+	queryIncidentsMostRecentNearLocation,
+	queryIncidentsInsideLocation,
+	queryMostRecentFatalIncidents
+} from '$lib/db';
 
 class AppStateManager {
 	#state = $state({
@@ -136,6 +140,18 @@ class AppStateManager {
 
 		this.#state.incidents = reifyIncidents(results);
 		this.#state.selectedIncident = null; // Clear selected incident when new search occurs
+	}
+
+	loadRecentFatalIncidents(limit: number = 10) {
+		if (!this.#state.database) {
+			console.warn('Database not initialized');
+			return;
+		}
+
+		this.#state.selectedLocation = null;
+		const results = queryMostRecentFatalIncidents(this.#state.database, limit);
+		this.#state.incidents = reifyIncidents(results);
+		this.#state.selectedIncident = null;
 	}
 
 	// Combined operation - select location and search
