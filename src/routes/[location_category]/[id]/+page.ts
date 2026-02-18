@@ -1,32 +1,18 @@
 import type { PageLoad } from './$types';
-import { queryLocationById } from '$lib/db';
-import { ensureDatabase } from '$lib/appInit';
-import { appState } from '$lib/components/AppState.svelte';
+import { getLocationById } from '$lib/api/client';
+import { Location } from '$lib/location';
 import { error } from '@sveltejs/kit';
 
 export const load: PageLoad = async ({ params }) => {
 	const id = params.id;
 
-	if (!appState.database) {
-		try {
-			await ensureDatabase();
-		} catch (e) {
-			throw error(500, 'Database not initialized.');
-		}
-	}
+	const record = await getLocationById(id);
 
-	const db = appState.database;
-	if (!db) {
-		throw error(500, 'Database not initialized.');
-	}
-
-	const location = queryLocationById(db, id);
-
-	if (!location) {
-		throw error(404, `Location with ID \'${id}\' not found.`);
+	if (!record) {
+		throw error(404, `Location '${id}' not found.`);
 	}
 
 	return {
-		location
+		location: new Location(record)
 	};
 };

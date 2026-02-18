@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	import { ensureDatabase } from '$lib/appInit';
-	import { getAllNeighborhoodStats, type NeighborhoodStat } from '$lib/db';
+	import { getNeighborhoodStats } from '$lib/api/client';
+	import type { NeighborhoodStat } from '$lib/db';
 
 	let stats: NeighborhoodStat[] = $state([]);
 	let loading = $state(true);
@@ -15,18 +15,11 @@
 
 	onMount(async () => {
 		try {
-			const db = await ensureDatabase();
-			// This might take a moment, so we keep loading true
-			// We could use a worker in a real heavy app, but main thread is likely fine for < 5000 incidents
-			setTimeout(() => {
-				if (db) {
-					stats = getAllNeighborhoodStats(db);
-					loading = false;
-				}
-			}, 10);
+			stats = await getNeighborhoodStats();
 		} catch (e) {
 			console.error(e);
 			error = 'Failed to load neighborhood statistics.';
+		} finally {
 			loading = false;
 		}
 	});
@@ -64,7 +57,7 @@
 			<div
 				class="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"
 			></div>
-			<p class="text-xl text-gray-500">Calculating statistics...</p>
+			<p class="text-xl text-gray-500">Loading statistics...</p>
 		</div>
 	{:else if error}
 		<div class="rounded-md bg-red-50 p-4">
@@ -84,7 +77,6 @@
 						>
 							<div class="flex items-center gap-2">
 								Neighborhood
-								<!-- <FontAwesomeIcon icon={getSortIcon('name')} class="text-gray-400 group-hover:text-gray-600" /> -->
 								<span class="text-gray-400 group-hover:text-gray-600">
 									{#if sortField === 'name'}
 										{sortDirection === 1 ? '▲' : '▼'}

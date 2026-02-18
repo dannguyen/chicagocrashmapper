@@ -3,9 +3,9 @@
 	import { slide } from 'svelte/transition';
 
 	import { appState } from '$lib/components/AppState.svelte';
-	import { queryLocationById } from '$lib/db';
+	import { getLocationById } from '$lib/api/client';
+	import { Location } from '$lib/location';
 	import type { Incident } from '$lib/incident';
-	import type { Location } from '$lib/location';
 	import IncidentList from '$lib/components/IncidentList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 
@@ -65,14 +65,11 @@
 	}
 
 	function showIncidentOnMap(index: number) {
-		// This function now just sets the selected incident,
-		// MapContainer will react to `selectedIncident` changes.
 		setIncidentDetail(appState.incidents[index]);
 	}
 
 	$effect(() => {
 		const loc = appState.selectedLocation;
-		// Only do an immediate fetch when the selected location itself changes
 		if (loc && loc !== lastSearchedLocation) {
 			lastSearchedLocation = loc;
 			appState.searchIncidentsByLocation(loc);
@@ -82,16 +79,13 @@
 	});
 
 	onMount(async () => {
-		if (appState.database?.db) {
-			if (initialLocationId) {
-				const loc = queryLocationById(appState.database, initialLocationId);
-				if (loc) {
-					onLocationSelect(loc);
-				}
-			} else {
-				// Default home view: show the most recent fatal crashes citywide.
-				appState.loadRecentFatalIncidents(10);
+		if (initialLocationId) {
+			const record = await getLocationById(initialLocationId);
+			if (record) {
+				onLocationSelect(new Location(record));
 			}
+		} else {
+			appState.loadRecentFatalIncidents(10);
 		}
 	});
 </script>
@@ -103,7 +97,11 @@
 			<div class="meta-wrapper" out:slide={{ duration: 300 }}>
 				<div class="search-results-for-selected-location">
 					<div class="selected-location-info">
-						{#if appState.selectedLocation}
+						{#if appState.loading}
+							<div class="meta-line">
+								<span class="meta-label">Loading...</span>
+							</div>
+						{:else if appState.selectedLocation}
 							<div class="meta-line">
 								<span class="meta-label">Location:</span>
 								<span class="location-name">{appState.selectedLocation.name}</span>

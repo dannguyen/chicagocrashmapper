@@ -1,30 +1,35 @@
 import type { Location } from '$lib/location';
 import type { Incident } from '$lib/incident';
-import type { DatabaseConnection } from '$lib/db';
 import { reifyIncidents } from '$lib/incident';
 import {
-	queryIncidentsMostRecentNearLocation,
-	queryIncidentsInsideLocation,
-	queryMostRecentFatalIncidents
-} from '$lib/db';
+	getIncidentsNearPoint,
+	getIncidentsWithin,
+	getRecentFatalIncidents
+} from '$lib/api/client';
+
+function toDateStr(d: Date): string {
+	return d.toISOString().split('T')[0];
+}
+
+function addDays(d: Date, days: number): Date {
+	const result = new Date(d);
+	result.setDate(result.getDate() + days);
+	return result;
+}
 
 class AppStateManager {
 	#state = $state({
-		database: null as DatabaseConnection | null,
 		selectedLocation: null as Location | null,
 		incidents: [] as Incident[],
 		selectedIncident: null as Incident | null,
 		maxDaysAgo: 540,
 		selectedDate: new Date(),
 		maxDistance: 2500,
-		distanceUnits: 'feet' as 'feet' | 'meters'
+		distanceUnits: 'feet' as 'feet' | 'meters',
+		loading: false
 	});
 
-	// Getters - read-only access to state
-	get database() {
-		return this.#state.database;
-	}
-
+	// Getters
 	get selectedLocation() {
 		return this.#state.selectedLocation;
 	}
@@ -53,16 +58,14 @@ class AppStateManager {
 		return this.#state.distanceUnits;
 	}
 
-	// Computed properties - derived state
-	hasDatabase = $derived(this.#state.database?.db != null);
+	get loading() {
+		return this.#state.loading;
+	}
+
+	// Computed
 	hasResults = $derived(this.#state.incidents.length > 0);
 	hasSelectedLocation = $derived(this.#state.selectedLocation != null);
 	incidentCount = $derived(this.#state.incidents.length);
-
-	// Database management
-	setDatabase(connection: DatabaseConnection | null) {
-		this.#state.database = connection;
-	}
 
 	// Location management
 	selectLocation(location: Location | null) {
@@ -88,86 +91,77 @@ class AppStateManager {
 		this.#state.incidents = incidents;
 	}
 
-	// Filter management with validation
+	// Filter management
 	setMaxDistance(value: number) {
-		if (value < 1) {
-			console.warn('maxDistance must be at least 1');
-			return;
-		}
+		if (value < 1) return;
 		this.#state.maxDistance = value;
 	}
 
 	setMaxDaysAgo(value: number) {
-		if (value < 1) {
-			console.warn('maxDaysAgo must be at least 1');
-			return;
-		}
+		if (value < 1) return;
 		this.#state.maxDaysAgo = value;
 	}
 
 	setSelectedDate(date: Date) {
-		if (!(date instanceof Date) || isNaN(date.getTime())) {
-			console.warn('Invalid date provided');
-			return;
-		}
+		if (!(date instanceof Date) || isNaN(date.getTime())) return;
 		this.#state.selectedDate = date;
 	}
 
-	// Business logic - search operations
-	searchIncidentsByLocation(location: Location) {
-		if (!this.#state.database) {
-			console.warn('Database not initialized');
-			return;
-		}
-
-		let results;
-		if (location.isShape) {
-			results = queryIncidentsInsideLocation(
-				this.#state.database,
-				location,
-				this.#state.maxDaysAgo,
-				this.#state.selectedDate
-			);
-		} else {
-			results = queryIncidentsMostRecentNearLocation(
-				this.#state.database,
-				location,
-				this.#state.maxDistance,
-				this.#state.maxDaysAgo,
-				this.#state.selectedDate
-			);
-		}
-
-		this.#state.incidents = reifyIncidents(results);
-		this.#state.selectedIncident = null; // Clear selected incident when new search occurs
-	}
-
-	loadRecentFatalIncidents(limit: number = 10) {
-		if (!this.#state.database) {
-			console.warn('Database not initialized');
-			return;
-		}
-
-		this.#state.selectedLocation = null;
-		const results = queryMostRecentFatalIncidents(this.#state.database, limit);
-		this.#state.incidents = reifyIncidents(results);
+	// Business logic
+	async searchIncidentsByLocation(location: Location) {
+		this.#state.loading = true;
 		this.#state.selectedIncident = null;
+		try {
+			const since = toDateStr(addDays(this.#state.selectedDate, -this.#state.maxDaysAgo));
+			const until = toDateStr(addDays(this.#state.selectedDate, this.#state.maxDaysAgo));
+
+			let records;
+			if (location.isShape) {
+				records = await getIncidentsWithin(location.id, since, until);
+			} else {
+				records = await getIncidentsNearPoint(
+					location.latitude,
+					location.longitude,
+					since,
+					until,
+					this.#state.maxDistance
+				);
+			}
+			this.#state.incidents = reifyIncidents(records);
+		} catch (e) {
+			console.error('Failed to fetch incidents:', e);
+			this.#state.incidents = [];
+		} finally {
+			this.#state.loading = false;
+		}
 	}
 
-	// Combined operation - select location and search
+	async loadRecentFatalIncidents(limit: number = 10) {
+		this.#state.loading = true;
+		this.#state.selectedLocation = null;
+		this.#state.selectedIncident = null;
+		try {
+			const records = await getRecentFatalIncidents(limit);
+			this.#state.incidents = reifyIncidents(records);
+		} catch (e) {
+			console.error('Failed to fetch recent fatal incidents:', e);
+			this.#state.incidents = [];
+		} finally {
+			this.#state.loading = false;
+		}
+	}
+
 	selectLocationAndSearch(location: Location) {
 		this.#state.selectedLocation = location;
 		this.searchIncidentsByLocation(location);
 	}
 
-	// Re-run search with current location and filters
 	refreshSearch() {
 		if (this.#state.selectedLocation) {
 			this.searchIncidentsByLocation(this.#state.selectedLocation);
 		}
 	}
 
-	// Reset to initial state
 	reset() {
 		this.#state.selectedLocation = null;
 		this.#state.incidents = [];
@@ -178,5 +172,4 @@ class AppStateManager {
 	}
 }
 
-// Export singleton instance
 export const appState = new AppStateManager();

@@ -1,9 +1,6 @@
 /**
- * Shared types and interfaces for the database layer
+ * Shared types and interfaces for the data layer
  */
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DbInstance = any;
 
 export interface LocationRecord {
 	name: string;

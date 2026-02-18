@@ -3,15 +3,11 @@
 	import { resolve } from '$app/paths';
 
 	import { highlightFilteredText } from '$lib/inputHelpers';
-	import { type Location } from '$lib/location';
-	import { queryLocationsByName, type DatabaseConnection } from '$lib/db';
+	import { Location } from '$lib/location';
+	import { searchLocations } from '$lib/api/client';
+	import type { LocationRecord } from '$lib/db/types';
 
-	let {
-		database,
-		onSelect,
-		locationName = ''
-	} = $props<{
-		database: DatabaseConnection | null;
+	let { onSelect, locationName = '' } = $props<{
 		onSelect: (loc: Location) => void;
 		locationName?: string;
 	}>();
@@ -25,9 +21,12 @@
 	let locationResults = $state<Location[]>([]);
 
 	$effect(() => {
-		if (searchQuery.trim().length >= 1 && database?.db) {
-			locationResults = queryLocationsByName(database, searchQuery);
-			selectedIndex = -1;
+		const q = searchQuery.trim();
+		if (q.length >= 1) {
+			searchLocations(q).then((results: LocationRecord[]) => {
+				locationResults = results.map((r) => new Location(r));
+				selectedIndex = -1;
+			});
 		} else {
 			locationResults = [];
 			selectedIndex = -1;
@@ -43,7 +42,6 @@
 	}
 
 	function handleInputBlur() {
-		// Small delay to allow click event on results to register
 		setTimeout(() => {
 			showAutocomplete = false;
 		}, 200);
@@ -78,7 +76,7 @@
 			} else {
 				selectLocation(locationResults[0]);
 			}
-			showAutocomplete = false; // Hide autocomplete after selection
+			showAutocomplete = false;
 		}
 	}
 

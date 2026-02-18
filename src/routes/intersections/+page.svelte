@@ -1,12 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	import { ensureDatabase } from '$lib/appInit';
-	import {
-		getTopIntersectionsByIncidentCount,
-		getTopIntersectionsByRecentIncidents,
-		type IntersectionStat
-	} from '$lib/db';
+	import { getTopIntersections } from '$lib/api/client';
+	import type { IntersectionStat } from '$lib/db';
 
 	let topByCount: IntersectionStat[] = $state([]);
 	let topByRecency: IntersectionStat[] = $state([]);
@@ -15,20 +11,13 @@
 
 	onMount(async () => {
 		try {
-			const db = await ensureDatabase();
-
-			// Run calculations
-			// Use setTimeout to allow UI to render loading state before heavy JS loop
-			setTimeout(() => {
-				if (db) {
-					topByCount = getTopIntersectionsByIncidentCount(db);
-					topByRecency = getTopIntersectionsByRecentIncidents(db);
-					loading = false;
-				}
-			}, 50);
+			const data = await getTopIntersections();
+			topByCount = data.by_count;
+			topByRecency = data.by_recency;
 		} catch (e) {
 			console.error(e);
 			error = 'Failed to load intersection statistics.';
+		} finally {
 			loading = false;
 		}
 	});
@@ -40,7 +29,7 @@
 	{#if loading}
 		<div class="loading-container">
 			<div class="spinner"></div>
-			<p class="loading-text">Analyzing intersection data...</p>
+			<p class="loading-text">Loading intersection data...</p>
 		</div>
 	{:else if error}
 		<div class="error-container">

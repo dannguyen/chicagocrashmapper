@@ -12,7 +12,7 @@
 <nav class="navigation">
 	<div class="search-label">Search for crashes by intersection, neighborhood, ward, etc</div>
 	<div class="search-wrapper">
-		<LocationSearch database={appState.database} onSelect={onLocationSelectGlobal} />
+		<LocationSearch onSelect={onLocationSelectGlobal} />
 	</div>
 	<ul class="navigation-items">
 		<li class="nav-link">
