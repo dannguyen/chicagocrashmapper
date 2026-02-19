@@ -74,8 +74,8 @@ export async function getIncidentsWithin(
 	return data.incidents;
 }
 
-export async function getRecentFatalIncidents(limit: number = 10): Promise<IncidentRecord[]> {
-	const data = await apiGet<{ incidents: IncidentRecord[] }>('/api/incidents/recent-fatal', {
+export async function getRecentIncidents(limit: number = 10): Promise<IncidentRecord[]> {
+	const data = await apiGet<{ incidents: IncidentRecord[] }>('/api/incidents/recent', {
 		limit
 	});
 	return data.incidents;

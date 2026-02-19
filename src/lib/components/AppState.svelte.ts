@@ -4,7 +4,7 @@ import { reifyIncidents } from '$lib/incident';
 import {
 	getIncidentsNearPoint,
 	getIncidentsWithin,
-	getRecentFatalIncidents
+	getRecentIncidents
 } from '$lib/api/client';
 
 function toDateStr(d: Date): string {
@@ -141,7 +141,7 @@ class AppStateManager {
 		this.#state.selectedLocation = null;
 		this.#state.selectedIncident = null;
 		try {
-			const records = await getRecentFatalIncidents(limit);
+			const records = await getRecentIncidents(limit);
 			this.#state.incidents = reifyIncidents(records);
 		} catch (e) {
 			console.error('Failed to fetch recent fatal incidents:', e);
