@@ -3,7 +3,13 @@
  */
 
 import { PUBLIC_API_BASE_URL } from '$env/static/public';
-import type { LocationRecord, NeighborhoodStat, IntersectionStat } from '$lib/db/types';
+import type {
+	LocationRecord,
+	NeighborhoodStat,
+	IntersectionStat,
+	IncidentSummary,
+	DateCountPeriod
+} from '$lib/db/types';
 import type { IncidentRecord } from '$lib/incident';
 
 const API_BASE = PUBLIC_API_BASE_URL ?? '';
@@ -91,4 +97,34 @@ export async function getTopIntersections(): Promise<{
 	by_recency: IntersectionStat[];
 }> {
 	return apiGet('/api/intersections/top');
+}
+
+export async function getIncidentSummary(params: {
+	locationId?: string;
+	latitude?: number;
+	longitude?: number;
+	distance?: number;
+	since?: string;
+	until?: string;
+}): Promise<IncidentSummary> {
+	return apiGet<IncidentSummary>('/api/incidents/summary', {
+		location_id: params.locationId,
+		latitude: params.latitude,
+		longitude: params.longitude,
+		distance: params.distance,
+		since: params.since,
+		until: params.until
+	});
+}
+
+export async function getDateCount(
+	unit: 'day' | 'month' | 'year' = 'month',
+	last: number = 18
+): Promise<Record<string, DateCountPeriod>> {
+	const data = await apiGet<{
+		unit: string;
+		last: number;
+		periods: Record<string, DateCountPeriod>;
+	}>('/api/incidents/date-count', { unit, last });
+	return data.periods;
 }

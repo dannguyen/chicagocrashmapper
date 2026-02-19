@@ -3,5 +3,11 @@
  * Database-specific code has been replaced by the API client in $lib/api/client.ts
  */
 
-export type { LocationRecord, NeighborhoodStat, IntersectionStat } from './types';
+export type {
+	LocationRecord,
+	NeighborhoodStat,
+	IntersectionStat,
+	IncidentSummary,
+	DateCountPeriod
+} from './types';
 export { maxLimit } from './types';

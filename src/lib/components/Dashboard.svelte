@@ -8,6 +8,9 @@
 	import type { Incident } from '$lib/incident';
 	import IncidentList from '$lib/components/IncidentList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
+	import LocationSummary from '$lib/components/LocationSummary.svelte';
+	import CauseFilter from '$lib/components/CauseFilter.svelte';
+	import TrendChart from '$lib/components/TrendChart.svelte';
 
 	let { initialLocationId = null } = $props<{
 		initialLocationId?: string | null;
@@ -65,7 +68,9 @@
 	}
 
 	function showIncidentOnMap(index: number) {
-		setIncidentDetail(appState.incidents[index]);
+		// find the index in the full incidents list matching the filtered item
+		const filtered = appState.filteredIncidents;
+		setIncidentDetail(filtered[index]);
 	}
 
 	$effect(() => {
@@ -105,10 +110,12 @@
 							<div class="meta-line">
 								<span class="meta-label">Location:</span>
 								<span class="location-name">{appState.selectedLocation.name}</span>
-								<span class="location-coordinates">
-									({appState.selectedLocation.longitude},
-									{appState.selectedLocation.latitude})
-								</span>
+								{#if appState.selectedLocation.name !== 'My Location'}
+									<span class="location-coordinates">
+										({appState.selectedLocation.longitude},
+										{appState.selectedLocation.latitude})
+									</span>
+								{/if}
 							</div>
 							<div class="search-results-summary">
 								<div class="search-attr">
@@ -167,6 +174,16 @@
 		{/key}
 	</section>
 
+	<!-- Summary panel (shown when a location is selected and incidents are loaded) -->
+	{#if appState.selectedLocation && !appState.loading && appState.incidents.length > 0}
+		<LocationSummary incidents={appState.incidents} location={appState.selectedLocation} />
+	{/if}
+
+	<!-- City-wide trend chart (shown on homepage with no location selected) -->
+	{#if !appState.selectedLocation && !appState.loading}
+		<TrendChart />
+	{/if}
+
 	<div class="details-container">
 		<section id="map-section">
 			<MapContainer
@@ -179,9 +196,18 @@
 		</section>
 	</div>
 
+	<!-- Cause filter (shown when incidents are loaded for a location) -->
+	{#if appState.selectedLocation && appState.incidents.length > 1}
+		<CauseFilter
+			incidents={appState.incidents}
+			activeCause={appState.causeFilter}
+			onSelectCause={(cause) => appState.setCauseFilter(cause)}
+		/>
+	{/if}
+
 	<section id="incidents-list-section">
 		<IncidentList
-			incidents={appState.incidents}
+			incidents={appState.filteredIncidents}
 			selectedLocation={appState.selectedLocation}
 			distanceUnits={appState.distanceUnits}
 			{showIncidentOnMap}

@@ -7,16 +7,37 @@
 	function onLocationSelectGlobal(location: Location) {
 		appState.selectLocation(location);
 	}
+
+	function handleNearMe() {
+		appState.useMyLocation();
+	}
 </script>
 
 <nav class="navigation">
-	<div class="search-label">Search for crashes by intersection, neighborhood, ward, etc</div>
-	<div class="search-wrapper">
-		<LocationSearch onSelect={onLocationSelectGlobal} />
+	<div class="search-label">Search crashes by neighborhood or intersection</div>
+	<div class="search-row">
+		<div class="search-wrapper">
+			<LocationSearch onSelect={onLocationSelectGlobal} />
+		</div>
+		<button
+			class="near-me-btn"
+			onclick={handleNearMe}
+			disabled={appState.geoLoading}
+			title="Find crashes near your current location"
+		>
+			{#if appState.geoLoading}
+				Locating...
+			{:else}
+				Near Me
+			{/if}
+		</button>
 	</div>
+	{#if appState.geoError}
+		<p class="geo-error">{appState.geoError}</p>
+	{/if}
 	<ul class="navigation-items">
 		<li class="nav-link">
-			<a href="{base}/">Homepage</a>
+			<a href="{base}/">Home</a>
 		</li>
 		<li class="nav-link">
 			<a href="{base}/neighborhoods">Neighborhoods</a>
@@ -35,11 +56,23 @@
 	}
 
 	.search-label {
-		@apply text-sm text-gray-600 text-center;
+		@apply text-sm text-gray-600 text-center mb-1;
+	}
+
+	.search-row {
+		@apply flex items-stretch gap-2 max-w-lg mx-auto mb-2;
 	}
 
 	.search-wrapper {
-		@apply w-full max-w-sm md:w-1/3 mx-auto mb-2;
+		@apply flex-1 min-w-0;
+	}
+
+	.near-me-btn {
+		@apply px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 transition-colors;
+	}
+
+	.geo-error {
+		@apply text-xs text-red-600 text-center mb-1;
 	}
 
 	.navigation-items {

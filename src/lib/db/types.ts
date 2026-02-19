@@ -27,4 +27,17 @@ export interface IntersectionStat {
 	distance?: number;
 }
 
+export interface IncidentSummary {
+	total: number;
+	fatal_injuries: number;
+	incapacitating_injuries: number;
+	top_causes: { cause: string; count: number }[];
+	by_year: Record<string, number>;
+}
+
+export interface DateCountPeriod {
+	injuries_fatal: number;
+	injuries_incapacitating: number;
+}
+
 export const maxLimit: number = 1000;

@@ -25,13 +25,25 @@
 
 		<dl class="incident-meta">
 			<div class="incident-meta-row">
-				<dt>Category</dt>
+				<dt>Type</dt>
 				<dd>{incident.category}</dd>
 			</div>
 			<div class="incident-meta-row">
 				<dt>Cause</dt>
-				<dd>{incident.cause}</dd>
+				<dd>{incident.primary_cause}</dd>
 			</div>
+			{#if incident.weather_condition && incident.weather_condition !== 'CLEAR'}
+				<div class="incident-meta-row">
+					<dt>Weather</dt>
+					<dd>{incident.weather_condition.toLowerCase()}</dd>
+				</div>
+			{/if}
+			{#if incident.trafficway_type}
+				<div class="incident-meta-row">
+					<dt>Road type</dt>
+					<dd>{incident.trafficway_type.toLowerCase()}</dd>
+				</div>
+			{/if}
 			{#if selectedLocation?.isPoint}
 				<div class="incident-meta-row">
 					<dt>Distance</dt>

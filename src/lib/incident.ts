@@ -175,6 +175,8 @@ export interface IncidentRecord {
 	crash_date: string;
 	prim_contributory_cause?: string;
 	sec_contributory_cause?: string;
+	weather_condition?: string | null;
+	trafficway_type?: string | null;
 	distance?: number;
 }
 
@@ -193,6 +195,8 @@ export class Incident {
 	non_passengers: Person[];
 	primary_cause: string;
 	secondary_cause: string;
+	weather_condition: string | null;
+	trafficway_type: string | null;
 
 	// Constructor now takes raw database row
 	constructor(record: IncidentRecord) {
@@ -210,6 +214,8 @@ export class Incident {
 		this.vehicles = parseVehicles(record.vehicles);
 		this.non_passengers = parsePeople(record.non_passengers);
 		this.primary_cause = normalizeString(record.prim_contributory_cause) ?? 'UNKNOWN';
+		this.weather_condition = normalizeString(record.weather_condition);
+		this.trafficway_type = normalizeString(record.trafficway_type);
 		this.secondary_cause = normalizeString(record.sec_contributory_cause) ?? 'UNKNOWN';
 	}
 

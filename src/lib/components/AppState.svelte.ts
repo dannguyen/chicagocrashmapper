@@ -1,11 +1,8 @@
-import type { Location } from '$lib/location';
+import { Location } from '$lib/location';
 import type { Incident } from '$lib/incident';
 import { reifyIncidents } from '$lib/incident';
-import {
-	getIncidentsNearPoint,
-	getIncidentsWithin,
-	getRecentIncidents
-} from '$lib/api/client';
+import { getIncidentsNearPoint, getIncidentsWithin, getRecentIncidents } from '$lib/api/client';
+import type { LocationRecord } from '$lib/db/types';
 
 function toDateStr(d: Date): string {
 	return d.toISOString().split('T')[0];
@@ -26,7 +23,10 @@ class AppStateManager {
 		selectedDate: new Date(),
 		maxDistance: 2500,
 		distanceUnits: 'feet' as 'feet' | 'meters',
-		loading: false
+		loading: false,
+		causeFilter: null as string | null,
+		geoLoading: false,
+		geoError: null as string | null
 	});
 
 	// Getters
@@ -62,10 +62,27 @@ class AppStateManager {
 		return this.#state.loading;
 	}
 
+	get causeFilter() {
+		return this.#state.causeFilter;
+	}
+
+	get geoLoading() {
+		return this.#state.geoLoading;
+	}
+
+	get geoError() {
+		return this.#state.geoError;
+	}
+
 	// Computed
 	hasResults = $derived(this.#state.incidents.length > 0);
 	hasSelectedLocation = $derived(this.#state.selectedLocation != null);
 	incidentCount = $derived(this.#state.incidents.length);
+	filteredIncidents = $derived(
+		this.#state.causeFilter
+			? this.#state.incidents.filter((i) => i.primary_cause === this.#state.causeFilter)
+			: this.#state.incidents
+	);
 
 	// Location management
 	selectLocation(location: Location | null) {
@@ -76,6 +93,11 @@ class AppStateManager {
 		this.#state.selectedLocation = null;
 		this.#state.incidents = [];
 		this.#state.selectedIncident = null;
+		this.#state.causeFilter = null;
+	}
+
+	setCauseFilter(cause: string | null) {
+		this.#state.causeFilter = cause;
 	}
 
 	// Incident management
@@ -107,10 +129,48 @@ class AppStateManager {
 		this.#state.selectedDate = date;
 	}
 
+	async useMyLocation() {
+		if (typeof navigator === 'undefined' || !navigator.geolocation) {
+			this.#state.geoError = 'Geolocation is not supported by your browser';
+			return;
+		}
+		this.#state.geoLoading = true;
+		this.#state.geoError = null;
+
+		try {
+			const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+				navigator.geolocation.getCurrentPosition(resolve, reject, {
+					timeout: 10000,
+					maximumAge: 60000
+				})
+			);
+			const { latitude, longitude } = pos.coords;
+			const record: LocationRecord = {
+				id: '',
+				name: 'My Location',
+				category: 'intersection',
+				latitude,
+				longitude,
+				the_geom: `POINT(${longitude} ${latitude})`
+			};
+			this.selectLocation(new Location(record));
+		} catch (e: unknown) {
+			const err = e as GeolocationPositionError;
+			if (err?.code === 1) {
+				this.#state.geoError = 'Location access denied. Please allow location access.';
+			} else {
+				this.#state.geoError = 'Could not get your location. Try searching by name instead.';
+			}
+		} finally {
+			this.#state.geoLoading = false;
+		}
+	}
+
 	// Business logic
 	async searchIncidentsByLocation(location: Location) {
 		this.#state.loading = true;
 		this.#state.selectedIncident = null;
+		this.#state.causeFilter = null;
 		try {
 			const since = toDateStr(addDays(this.#state.selectedDate, -this.#state.maxDaysAgo));
 			const until = toDateStr(addDays(this.#state.selectedDate, this.#state.maxDaysAgo));
@@ -169,6 +229,8 @@ class AppStateManager {
 		this.#state.maxDaysAgo = 540;
 		this.#state.selectedDate = new Date();
 		this.#state.maxDistance = 2500;
+		this.#state.causeFilter = null;
+		this.#state.geoError = null;
 	}
 }
 
