@@ -123,6 +123,35 @@ export async function getIncidentSummary(params: {
 	});
 }
 
+export interface IncidentListResult {
+	total: number;
+	page: number;
+	per_page: number;
+	incidents: IncidentRecord[];
+}
+
+export async function getIncidentsList(params: {
+	locationId?: string;
+	latitude?: number;
+	longitude?: number;
+	distance?: number;
+	since?: string;
+	until?: string;
+	page?: number;
+	sort?: 'asc' | 'desc';
+}): Promise<IncidentListResult> {
+	return apiGet<IncidentListResult>('/api/incidents/list', {
+		location_id: params.locationId,
+		latitude: params.latitude,
+		longitude: params.longitude,
+		distance: params.distance,
+		since: params.since,
+		until: params.until,
+		page: params.page,
+		sort: params.sort
+	});
+}
+
 export async function getDateCount(
 	unit: 'day' | 'month' | 'year' = 'month',
 	last: number = 18

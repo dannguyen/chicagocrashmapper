@@ -15,16 +15,24 @@ export interface NeighborhoodStat {
 	id: string;
 	name: string;
 	totalIncidents: number;
+	totalFatal: number;
+	totalSeriousInjuries: number;
 	mostRecent: string | null;
 	avgPerYear: number;
+	rank: number;
+	percentile: number;
 }
 
 export interface WardStat {
 	id: string;
 	name: string;
 	totalIncidents: number;
+	totalFatal: number;
+	totalSeriousInjuries: number;
 	mostRecent: string | null;
 	avgPerYear: number;
+	rank: number;
+	percentile: number;
 }
 
 export interface IntersectionStat {

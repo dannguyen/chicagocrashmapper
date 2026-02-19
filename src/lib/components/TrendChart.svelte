@@ -158,7 +158,7 @@
 	}
 
 	.total-incap {
-		@apply text-orange-600 font-semibold;
+		@apply text-purple-500 font-semibold;
 	}
 
 	.chart-wrap {
@@ -174,7 +174,7 @@
 	}
 
 	:global(.bar-incap) {
-		fill: #fb923c;
+		fill: #8b5cf6; /* purple-500 */
 	}
 
 	:global(.bar-label) {
@@ -199,6 +199,6 @@
 	}
 
 	.swatch-incap {
-		@apply bg-orange-400;
+		@apply bg-purple-500;
 	}
 </style>

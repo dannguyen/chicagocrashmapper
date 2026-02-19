@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { Incident } from '$lib/incident';
+	import type { Incident, Person } from '$lib/incident';
 	import { type Location } from '$lib/location';
-	import PeopleList from '$lib/components/PeopleList.svelte';
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
 
 	let { incident, selectedLocation, distanceUnits } = $props<{
@@ -9,73 +8,80 @@
 		selectedLocation: Location | null;
 		distanceUnits: string;
 	}>();
+
+	function injuryClass(p: Person): string {
+		const lvl = p.injury_level;
+		if (lvl === 'fatal') return 'text-red-600 font-semibold';
+		if (lvl === 'incapacitating') return 'text-purple-500 font-semibold';
+		return 'text-gray-500';
+	}
+
+	function outcomeText(p: Person): string | null {
+		if (p.isKilled) return 'was killed';
+		if (p.injury_level === 'incapacitating') return 'was seriously injured';
+		return null;
+	}
 </script>
 
 {#if incident}
-	<article class="incident-detail">
-		<header class="incident-header">
-			<div class="incident-date">
-				<time datetime={incident.date.toISOString()}>
-					{incident.prettyDate}
-				</time>
-				<em>({currentAgeSimplified(incident.date)})</em>
-			</div>
-			<h3 class="incident-title">{incident.title}</h3>
-		</header>
+	<article class="incident-detail" incident-id={incident.crash_record_id}>
+		<!-- Date + age -->
+		<div class="incident-date">
+			<time datetime={incident.date.toISOString()}>{incident.prettyDate}</time>
+			<span class="age">({currentAgeSimplified(incident.date)})</span>
+		</div>
 
-		<dl class="incident-meta">
-			<div class="incident-meta-row">
-				<dt>Type</dt>
-				<dd>{incident.category}</dd>
-			</div>
-			<div class="incident-meta-row">
-				<dt>Cause</dt>
-				<dd>{incident.primary_cause}</dd>
-			</div>
+		<!-- Title -->
+		<h3 class="incident-title">{incident.title}</h3>
+
+		<!-- Meta: cause · type · distance -->
+		<div class="incident-meta">
+			<span>{incident.primary_cause}</span>
+			{#if incident.category}
+				<span class="sep">·</span><span>{incident.category}</span>
+			{/if}
+			{#if selectedLocation?.isPoint && incident.distance != null}
+				<span class="sep">·</span>
+				<span>{prettifyInteger(incident.distance as number)} {distanceUnits} away</span>
+			{/if}
 			{#if incident.weather_condition && incident.weather_condition !== 'CLEAR'}
-				<div class="incident-meta-row">
-					<dt>Weather</dt>
-					<dd>{incident.weather_condition.toLowerCase()}</dd>
-				</div>
+				<span class="sep">·</span><span>{incident.weather_condition.toLowerCase()}</span>
 			{/if}
-			{#if incident.trafficway_type}
-				<div class="incident-meta-row">
-					<dt>Road type</dt>
-					<dd>{incident.trafficway_type.toLowerCase()}</dd>
-				</div>
-			{/if}
-			{#if selectedLocation?.isPoint}
-				<div class="incident-meta-row">
-					<dt>Distance</dt>
-					<dd>
-						{prettifyInteger(incident.distance as number)}
-						{distanceUnits} away
-					</dd>
-				</div>
-			{/if}
-		</dl>
+		</div>
 
+		<!-- People (non-passengers) -->
 		{#if incident.non_passengers.length > 0}
-			<section class="incident-people">
-				<h4 class="section-title">People involved</h4>
-				<PeopleList people={incident.non_passengers} />
-			</section>
+			<ul class="people-list">
+				{#each incident.non_passengers as p}
+					<li>
+						{#if p.person_type}<span class="person-role">{p.person_type}:</span>{/if}
+						<span class="person-desc">{p.description}</span>
+						{#if outcomeText(p)}
+							<span class={injuryClass(p)}>{outcomeText(p)}</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
 		{/if}
 
+		<!-- Vehicles -->
 		{#if incident.vehicles.length > 0}
-			<section class="incident-vehicles-section">
-				<h4 class="section-title">Vehicles involved</h4>
-				<ul class="incident-vehicles incident-list incident-list--spaced">
-					{#each incident.vehicles as vh}
-						<li class="vehicle">
-							<span class="incident-item-label">{vh.description}</span>
-							{#if vh.passengers.length > 0}
-								<PeopleList people={vh.passengers} listClass="incident-sublist" />
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</section>
+			<ul class="vehicle-list">
+				{#each incident.vehicles as vh}
+					<li>
+						<span class="vehicle-desc">{vh.description || 'Unknown vehicle'}</span>
+						{#each vh.passengers as p}
+							<span class="passenger">
+								{#if p.person_type}<span class="person-role">{p.person_type}:</span>{/if}
+								{p.description}
+								{#if outcomeText(p)}
+									<span class={injuryClass(p)}>{outcomeText(p)}</span>
+								{/if}
+							</span>
+						{/each}
+					</li>
+				{/each}
+			</ul>
 		{/if}
 	</article>
 {/if}
@@ -84,38 +90,49 @@
 	@reference "$lib/styles/app.css";
 
 	.incident-detail {
-		@apply w-full text-gray-900;
+		@apply flex-1 min-w-0 text-sm;
 	}
 
 	.incident-date {
-		@apply text-sm text-gray-600 flex flex-wrap gap-2;
+		@apply text-xs text-gray-400 flex gap-1.5 flex-wrap;
+	}
+
+	.age {
+		@apply italic;
 	}
 
 	.incident-title {
-		@apply text-lg font-semibold text-gray-900;
+		@apply font-semibold text-gray-900 leading-snug mb-1;
 	}
 
 	.incident-meta {
-		@apply mt-2 mb-3 text-sm text-gray-700;
+		@apply text-xs text-gray-500 flex flex-wrap gap-x-1 mb-1;
 	}
 
-	.incident-meta-row {
-		@apply flex flex-wrap gap-2;
+	.sep {
+		@apply text-gray-300;
 	}
 
-	.incident-meta-row dt {
-		@apply font-semibold text-gray-800;
+	.people-list,
+	.vehicle-list {
+		@apply text-xs text-gray-600 space-y-0.5 mt-1;
 	}
 
-	.incident-meta-row dd {
-		@apply m-0;
+	.people-list li,
+	.vehicle-list li {
+		@apply flex flex-wrap gap-x-1 items-baseline;
 	}
 
-	.section-title {
-		@apply text-sm font-semibold text-gray-800 mt-3 mb-1;
+	.person-desc,
+	.vehicle-desc {
+		@apply font-medium text-gray-800;
 	}
 
-	.incident-vehicles .vehicle {
-		@apply text-sm;
+	.person-role {
+		@apply text-gray-400;
+	}
+
+	.passenger {
+		@apply flex flex-wrap gap-x-1 items-baseline ml-2 before:content-['·'] before:text-gray-300;
 	}
 </style>

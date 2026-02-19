@@ -25,9 +25,10 @@
 	let mapCircleLayer: any = null;
 	let markerLayerGroup: any;
 
-	function markerIconHtml(index: number) {
+	function markerIconHtml(index: number, isFatal: boolean) {
 		const label = index + 1;
-		return `<div class="marker-icon">${label}</div>`;
+		const cls = isFatal ? 'marker-icon fatal' : 'marker-icon';
+		return `<div class="${cls}">${label}</div>`;
 	}
 
 	async function initMap() {
@@ -96,7 +97,7 @@
 			if (!isNaN(lat) && !isNaN(lon)) {
 				const popupHtml = item.title;
 				const icon = MapperInstance.L.divIcon({
-					html: markerIconHtml(index),
+					html: markerIconHtml(index, item.isFatal),
 					className: '',
 					iconSize: [24, 24],
 					iconAnchor: [12, 12]
@@ -207,6 +208,26 @@
 	:global(#map) {
 		height: 400px;
 		z-index: 0; /* Ensure map stays below autocomplete */
-		@apply h-96 w-full rounded-md border border-gray-300 mb-4 z-0;
+		@apply h-96 w-full rounded-md border border-gray-200 shadow-sm mb-4 z-0;
+	}
+
+	/* Incident markers — injected by Leaflet outside Svelte scope, must be :global */
+	:global(.marker-icon) {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: #6d28d9; /* purple-700 */
+		color: #fff;
+		font-size: 11px;
+		font-weight: 700;
+		line-height: 1;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+
+	:global(.marker-icon.fatal) {
+		background: #dc2626; /* red-600 */
 	}
 </style>

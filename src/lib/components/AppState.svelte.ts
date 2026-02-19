@@ -196,7 +196,7 @@ class AppStateManager {
 		}
 	}
 
-	async loadRecentFatalIncidents(limit: number = 10) {
+	async loadRecentSeriousIncidents(limit: number = 10) {
 		this.#state.loading = true;
 		this.#state.selectedLocation = null;
 		this.#state.selectedIncident = null;
@@ -204,7 +204,7 @@ class AppStateManager {
 			const records = await getRecentIncidents(limit);
 			this.#state.incidents = reifyIncidents(records);
 		} catch (e) {
-			console.error('Failed to fetch recent fatal incidents:', e);
+			console.error('Failed to fetch recent serious incidents:', e);
 			this.#state.incidents = [];
 		} finally {
 			this.#state.loading = false;

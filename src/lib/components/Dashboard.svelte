@@ -90,7 +90,7 @@
 				onLocationSelect(new Location(record));
 			}
 		} else {
-			appState.loadRecentFatalIncidents(10);
+			appState.loadRecentSeriousIncidents(20);
 		}
 	});
 </script>
@@ -110,12 +110,6 @@
 							<div class="meta-line">
 								<span class="meta-label">Location:</span>
 								<span class="location-name">{appState.selectedLocation.name}</span>
-								{#if appState.selectedLocation.name !== 'My Location'}
-									<span class="location-coordinates">
-										({appState.selectedLocation.longitude},
-										{appState.selectedLocation.latitude})
-									</span>
-								{/if}
 							</div>
 							<div class="search-results-summary">
 								<div class="search-attr">
@@ -164,7 +158,7 @@
 						{:else}
 							<div class="meta-line">
 								<span class="meta-label">
-									Showing {appState.incidents.length} most recent fatal crashes citywide.
+									Showing {appState.incidents.length} most recent serious crashes citywide.
 								</span>
 							</div>
 						{/if}

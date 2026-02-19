@@ -161,6 +161,7 @@ export class Vehicle {
 }
 
 export interface IncidentRecord {
+	crash_record_id: string;
 	longitude: number;
 	latitude: number;
 	injuries_fatal: number;
@@ -181,6 +182,7 @@ export interface IncidentRecord {
 }
 
 export class Incident {
+	crash_record_id: string;
 	longitude: number;
 	latitude: number;
 	date: Date;
@@ -200,6 +202,7 @@ export class Incident {
 
 	// Constructor now takes raw database row
 	constructor(record: IncidentRecord) {
+		this.crash_record_id = record.crash_record_id;
 		this.longitude = record.longitude;
 		this.latitude = record.latitude;
 		this.injuries_fatal = record.injuries_fatal;
@@ -273,7 +276,9 @@ function parseVehicles(raw: IncidentRecord['vehicles']): Vehicle[] {
 	}
 
 	if (!Array.isArray(vehicles)) return [];
-	return vehicles.map((v) => new Vehicle(v));
+	return vehicles
+		.filter((v) => v.vehicle_id != null)
+		.map((v) => new Vehicle(v));
 }
 
 function parsePeople(raw: IncidentRecord['non_passengers']): Person[] {

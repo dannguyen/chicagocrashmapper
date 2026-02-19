@@ -31,7 +31,16 @@
 		const mostRecent = dates[0];
 		const oldest = dates[dates.length - 1];
 
-		return { total, fatalCount, incapCount, topCauses, maxCauseCount, mostRecent, oldest };
+		// Compute incidents by year
+		const yearCounts = new Map<string, number>();
+		for (const inc of incidents) {
+			const yr = String(inc.date.getFullYear());
+			yearCounts.set(yr, (yearCounts.get(yr) ?? 0) + 1);
+		}
+		const byYear = [...yearCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+		const maxYearCount = byYear.reduce((m, [, c]) => Math.max(m, c), 1);
+
+		return { total, fatalCount, incapCount, topCauses, maxCauseCount, mostRecent, oldest, byYear, maxYearCount };
 	});
 
 	function fmt(cause: string): string {
@@ -76,6 +85,21 @@
 						<div class="cause-label" title={cause}>{fmt(cause)}</div>
 						<div class="cause-bar-track">
 							<div class="cause-bar" style="width: {(count / stats.maxCauseCount) * 100}%"></div>
+						</div>
+						<div class="cause-count">{count}</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		{#if stats.byYear.length > 1}
+			<div class="year-chart">
+				<h4 class="causes-title">Year by year</h4>
+				{#each stats.byYear as [year, count]}
+					<div class="cause-row">
+						<div class="year-label">{year}</div>
+						<div class="cause-bar-track">
+							<div class="year-bar" style="width: {(count / stats.maxYearCount) * 100}%"></div>
 						</div>
 						<div class="cause-count">{count}</div>
 					</div>
@@ -136,6 +160,10 @@
 		@apply text-xs text-gray-700 w-44 truncate shrink-0;
 	}
 
+	.year-label {
+		@apply text-xs text-gray-700 w-10 shrink-0 font-medium;
+	}
+
 	.cause-bar-track {
 		@apply flex-1 h-2 bg-blue-100 rounded-full overflow-hidden;
 	}
@@ -144,7 +172,19 @@
 		@apply h-full bg-blue-500 rounded-full transition-all duration-300;
 	}
 
+	.year-bar {
+		@apply h-full bg-indigo-500 rounded-full transition-all duration-300;
+	}
+
 	.cause-count {
 		@apply text-xs text-gray-500 w-8 text-right shrink-0;
+	}
+
+	.year-chart {
+		@apply mt-3;
+	}
+
+	.top-causes {
+		@apply mb-1;
 	}
 </style>

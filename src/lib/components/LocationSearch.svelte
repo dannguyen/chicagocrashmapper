@@ -89,6 +89,21 @@
 			goto(resolve(`/${location.pluralCategory}/${location.id}`));
 		}
 	}
+
+	type BadgeInfo = { label: string; classes: string };
+
+	function categoryBadge(category: string): BadgeInfo {
+		switch (category) {
+			case 'neighborhood':
+				return { label: 'Neighborhood', classes: 'bg-blue-100 text-blue-700' };
+			case 'ward':
+				return { label: 'Ward', classes: 'bg-purple-100 text-purple-700' };
+			case 'intersection':
+				return { label: 'Intersection', classes: 'bg-gray-100 text-gray-600' };
+			default:
+				return { label: category, classes: 'bg-gray-100 text-gray-600' };
+		}
+	}
 </script>
 
 <div class="search-container">
@@ -116,7 +131,10 @@
 					onclick={() => selectLocation(result)}
 					onmouseenter={() => (selectedIndex = index)}
 				>
-					{@html highlightFilteredText(result.name, searchQuery)}
+					<span class="location-item-name">{@html highlightFilteredText(result.name, searchQuery)}</span>
+					<span class="category-badge {categoryBadge(result.category).classes}">
+						{categoryBadge(result.category).label}
+					</span>
 				</div>
 			{/each}
 		</div>
@@ -131,12 +149,20 @@
 	}
 
 	.location-results-list .location-item {
-		@apply p-3 cursor-pointer border-b border-gray-100 last:border-0;
+		@apply p-3 cursor-pointer border-b border-gray-100 last:border-0 flex items-center justify-between gap-2;
 	}
 
 	.location-results-list .location-item:hover,
 	.location-results-list .location-item.selected {
 		@apply bg-gray-100;
+	}
+
+	.location-item-name {
+		@apply flex-1 min-w-0 truncate;
+	}
+
+	.category-badge {
+		@apply shrink-0 text-xs font-medium px-2 py-0.5 rounded-full;
 	}
 
 	#search-input-field {
