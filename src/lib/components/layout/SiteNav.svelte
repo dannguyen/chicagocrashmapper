@@ -14,7 +14,7 @@
 </script>
 
 <nav class="navigation">
-	<div class="search-label">Search crashes by neighborhood or intersection</div>
+	<div class="search-label">Search crashes by neighborhood, ward, or intersection</div>
 	<div class="search-row">
 		<div class="search-wrapper">
 			<LocationSearch onSelect={onLocationSelectGlobal} />
@@ -41,6 +41,9 @@
 		</li>
 		<li class="nav-link">
 			<a href="{base}/neighborhoods">Neighborhoods</a>
+		</li>
+		<li class="nav-link">
+			<a href="{base}/wards">Wards</a>
 		</li>
 		<li class="nav-link">
 			<a href="{base}/intersections">Intersections</a>

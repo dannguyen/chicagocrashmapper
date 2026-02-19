@@ -6,6 +6,7 @@
 export type {
 	LocationRecord,
 	NeighborhoodStat,
+	WardStat,
 	IntersectionStat,
 	IncidentSummary,
 	DateCountPeriod

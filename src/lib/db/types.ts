@@ -19,6 +19,14 @@ export interface NeighborhoodStat {
 	avgPerYear: number;
 }
 
+export interface WardStat {
+	id: string;
+	name: string;
+	totalIncidents: number;
+	mostRecent: string | null;
+	avgPerYear: number;
+}
+
 export interface IntersectionStat {
 	id: string;
 	name: string;

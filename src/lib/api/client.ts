@@ -6,6 +6,7 @@ import { PUBLIC_API_BASE_URL } from '$env/static/public';
 import type {
 	LocationRecord,
 	NeighborhoodStat,
+	WardStat,
 	IntersectionStat,
 	IncidentSummary,
 	DateCountPeriod
@@ -89,6 +90,11 @@ export async function getRecentIncidents(limit: number = 10): Promise<IncidentRe
 
 export async function getNeighborhoodStats(): Promise<NeighborhoodStat[]> {
 	const data = await apiGet<{ stats: NeighborhoodStat[] }>('/api/neighborhoods/stats');
+	return data.stats;
+}
+
+export async function getWardStats(): Promise<WardStat[]> {
+	const data = await apiGet<{ stats: WardStat[] }>('/api/wards/stats');
 	return data.stats;
 }
 
