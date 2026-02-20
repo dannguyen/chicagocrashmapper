@@ -147,14 +147,35 @@
 	{/if}
 
 	{#if loading}
-		<p class="text-sm text-gray-500 text-center py-8">Loading incidents...</p>
+		<div class="space-y-3">
+			{#each Array(5) as _}
+				<div class="rounded-xl border border-gray-200 bg-white p-4">
+					<div class="h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
+					<div class="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+				</div>
+			{/each}
+		</div>
 	{:else}
-		<IncidentList
-			{incidents}
-			selectedLocation={location}
-			distanceUnits="feet"
-			{showIncidentOnMap}
-		/>
+		<p class="text-sm font-semibold text-gray-700 mb-3">
+			{#if totalPages > 1}
+				Incidents &mdash; Page {currentPage + 1} of {totalPages}
+			{:else}
+				Incidents
+			{/if}
+		</p>
+
+		{#if incidents.length === 0}
+			<div class="text-center py-12 text-gray-400">
+				<p class="text-sm">No incidents found for this location.</p>
+			</div>
+		{:else}
+			<IncidentList
+				{incidents}
+				selectedLocation={location}
+				distanceUnits="feet"
+				{showIncidentOnMap}
+			/>
+		{/if}
 	{/if}
 
 	<!-- Bottom pagination (only when there are multiple pages) -->

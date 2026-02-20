@@ -71,15 +71,20 @@
 
 	let totalFatal = $derived(periods.reduce((s, p) => s + p.injuries_fatal, 0));
 	let totalIncap = $derived(periods.reduce((s, p) => s + p.injuries_incapacitating, 0));
+	let hasData = $derived(totalFatal + totalIncap > 0);
 </script>
 
 {#if loading}
 	<div class="text-sm text-gray-400 py-2">Loading trend data...</div>
+{:else if !error && periods.length > 0 && !hasData}
+	<div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+		<div class="flex items-center justify-center h-32 text-sm text-gray-400">No trend data available</div>
+	</div>
 {:else if !error && periods.length > 0}
 	<div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
 		<!-- Header -->
 		<div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-			<h3 class="text-sm font-semibold text-gray-700">City-wide serious injuries — last 18 months</h3>
+			<h3 class="text-sm font-semibold text-gray-700">18-Month Injury Trend</h3>
 			<div class="flex gap-3 text-xs">
 				<span class="text-red-600 font-semibold">{totalFatal} killed</span>
 				<span class="text-purple-600 font-semibold">{totalIncap} seriously injured</span>

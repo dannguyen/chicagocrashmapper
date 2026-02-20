@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Incident, Person } from '$lib/incident';
+	import type { Incident, Person, Vehicle } from '$lib/incident';
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
 	import {
 		incidentSeverity,
@@ -86,6 +86,22 @@
 				].filter((c) => c.count != null && c.count > 0)
 			: []
 	);
+
+	// ── people count ────────────────────────────────────────────────────────────
+
+	const peopleCount = $derived(
+		incident
+			? incident.vehicles.reduce((sum: number, vh: Vehicle) => sum + vh.passengers.length, 0) +
+					incident.non_passengers.length
+			: 0
+	);
+
+	// ── condition display helper ─────────────────────────────────────────────────
+
+	function conditionValue(val: string | null | undefined): string {
+		if (val == null || val.trim() === '' || val.toUpperCase().trim() === 'UNKNOWN') return '—';
+		return val;
+	}
 </script>
 
 {#if incident}
@@ -128,36 +144,32 @@
 		<div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
 			<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Conditions</p>
 
-			{#if incident.weather_condition}
-				<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
-					<span class="text-gray-500">Weather</span>
-					<span class="text-gray-900 text-right break-words">{incident.weather_condition}</span>
-				</div>
-			{/if}
+			<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
+				<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Weather</span>
+				<span class="font-medium text-gray-800 text-right break-words">{conditionValue(incident.weather_condition)}</span>
+			</div>
 
-			{#if incident.trafficway_type}
-				<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
-					<span class="text-gray-500">Trafficway</span>
-					<span class="text-gray-900 text-right break-words">{incident.trafficway_type}</span>
-				</div>
-			{/if}
+			<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
+				<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Trafficway</span>
+				<span class="font-medium text-gray-800 text-right break-words">{conditionValue(incident.trafficway_type)}</span>
+			</div>
 
 			{#if incident.posted_speed_limit}
 				<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
-					<span class="text-gray-500">Speed limit</span>
-					<span class="text-gray-900">{incident.posted_speed_limit} mph</span>
+					<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Speed limit</span>
+					<span class="font-medium text-gray-800">{incident.posted_speed_limit} mph</span>
 				</div>
 			{/if}
 
 			<div class="flex justify-between py-1.5 border-b border-gray-100 last:border-0 text-sm">
-				<span class="text-gray-500">Crash type</span>
-				<span class="text-gray-900 text-right break-words">{incident.category}</span>
+				<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Crash type</span>
+				<span class="font-medium text-gray-800 text-right break-words">{conditionValue(incident.category)}</span>
 			</div>
 
 			{#if showSecondaryCause}
 				<div class="flex justify-between py-1.5 last:border-0 text-sm">
-					<span class="text-gray-500">Secondary cause</span>
-					<span class="text-gray-900 text-right break-words">{incident.secondary_cause}</span>
+					<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Secondary cause</span>
+					<span class="font-medium text-gray-800 text-right break-words">{incident.secondary_cause}</span>
 				</div>
 			{/if}
 		</div>
@@ -202,69 +214,25 @@
 	</div>
 
 	<!-- ── People Involved ───────────────────────────────────────────────────── -->
-	{#if incident.vehicles.length > 0 || incident.non_passengers.length > 0}
-		<section class="mb-6">
-			<h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">People Involved</h2>
+	<section class="mb-6">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">People Involved</h2>
 
-			<div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
-				{#each incident.vehicles as vh}
-					{#each vh.passengers as p}
-						{@const pLevel = personInjuryLevel(p)}
-						{@const pLabel = injuryLabel(pLevel)}
-						<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
-							<!-- Left: role + vehicle info -->
-							<div class="flex flex-col min-w-0">
-								<div class="flex items-center gap-2 flex-wrap">
-									{#if p.person_type}
-										<span class="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{p.person_type}</span>
-									{/if}
-									<span class="text-sm text-gray-800">{p.description}</span>
-								</div>
-								{#if vh.description}
-									<span class="text-xs text-gray-500 mt-0.5">{vh.description}</span>
-								{/if}
-								<!-- Relevant extra details -->
-								<div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-									{#if isRelevantDetail(p.safety_equipment)}
-										<span class="text-xs text-gray-400 italic">Safety: {p.safety_equipment}</span>
-									{/if}
-									{#if isRelevantDetail(p.airbag_deployed)}
-										<span class="text-xs text-gray-400 italic">Airbag: {p.airbag_deployed}</span>
-									{/if}
-									{#if isRelevantDetail(p.ejection)}
-										<span class="text-xs text-gray-400 italic">Ejection: {p.ejection}</span>
-									{/if}
-									{#if isRelevantDetail(p.physical_condition)}
-										<span class="text-xs text-gray-400 italic">Condition: {p.physical_condition}</span>
-									{/if}
-									{#if isRelevantDetail(p.driver_action)}
-										<span class="text-xs text-gray-400 italic">Action: {p.driver_action}</span>
-									{/if}
-									{#if isRelevantDetail(p.driver_vision)}
-										<span class="text-xs text-gray-400 italic">Visibility: {p.driver_vision}</span>
-									{/if}
-									{#if isRelevantDetail(p.hospital)}
-										<span class="text-xs text-gray-400 italic">Hospital: {p.hospital}</span>
-									{/if}
-								</div>
-							</div>
+		{#if peopleCount > 0}
+			<p class="text-sm font-semibold text-gray-700 mb-2">{peopleCount} {peopleCount === 1 ? 'person' : 'people'} involved</p>
+		{/if}
 
-							<!-- Right: injury indicator -->
-							{#if pLabel}
-								<div class="flex items-center gap-1.5 flex-shrink-0">
-									<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(pLevel)}"></span>
-									<span class="text-sm {injuryTextClass(pLevel)}">{pLabel}</span>
-								</div>
-							{/if}
-						</div>
-					{/each}
-				{/each}
+		<div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+			{#if peopleCount === 0}
+				<p class="text-sm text-gray-400 text-center py-4">No people records available</p>
+			{/if}
 
-				{#each incident.non_passengers as p}
+			{#each incident.vehicles as vh}
+				{#each vh.passengers as p}
 					{@const pLevel = personInjuryLevel(p)}
 					{@const pLabel = injuryLabel(pLevel)}
+					{@const vehicleDesc = [vh.vehicle_year, vh.make, vh.model].filter((x) => x != null && x !== '').join(' ')}
 					<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
-						<!-- Left: role + description -->
+						<!-- Left: role + vehicle info -->
 						<div class="flex flex-col min-w-0">
 							<div class="flex items-center gap-2 flex-wrap">
 								{#if p.person_type}
@@ -272,6 +240,9 @@
 								{/if}
 								<span class="text-sm text-gray-800">{p.description}</span>
 							</div>
+							{#if vehicleDesc}
+								<span class="text-xs text-gray-500 mt-0.5">{vehicleDesc}</span>
+							{/if}
 							<!-- Relevant extra details -->
 							<div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
 								{#if isRelevantDetail(p.safety_equipment)}
@@ -307,7 +278,55 @@
 						{/if}
 					</div>
 				{/each}
-			</div>
-		</section>
-	{/if}
+			{/each}
+
+			{#each incident.non_passengers as p}
+				{@const pLevel = personInjuryLevel(p)}
+				{@const pLabel = injuryLabel(pLevel)}
+				<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
+					<!-- Left: role + description -->
+					<div class="flex flex-col min-w-0">
+						<div class="flex items-center gap-2 flex-wrap">
+							{#if p.person_type}
+								<span class="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{p.person_type}</span>
+							{/if}
+							<span class="text-sm text-gray-800">{p.description}</span>
+						</div>
+						<!-- Relevant extra details -->
+						<div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+							{#if isRelevantDetail(p.safety_equipment)}
+								<span class="text-xs text-gray-400 italic">Safety: {p.safety_equipment}</span>
+							{/if}
+							{#if isRelevantDetail(p.airbag_deployed)}
+								<span class="text-xs text-gray-400 italic">Airbag: {p.airbag_deployed}</span>
+							{/if}
+							{#if isRelevantDetail(p.ejection)}
+								<span class="text-xs text-gray-400 italic">Ejection: {p.ejection}</span>
+							{/if}
+							{#if isRelevantDetail(p.physical_condition)}
+								<span class="text-xs text-gray-400 italic">Condition: {p.physical_condition}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_action)}
+								<span class="text-xs text-gray-400 italic">Action: {p.driver_action}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_vision)}
+								<span class="text-xs text-gray-400 italic">Visibility: {p.driver_vision}</span>
+							{/if}
+							{#if isRelevantDetail(p.hospital)}
+								<span class="text-xs text-gray-400 italic">Hospital: {p.hospital}</span>
+							{/if}
+						</div>
+					</div>
+
+					<!-- Right: injury indicator -->
+					{#if pLabel}
+						<div class="flex items-center gap-1.5 flex-shrink-0">
+							<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(pLevel)}"></span>
+							<span class="text-sm {injuryTextClass(pLevel)}">{pLabel}</span>
+						</div>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	</section>
 {/if}

@@ -47,6 +47,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>{incident ? `${crashDateTitle()} — Chicago Crash Map` : 'Incident — Chicago Crash Map'}</title>
+</svelte:head>
+
 <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
 	<!-- Back link -->
 	<nav class="text-sm">

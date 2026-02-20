@@ -112,7 +112,7 @@
 	}
 </script>
 
-<div class="search-container">
+<div class="relative z-[1000] flex-1">
 	<input
 		type="text"
 		bind:value={inputValue}
@@ -128,20 +128,20 @@
 	/>
 
 	{#if showAutocomplete && searchQuery.trim().length >= 1}
-		<div class="location-results-list">
+		<div class="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden max-h-72 overflow-y-auto">
 			{#if locationResults.length > 0}
 				{#each locationResults as result, index}
 					<button
 						type="button"
-						class="location-item"
+						class="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0 cursor-pointer"
 						class:selected={index === selectedIndex}
 						onclick={() => selectLocation(result)}
 						onmouseenter={() => (selectedIndex = index)}
 					>
-						<span class="category-badge {categoryBadge(result.category).classes}">
+						<span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium {categoryBadge(result.category).classes}">
 							{categoryBadge(result.category).label}
 						</span>
-						<span class="location-item-name"
+						<span class="flex-1 min-w-0 truncate text-sm font-medium text-gray-900"
 							>{@html highlightFilteredText(result.name, searchQuery)}</span
 						>
 					</button>
@@ -159,30 +159,8 @@
 	{/if}
 </div>
 
-<style lang="postcss">
-	@reference "$lib/styles/app.css";
-
-	.search-container {
-		@apply relative z-[1000] flex-1;
-	}
-
-	.location-results-list {
-		@apply absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden max-h-72 overflow-y-auto;
-	}
-
-	.location-item {
-		@apply w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0 cursor-pointer;
-	}
-
-	.location-item.selected {
-		@apply bg-blue-50;
-	}
-
-	.location-item-name {
-		@apply flex-1 min-w-0 truncate text-sm font-medium text-gray-900;
-	}
-
-	.category-badge {
-		@apply shrink-0 text-xs px-2 py-0.5 rounded-full font-medium;
+<style>
+	.selected {
+		background-color: rgb(239 246 255); /* bg-blue-50 */
 	}
 </style>

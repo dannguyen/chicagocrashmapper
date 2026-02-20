@@ -12,8 +12,8 @@
 
 <div class="app-shell {envClass}">
 	<SiteHeader />
-	<main class="main-content">
-		<div class="page-container">
+	<main class="flex-1">
+		<div class="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-8">
 			{@render children()}
 		</div>
 	</main>
@@ -29,13 +29,5 @@
 
 	.app-shell.env-dev {
 		@apply outline outline-4 outline-yellow-400 outline-offset-[-4px];
-	}
-
-	.main-content {
-		@apply flex-1;
-	}
-
-	.page-container {
-		@apply max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-8;
 	}
 </style>

@@ -1,3 +1,7 @@
+<svelte:head>
+	<title>Dangerous Intersections — Chicago Crash Map</title>
+</svelte:head>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
@@ -23,9 +27,11 @@
 </script>
 
 <div class="mx-auto max-w-7xl px-4 py-8">
-	<div class="mb-6">
+	<div class="mb-8">
 		<h1 class="text-2xl font-bold text-gray-900">Dangerous Intersections</h1>
-		<p class="mt-1 text-sm text-gray-500">Chicago intersections with the most crashes</p>
+		<p class="mt-1 text-sm text-gray-500">
+			Sorted by total crashes · Click any intersection to explore
+		</p>
 	</div>
 
 	{#if loading}
