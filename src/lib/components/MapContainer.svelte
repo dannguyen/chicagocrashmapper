@@ -116,7 +116,7 @@
 		if (!MapperInstance.map || !MapperInstance.L) return;
 
 		// Only include coordinates that are valid and non-zero (lat=0/lng=0 means missing data)
-		const validLatLngs: L.LatLngExpression[] = items
+		const validLatLngs: import('leaflet').LatLngExpression[] = items
 			.filter((item) => !isNaN(item.latitude) && !isNaN(item.longitude) && (item.latitude !== 0 || item.longitude !== 0))
 			.map((item) => [item.latitude, item.longitude]);
 
@@ -235,6 +235,14 @@
 		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
 		margin-bottom: 1rem; /* mb-4 */
 		z-index: 0;
+	}
+
+	/* On desktop the map panel is sticky + full viewport height — fill it */
+	@media (min-width: 1024px) {
+		:global(#map) {
+			height: 100%;
+			margin-bottom: 0;
+		}
 	}
 
 	/* Incident markers — injected by Leaflet outside Svelte scope, must be :global */

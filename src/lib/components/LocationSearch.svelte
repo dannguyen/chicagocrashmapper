@@ -101,18 +101,18 @@
 	function categoryBadge(category: string): BadgeInfo {
 		switch (category) {
 			case 'neighborhood':
-				return { label: 'Neighborhood', classes: 'bg-blue-100 text-blue-700' };
+				return { label: 'Neighborhood', classes: 'badge badge-neighborhood' };
 			case 'ward':
-				return { label: 'Ward', classes: 'bg-orange-100 text-orange-700' };
+				return { label: 'Ward', classes: 'badge badge-ward' };
 			case 'intersection':
-				return { label: 'Intersection', classes: 'bg-gray-100 text-gray-600' };
+				return { label: 'Intersection', classes: 'badge badge-neutral' };
 			default:
-				return { label: category, classes: 'bg-gray-100 text-gray-600' };
+				return { label: category, classes: 'badge badge-neutral' };
 		}
 	}
 </script>
 
-<div class="relative z-[1000] flex-1">
+<div class="search-shell">
 	<input
 		type="text"
 		bind:value={inputValue}
@@ -124,30 +124,30 @@
 		placeholder={locationName || 'Enter location name...'}
 		id="search-input-field"
 		autocomplete="off"
-		class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white"
+		class="search-input"
 	/>
 
 	{#if showAutocomplete && searchQuery.trim().length >= 1}
-		<div class="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden max-h-72 overflow-y-auto">
+		<div class="search-dropdown">
 			{#if locationResults.length > 0}
 				{#each locationResults as result, index}
 					<button
 						type="button"
-						class="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0 cursor-pointer"
+						class="search-option"
 						class:selected={index === selectedIndex}
 						onclick={() => selectLocation(result)}
 						onmouseenter={() => (selectedIndex = index)}
 					>
-						<span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium {categoryBadge(result.category).classes}">
+						<span class={categoryBadge(result.category).classes}>
 							{categoryBadge(result.category).label}
 						</span>
-						<span class="flex-1 min-w-0 truncate text-sm font-medium text-gray-900"
+						<span class="option-name"
 							>{@html highlightFilteredText(result.name, searchQuery)}</span
 						>
 					</button>
 				{/each}
 			{:else}
-				<div class="px-4 py-6 text-center text-sm text-gray-400">
+				<div class="search-empty">
 					No locations found for "{searchQuery}"
 				</div>
 			{/if}
@@ -155,12 +155,118 @@
 	{/if}
 
 	{#if showAutocomplete && searchQuery.trim().length >= 1}
-		<p class="text-xs text-gray-400 mt-1">&#8593;&#8595; to navigate, Enter to select, Esc to close</p>
+		<p class="search-hint">&#8593;&#8595; to navigate, Enter to select, Esc to close</p>
 	{/if}
 </div>
 
 <style>
+	.search-shell {
+		position: relative;
+		z-index: 1000;
+		flex: 1;
+	}
+
+	.search-input {
+		width: 100%;
+		border-radius: 0.5rem;
+		border: 1px solid #d1d5db;
+		padding: 0.625rem 1rem;
+		font-size: 0.875rem;
+		background: #fff;
+		transition: border-color 120ms ease, box-shadow 120ms ease;
+	}
+
+	.search-input:focus {
+		outline: none;
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 2px rgb(59 130 246 / 0.35);
+	}
+
+	.search-dropdown {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		margin-top: 0.25rem;
+		background: #fff;
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		box-shadow: 0 10px 20px -12px rgb(15 23 42 / 0.35);
+		z-index: 50;
+		overflow: hidden;
+		max-height: 18rem;
+		overflow-y: auto;
+	}
+
+	.search-option {
+		width: 100%;
+		text-align: left;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid #f3f4f6;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		cursor: pointer;
+		transition: background-color 120ms ease;
+		background: #fff;
+	}
+
+	.search-option:last-child {
+		border-bottom: 0;
+	}
+
+	.search-option:hover {
+		background: #eff6ff;
+	}
+
 	.selected {
-		background-color: rgb(239 246 255); /* bg-blue-50 */
+		background-color: #eff6ff;
+	}
+
+	.badge {
+		flex-shrink: 0;
+		font-size: 0.75rem;
+		font-weight: 500;
+		padding: 0.125rem 0.5rem;
+		border-radius: 9999px;
+	}
+
+	.badge-neighborhood {
+		background: #dbeafe;
+		color: #1d4ed8;
+	}
+
+	.badge-ward {
+		background: #ffedd5;
+		color: #c2410c;
+	}
+
+	.badge-neutral {
+		background: #f3f4f6;
+		color: #4b5563;
+	}
+
+	.option-name {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #111827;
+	}
+
+	.search-empty {
+		padding: 1.5rem 1rem;
+		text-align: center;
+		font-size: 0.875rem;
+		color: #9ca3af;
+	}
+
+	.search-hint {
+		margin-top: 0.25rem;
+		font-size: 0.75rem;
+		color: #9ca3af;
 	}
 </style>

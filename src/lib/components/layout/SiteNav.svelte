@@ -13,18 +13,18 @@
 	}
 </script>
 
-<nav class="w-full" aria-label="Search navigation">
-	<div class="flex items-stretch gap-2">
-		<div class="flex-1 min-w-0">
+<nav class="site-nav" aria-label="Search navigation">
+	<div class="nav-row">
+		<div class="nav-search">
 			<LocationSearch onSelect={onLocationSelectGlobal} />
 		</div>
 		<button
-			class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 transition-colors"
+			class="near-button"
 			onclick={handleNearMe}
 			disabled={appState.geoLoading}
 			title="Find crashes near your current location"
 		>
-			<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+			<svg class="near-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
 				<circle cx="12" cy="12" r="3" />
 				<path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
 			</svg>
@@ -36,6 +36,60 @@
 		</button>
 	</div>
 	{#if appState.geoError}
-		<p class="mt-1.5 text-xs text-red-600">{appState.geoError}</p>
+		<p class="nav-error">{appState.geoError}</p>
 	{/if}
 </nav>
+
+<style>
+	.site-nav {
+		width: 100%;
+	}
+
+	.nav-row {
+		display: flex;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
+
+	.nav-search {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.near-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		background: #f97316;
+		color: #fff;
+		border-radius: 0.5rem;
+		border: none;
+		white-space: nowrap;
+		flex-shrink: 0;
+		transition: background-color 120ms ease, opacity 120ms ease;
+	}
+
+	.near-button:hover:not(:disabled) {
+		background: #ea580c;
+	}
+
+	.near-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.near-icon {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+	}
+
+	.nav-error {
+		margin-top: 0.375rem;
+		font-size: 0.75rem;
+		color: #dc2626;
+	}
+</style>

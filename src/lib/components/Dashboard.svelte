@@ -105,47 +105,47 @@
 </script>
 
 <!-- Two-column layout: left panel + map -->
-<div class="flex flex-col lg:flex-row min-h-[calc(100vh-8rem)] gap-0" id="main-results-section">
+<div class="dashboard-layout" id="main-results-section">
 
 	<!-- LEFT PANEL: controls + list -->
 	<!-- Task 4: added border-r border-gray-200 for visual separation from map -->
-	<div class="order-2 lg:order-1 lg:w-[40%] flex flex-col overflow-y-auto lg:max-h-[calc(100vh-8rem)] border-r border-gray-200 bg-gray-50">
+	<div class="dashboard-panel">
 
 		<!-- Filters collapsible -->
-		<div class="p-4 border-b border-gray-200 bg-white">
+		<div class="panel-section">
 			{#if appState.selectedLocation}
 				<!-- Task 3: filter summary as chips -->
-				<div class="flex flex-wrap items-center gap-1.5 mb-2">
+				<div class="filter-chips">
 					{#if appState.selectedLocation.isPoint}
-						<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+						<span class="filter-chip">
 							Within {appState.maxDistance.toLocaleString()} {appState.distanceUnits}
 						</span>
 					{:else}
-						<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+						<span class="filter-chip">
 							Within {appState.selectedLocation.name}
 						</span>
 					{/if}
-					<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+					<span class="filter-chip">
 						Last {appState.maxDaysAgo} days
 					</span>
 					{#if !isToday(appState.selectedDate)}
-						<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+						<span class="filter-chip">
 							As of {formatDateInput(appState.selectedDate)}
 						</span>
 					{/if}
 				</div>
 
-				<details class="group">
-					<summary class="text-sm font-medium text-gray-700 cursor-pointer select-none list-none flex items-center gap-1 hover:text-blue-700 transition-colors py-2 px-3 min-h-[44px] -mx-3">
-						<svg class="w-3.5 h-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+				<details class="filter-details">
+					<summary class="filter-summary">
+						<svg class="filter-caret" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 						</svg>
 						Filters
 					</summary>
-					<div class="mt-3 space-y-3 pl-1">
+					<div class="filter-body">
 						{#if appState.selectedLocation.isPoint}
 							<div>
-								<label for="max-distance-input" class="block text-xs font-medium text-gray-600 mb-1">
+								<label for="max-distance-input" class="filter-label">
 									Search radius ({appState.distanceUnits})
 								</label>
 								<input
@@ -154,12 +154,12 @@
 									min="1"
 									value={appState.maxDistance}
 									oninput={handleMaxDistanceChange}
-									class="w-full px-2 h-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+									class="filter-input"
 								/>
 							</div>
 						{/if}
 						<div>
-							<label for="max-days-ago-input" class="block text-xs font-medium text-gray-600 mb-1">
+							<label for="max-days-ago-input" class="filter-label">
 								Days of history
 							</label>
 							<input
@@ -168,11 +168,11 @@
 								min="1"
 								value={appState.maxDaysAgo}
 								oninput={handleMaxDaysAgoChange}
-								class="w-full px-2 h-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								class="filter-input"
 							/>
 						</div>
 						<div>
-							<label for="selected-date-input" class="block text-xs font-medium text-gray-600 mb-1">
+							<label for="selected-date-input" class="filter-label">
 								Reference date
 							</label>
 							<input
@@ -180,32 +180,32 @@
 								type="date"
 								value={formatDateInput(appState.selectedDate)}
 								oninput={handleSelectedDateChange}
-								class="w-full px-2 h-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								class="filter-input"
 							/>
 						</div>
 					</div>
 				</details>
 			{:else}
-				<p class="text-sm text-gray-500">Search for a location or tap Near Me to filter crashes.</p>
+				<p class="panel-hint">Search for a location or tap Near Me to filter crashes.</p>
 			{/if}
 		</div>
 
 		<!-- Task 2: Results header — sticky, polished count + location badge -->
-		<div class="sticky top-0 bg-white border-b border-gray-100 z-10 px-4 py-2 flex items-center gap-2">
+		<div class="results-header">
 			{#if appState.loading}
-				<svg class="animate-spin h-3.5 w-3.5 text-blue-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+				<svg class="loading-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
 					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
 					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
 				</svg>
-				<span class="text-sm font-medium text-gray-500">Loading...</span>
+				<span class="loading-label">Loading...</span>
 			{:else if appState.selectedLocation}
-				<span class="font-medium text-gray-900 truncate max-w-[150px]">{appState.selectedLocation.name}</span>
-				<span class="text-gray-300 flex-shrink-0">&middot;</span>
-				<span class="text-sm text-gray-600 flex-shrink-0">
-					<span class="font-bold text-blue-700">{appState.filteredIncidents.length.toLocaleString()}</span> crashes
+				<span class="results-location">{appState.selectedLocation.name}</span>
+				<span class="results-divider">&middot;</span>
+				<span class="results-count">
+					<span class="results-count-strong">{appState.filteredIncidents.length.toLocaleString()}</span> crashes
 				</span>
 			{:else}
-				<span class="text-sm font-medium text-gray-600">
+				<span class="results-summary">
 					{appState.incidents.length} recent serious crashes citywide
 				</span>
 			{/if}
@@ -213,21 +213,21 @@
 
 		<!-- LocationSummary (when location selected + incidents loaded) -->
 		{#if appState.selectedLocation && !appState.loading && appState.incidents.length > 0}
-			<div class="px-4 pt-3 pb-1">
+			<div class="panel-block">
 				<LocationSummary incidents={appState.incidents} location={appState.selectedLocation} />
 			</div>
 		{/if}
 
 		<!-- City-wide trend chart (homepage, no location) -->
 		{#if !appState.selectedLocation && !appState.loading}
-			<div class="px-4 pt-3 pb-1">
+			<div class="panel-block">
 				<TrendChart />
 			</div>
 		{/if}
 
 		<!-- Cause filter -->
 		{#if appState.selectedLocation && appState.incidents.length > 1}
-			<div class="px-4 pt-3 pb-1">
+			<div class="panel-block">
 				<CauseFilter
 					incidents={appState.incidents}
 					activeCause={appState.causeFilter}
@@ -239,10 +239,10 @@
 		<!-- Incident list (scrollable on desktop, stacked below map on mobile) -->
 		{#if !appState.selectedLocation && appState.incidents.length === 0 && !appState.loading}
 			<!-- Task 1: Compelling welcome empty state -->
-			<div class="flex flex-col items-center justify-center flex-1 px-6 py-12 text-center gap-3">
+			<div class="empty-state">
 				<!-- Map pin icon, 48px, blue-700 -->
 				<svg
-					class="w-12 h-12 text-blue-700 mb-1"
+					class="empty-icon"
 					fill="none"
 					stroke="currentColor"
 					viewBox="0 0 24 24"
@@ -256,14 +256,14 @@
 					/>
 					<circle cx="12" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
 				</svg>
-				<h2 class="text-xl font-bold text-gray-900">Chicago Crash Data</h2>
-				<p class="text-sm text-gray-500 max-w-xs leading-relaxed">
+				<h2 class="empty-title">Chicago Crash Data</h2>
+				<p class="empty-body">
 					Explore traffic crash data for any Chicago neighborhood, ward, or intersection.
 				</p>
-				<p class="text-xs text-gray-400">Search above or use Near Me to get started.</p>
+				<p class="empty-note">Search above or use Near Me to get started.</p>
 			</div>
 		{:else}
-			<div class="px-4 py-3 lg:flex-1">
+			<div class="panel-list">
 				<IncidentList
 					incidents={appState.filteredIncidents}
 					selectedLocation={appState.selectedLocation}
@@ -276,8 +276,8 @@
 
 	<!-- RIGHT PANEL: map (desktop), or stacked above list (mobile) -->
 	<!-- Task 4: sticky positioning + full viewport height on desktop -->
-	<div class="order-1 lg:order-2 lg:flex-1 h-72 sm:h-96 lg:h-auto lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)]">
-		<div class="h-full">
+	<div class="map-panel">
+		<div class="map-shell">
 			<MapContainer
 				selectedLocation={appState.selectedLocation}
 				incidents={appState.incidents}
@@ -289,3 +289,272 @@
 	</div>
 
 </div>
+
+<style>
+	.dashboard-layout {
+		display: flex;
+		flex-direction: column;
+		min-height: calc(100vh - 8rem);
+	}
+
+	@media (min-width: 1024px) {
+		.dashboard-layout {
+			flex-direction: row;
+		}
+	}
+
+	.dashboard-panel {
+		order: 2;
+		display: flex;
+		flex-direction: column;
+		overflow-y: auto;
+		border-right: 1px solid #e5e7eb;
+		background: #f9fafb;
+	}
+
+	@media (min-width: 1024px) {
+		.dashboard-panel {
+			order: 1;
+			width: 40%;
+			max-height: calc(100vh - 8rem);
+		}
+	}
+
+	.panel-section {
+		padding: 1rem;
+		border-bottom: 1px solid #e5e7eb;
+		background: #fff;
+	}
+
+	.filter-chips {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.375rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.filter-chip {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.125rem 0.5rem;
+		border-radius: 0.375rem;
+		background: #f3f4f6;
+		font-size: 0.75rem;
+		color: #4b5563;
+	}
+
+	.filter-details {
+		border-radius: 0.5rem;
+	}
+
+	.filter-summary {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.5rem 0.75rem;
+		margin: 0 -0.75rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #374151;
+		cursor: pointer;
+		user-select: none;
+		list-style: none;
+		min-height: 44px;
+		transition: color 150ms ease;
+	}
+
+	.filter-summary:hover {
+		color: #1d4ed8;
+	}
+
+	.filter-summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.filter-caret {
+		width: 0.875rem;
+		height: 0.875rem;
+		transition: transform 150ms ease;
+	}
+
+	.filter-details[open] .filter-caret {
+		transform: rotate(90deg);
+	}
+
+	.filter-body {
+		margin-top: 0.75rem;
+		padding-left: 0.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.filter-label {
+		display: block;
+		margin-bottom: 0.25rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #4b5563;
+	}
+
+	.filter-input {
+		width: 100%;
+		height: 2.5rem;
+		padding: 0 0.5rem;
+		font-size: 0.875rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.5rem;
+		background: #fff;
+		transition: border-color 120ms ease, box-shadow 120ms ease;
+	}
+
+	.filter-input:focus {
+		outline: none;
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 2px rgb(59 130 246 / 0.35);
+	}
+
+	.panel-hint {
+		font-size: 0.875rem;
+		color: #6b7280;
+	}
+
+	.results-header {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		border-bottom: 1px solid #f3f4f6;
+		background: #fff;
+	}
+
+	.loading-icon {
+		width: 0.875rem;
+		height: 0.875rem;
+		color: #2563eb;
+		flex-shrink: 0;
+		animation: spin 1s linear infinite;
+	}
+
+	.loading-label {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #6b7280;
+	}
+
+	.results-location {
+		font-weight: 500;
+		color: #111827;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 150px;
+	}
+
+	.results-divider {
+		color: #d1d5db;
+		flex-shrink: 0;
+	}
+
+	.results-count {
+		font-size: 0.875rem;
+		color: #4b5563;
+		flex-shrink: 0;
+	}
+
+	.results-count-strong {
+		font-weight: 700;
+		color: #1d4ed8;
+	}
+
+	.results-summary {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #4b5563;
+	}
+
+	.panel-block {
+		padding: 0.75rem 1rem 0.25rem;
+	}
+
+	.panel-list {
+		padding: 0.75rem 1rem;
+	}
+
+	@media (min-width: 1024px) {
+		.panel-list {
+			flex: 1;
+		}
+	}
+
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		flex: 1;
+		gap: 0.75rem;
+		padding: 3rem 1.5rem;
+		text-align: center;
+	}
+
+	.empty-icon {
+		width: 3rem;
+		height: 3rem;
+		color: #1d4ed8;
+		margin-bottom: 0.25rem;
+	}
+
+	.empty-title {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: #111827;
+	}
+
+	.empty-body {
+		font-size: 0.875rem;
+		color: #6b7280;
+		max-width: 20rem;
+		line-height: 1.5;
+	}
+
+	.empty-note {
+		font-size: 0.75rem;
+		color: #9ca3af;
+	}
+
+	.map-panel {
+		order: 1;
+		height: 18rem;
+	}
+
+	@media (min-width: 640px) {
+		.map-panel {
+			height: 24rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.map-panel {
+			order: 2;
+			flex: 1;
+			position: sticky;
+			top: 3.5rem;
+			height: calc(100vh - 3.5rem);
+		}
+	}
+
+	.map-shell {
+		height: 100%;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+</style>

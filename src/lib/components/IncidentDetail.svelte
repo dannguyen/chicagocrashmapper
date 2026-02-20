@@ -106,105 +106,103 @@
 
 {#if incident}
 	<!-- ── Hero card ─────────────────────────────────────────────────────────── -->
-	<div class="rounded-xl border-l-4 border border-gray-200 bg-white p-4 sm:p-6 mb-6 shadow-sm {severityBorderClass(severity)}">
-		<div class="flex items-start justify-between gap-4">
-			<div class="flex-1 min-w-0">
+	<div class="hero-card {severityBorderClass(severity)}">
+		<div class="hero-header">
+			<div class="hero-main">
 				<!-- Severity badge + optional hit-and-run -->
-				<div class="flex flex-wrap gap-2 mb-2">
-					<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase {severityBadgeClass(severity)}">
+				<div class="hero-badges">
+					<span class="severity-badge {severityBadgeClass(severity)}">
 						{severityLabel(severity)}
 					</span>
 					{#if incident.hit_and_run}
-						<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-700">
-							Hit & Run
-						</span>
+						<span class="hitrun-badge">Hit & Run</span>
 					{/if}
 				</div>
 
 				<!-- Primary cause -->
-				<p class="text-xl font-semibold text-gray-900 mt-2 break-words">{incident.primary_cause}</p>
+				<p class="hero-cause">{incident.primary_cause}</p>
 
 				<!-- Location line -->
-				<p class="text-sm text-gray-600 mt-1 break-words">
-					{address}{#if ward || neighborhood}&ensp;·&ensp;{/if}{#if ward}<a href="/wards/{ward.id}" class="hover:underline text-blue-600">{ward.name}</a>{/if}{#if ward && neighborhood}&ensp;·&ensp;{/if}{#if neighborhood}<a href="/neighborhoods/{neighborhood.id}" class="hover:underline text-blue-600">{neighborhood.name}</a>{/if}
+				<p class="hero-location">
+					{address}{#if ward || neighborhood}&ensp;·&ensp;{/if}{#if ward}<a href="/wards/{ward.id}" class="hero-link">{ward.name}</a>{/if}{#if ward && neighborhood}&ensp;·&ensp;{/if}{#if neighborhood}<a href="/neighborhoods/{neighborhood.id}" class="hero-link">{neighborhood.name}</a>{/if}
 				</p>
 			</div>
 
 			<!-- Date / age aligned right -->
-			<div class="text-right flex-shrink-0">
-				<time datetime={incident.date.toISOString()} class="text-sm text-gray-400 block">{incident.prettyDate}</time>
-				<span class="text-sm text-gray-400 italic">{currentAgeSimplified(incident.date)}</span>
+			<div class="hero-meta">
+				<time datetime={incident.date.toISOString()} class="hero-date">{incident.prettyDate}</time>
+				<span class="hero-age">{currentAgeSimplified(incident.date)}</span>
 			</div>
 		</div>
 	</div>
 
 	<!-- ── Info grid ─────────────────────────────────────────────────────────── -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+	<div class="info-grid">
 		<!-- Conditions card -->
-		<div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-			<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Conditions</p>
+		<div class="info-card">
+			<p class="info-title">Conditions</p>
 
-			<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
-				<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Weather</span>
-				<span class="font-medium text-gray-800 text-right break-words">{conditionValue(incident.weather_condition)}</span>
+			<div class="info-row">
+				<span class="info-label">Weather</span>
+				<span class="info-value info-value-right">{conditionValue(incident.weather_condition)}</span>
 			</div>
 
-			<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
-				<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Trafficway</span>
-				<span class="font-medium text-gray-800 text-right break-words">{conditionValue(incident.trafficway_type)}</span>
+			<div class="info-row">
+				<span class="info-label">Trafficway</span>
+				<span class="info-value info-value-right">{conditionValue(incident.trafficway_type)}</span>
 			</div>
 
 			{#if incident.posted_speed_limit}
-				<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
-					<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Speed limit</span>
-					<span class="font-medium text-gray-800">{incident.posted_speed_limit} mph</span>
+				<div class="info-row">
+					<span class="info-label">Speed limit</span>
+					<span class="info-value">{incident.posted_speed_limit} mph</span>
 				</div>
 			{/if}
 
-			<div class="flex justify-between py-1.5 border-b border-gray-100 last:border-0 text-sm">
-				<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Crash type</span>
-				<span class="font-medium text-gray-800 text-right break-words">{conditionValue(incident.category)}</span>
+			<div class="info-row {showSecondaryCause ? '' : 'info-row-last'}">
+				<span class="info-label">Crash type</span>
+				<span class="info-value info-value-right">{conditionValue(incident.category)}</span>
 			</div>
 
 			{#if showSecondaryCause}
-				<div class="flex justify-between py-1.5 last:border-0 text-sm">
-					<span class="text-xs text-gray-500 uppercase tracking-wide self-center">Secondary cause</span>
-					<span class="font-medium text-gray-800 text-right break-words">{incident.secondary_cause}</span>
+				<div class="info-row info-row-last">
+					<span class="info-label">Secondary cause</span>
+					<span class="info-value info-value-right">{incident.secondary_cause}</span>
 				</div>
 			{/if}
 		</div>
 
 		<!-- Location card -->
-		<div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-			<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Location</p>
+		<div class="info-card">
+			<p class="info-title">Location</p>
 
-			<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
-				<span class="text-gray-500">Address</span>
-				<span class="text-gray-900 text-right break-words ml-2">{address}</span>
+			<div class="info-row {(!ward && !neighborhood) ? 'info-row-last' : ''}">
+				<span class="info-label-regular">Address</span>
+				<span class="location-address">{address}</span>
 			</div>
 
 			{#if ward}
-				<div class="flex justify-between py-1.5 border-b border-gray-100 last:border-0 text-sm">
-					<span class="text-gray-500">Ward</span>
-					<a href="/wards/{ward.id}" class="text-blue-600 hover:text-blue-800 hover:underline">{ward.name}</a>
+				<div class="info-row {neighborhood ? '' : 'info-row-last'}">
+					<span class="info-label-regular">Ward</span>
+					<a href="/wards/{ward.id}" class="info-link">{ward.name}</a>
 				</div>
 			{/if}
 
 			{#if neighborhood}
-				<div class="flex justify-between py-1.5 last:border-0 text-sm">
-					<span class="text-gray-500">Neighborhood</span>
-					<a href="/neighborhoods/{neighborhood.id}" class="text-blue-600 hover:text-blue-800 hover:underline">{neighborhood.name}</a>
+				<div class="info-row info-row-last">
+					<span class="info-label-regular">Neighborhood</span>
+					<a href="/neighborhoods/{neighborhood.id}" class="info-link">{neighborhood.name}</a>
 				</div>
 			{/if}
 
 			{#if injuryCategories.length > 0}
-				<div class="mt-3 pt-3 border-t border-gray-100">
-					<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Injuries</p>
-					<div class="flex flex-wrap gap-x-4 gap-y-1">
+				<div class="injury-block">
+					<p class="info-title info-title-tight">Injuries</p>
+					<div class="injury-list">
 						{#each injuryCategories as cat}
-							<div class="flex items-center gap-1.5">
-								<span class="w-2 h-2 rounded-full inline-block {cat.color}"></span>
-								<span class="text-xs text-gray-600">{cat.count} {cat.label}</span>
+							<div class="injury-item">
+								<span class="injury-dot {cat.color}"></span>
+								<span class="injury-text">{cat.count} {cat.label}</span>
 							</div>
 						{/each}
 					</div>
@@ -214,16 +212,16 @@
 	</div>
 
 	<!-- ── People Involved ───────────────────────────────────────────────────── -->
-	<section class="mb-6">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">People Involved</h2>
+	<section class="people-section">
+		<h2 class="people-title">People Involved</h2>
 
 		{#if peopleCount > 0}
-			<p class="text-sm font-semibold text-gray-700 mb-2">{peopleCount} {peopleCount === 1 ? 'person' : 'people'} involved</p>
+			<p class="people-count">{peopleCount} {peopleCount === 1 ? 'person' : 'people'} involved</p>
 		{/if}
 
-		<div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+		<div class="people-card">
 			{#if peopleCount === 0}
-				<p class="text-sm text-gray-400 text-center py-4">No people records available</p>
+				<p class="people-empty">No people records available</p>
 			{/if}
 
 			{#each incident.vehicles as vh}
@@ -231,49 +229,49 @@
 					{@const pLevel = personInjuryLevel(p)}
 					{@const pLabel = injuryLabel(pLevel)}
 					{@const vehicleDesc = [vh.vehicle_year, vh.make, vh.model].filter((x) => x != null && x !== '').join(' ')}
-					<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
+					<div class="person-row">
 						<!-- Left: role + vehicle info -->
-						<div class="flex flex-col min-w-0">
-							<div class="flex items-center gap-2 flex-wrap">
+						<div class="person-main">
+							<div class="person-header">
 								{#if p.person_type}
-									<span class="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{p.person_type}</span>
+									<span class="person-tag">{p.person_type}</span>
 								{/if}
-								<span class="text-sm text-gray-800">{p.description}</span>
+								<span class="person-name">{p.description}</span>
 							</div>
 							{#if vehicleDesc}
-								<span class="text-xs text-gray-500 mt-0.5">{vehicleDesc}</span>
+								<span class="person-vehicle">{vehicleDesc}</span>
 							{/if}
 							<!-- Relevant extra details -->
-							<div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+							<div class="person-details">
 								{#if isRelevantDetail(p.safety_equipment)}
-									<span class="text-xs text-gray-400 italic">Safety: {p.safety_equipment}</span>
+									<span class="person-detail">Safety: {p.safety_equipment}</span>
 								{/if}
 								{#if isRelevantDetail(p.airbag_deployed)}
-									<span class="text-xs text-gray-400 italic">Airbag: {p.airbag_deployed}</span>
+									<span class="person-detail">Airbag: {p.airbag_deployed}</span>
 								{/if}
 								{#if isRelevantDetail(p.ejection)}
-									<span class="text-xs text-gray-400 italic">Ejection: {p.ejection}</span>
+									<span class="person-detail">Ejection: {p.ejection}</span>
 								{/if}
 								{#if isRelevantDetail(p.physical_condition)}
-									<span class="text-xs text-gray-400 italic">Condition: {p.physical_condition}</span>
+									<span class="person-detail">Condition: {p.physical_condition}</span>
 								{/if}
 								{#if isRelevantDetail(p.driver_action)}
-									<span class="text-xs text-gray-400 italic">Action: {p.driver_action}</span>
+									<span class="person-detail">Action: {p.driver_action}</span>
 								{/if}
 								{#if isRelevantDetail(p.driver_vision)}
-									<span class="text-xs text-gray-400 italic">Visibility: {p.driver_vision}</span>
+									<span class="person-detail">Visibility: {p.driver_vision}</span>
 								{/if}
 								{#if isRelevantDetail(p.hospital)}
-									<span class="text-xs text-gray-400 italic">Hospital: {p.hospital}</span>
+									<span class="person-detail">Hospital: {p.hospital}</span>
 								{/if}
 							</div>
 						</div>
 
 						<!-- Right: injury indicator -->
 						{#if pLabel}
-							<div class="flex items-center gap-1.5 flex-shrink-0">
-								<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(pLevel)}"></span>
-								<span class="text-sm {injuryTextClass(pLevel)}">{pLabel}</span>
+							<div class="person-injury">
+								<span class="person-dot {injuryDotClass(pLevel)}"></span>
+								<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
 							</div>
 						{/if}
 					</div>
@@ -283,46 +281,46 @@
 			{#each incident.non_passengers as p}
 				{@const pLevel = personInjuryLevel(p)}
 				{@const pLabel = injuryLabel(pLevel)}
-				<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
+				<div class="person-row">
 					<!-- Left: role + description -->
-					<div class="flex flex-col min-w-0">
-						<div class="flex items-center gap-2 flex-wrap">
+					<div class="person-main">
+						<div class="person-header">
 							{#if p.person_type}
-								<span class="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{p.person_type}</span>
+								<span class="person-tag">{p.person_type}</span>
 							{/if}
-							<span class="text-sm text-gray-800">{p.description}</span>
+							<span class="person-name">{p.description}</span>
 						</div>
 						<!-- Relevant extra details -->
-						<div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+						<div class="person-details">
 							{#if isRelevantDetail(p.safety_equipment)}
-								<span class="text-xs text-gray-400 italic">Safety: {p.safety_equipment}</span>
+								<span class="person-detail">Safety: {p.safety_equipment}</span>
 							{/if}
 							{#if isRelevantDetail(p.airbag_deployed)}
-								<span class="text-xs text-gray-400 italic">Airbag: {p.airbag_deployed}</span>
+								<span class="person-detail">Airbag: {p.airbag_deployed}</span>
 							{/if}
 							{#if isRelevantDetail(p.ejection)}
-								<span class="text-xs text-gray-400 italic">Ejection: {p.ejection}</span>
+								<span class="person-detail">Ejection: {p.ejection}</span>
 							{/if}
 							{#if isRelevantDetail(p.physical_condition)}
-								<span class="text-xs text-gray-400 italic">Condition: {p.physical_condition}</span>
+								<span class="person-detail">Condition: {p.physical_condition}</span>
 							{/if}
 							{#if isRelevantDetail(p.driver_action)}
-								<span class="text-xs text-gray-400 italic">Action: {p.driver_action}</span>
+								<span class="person-detail">Action: {p.driver_action}</span>
 							{/if}
 							{#if isRelevantDetail(p.driver_vision)}
-								<span class="text-xs text-gray-400 italic">Visibility: {p.driver_vision}</span>
+								<span class="person-detail">Visibility: {p.driver_vision}</span>
 							{/if}
 							{#if isRelevantDetail(p.hospital)}
-								<span class="text-xs text-gray-400 italic">Hospital: {p.hospital}</span>
+								<span class="person-detail">Hospital: {p.hospital}</span>
 							{/if}
 						</div>
 					</div>
 
 					<!-- Right: injury indicator -->
 					{#if pLabel}
-						<div class="flex items-center gap-1.5 flex-shrink-0">
-							<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(pLevel)}"></span>
-							<span class="text-sm {injuryTextClass(pLevel)}">{pLabel}</span>
+						<div class="person-injury">
+							<span class="person-dot {injuryDotClass(pLevel)}"></span>
+							<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
 						</div>
 					{/if}
 				</div>
@@ -330,3 +328,330 @@
 		</div>
 	</section>
 {/if}
+
+<style>
+	.hero-card {
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		background: #fff;
+		padding: 1rem;
+		margin-bottom: 1.5rem;
+		box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+		border-left-width: 4px;
+	}
+
+	@media (min-width: 640px) {
+		.hero-card {
+			padding: 1.5rem;
+		}
+	}
+
+	.hero-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.hero-main {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.hero-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.severity-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.25rem 0.625rem;
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.hitrun-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.25rem 0.625rem;
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		background: #fef3c7;
+		color: #b45309;
+	}
+
+	.hero-cause {
+		margin-top: 0.5rem;
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: #111827;
+		word-break: break-word;
+	}
+
+	.hero-location {
+		margin-top: 0.25rem;
+		font-size: 0.875rem;
+		color: #4b5563;
+		word-break: break-word;
+	}
+
+	.hero-link {
+		color: #2563eb;
+		text-decoration: none;
+	}
+
+	.hero-link:hover {
+		text-decoration: underline;
+	}
+
+	.hero-meta {
+		text-align: right;
+		flex-shrink: 0;
+	}
+
+	.hero-date {
+		display: block;
+		font-size: 0.875rem;
+		color: #9ca3af;
+	}
+
+	.hero-age {
+		font-size: 0.875rem;
+		color: #9ca3af;
+		font-style: italic;
+	}
+
+	.info-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	@media (min-width: 640px) {
+		.info-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	.info-card {
+		background: #fff;
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		padding: 1rem;
+		box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+	}
+
+	.info-title {
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #6b7280;
+		margin-bottom: 0.75rem;
+	}
+
+	.info-title-tight {
+		margin-bottom: 0.5rem;
+	}
+
+	.info-row {
+		display: flex;
+		justify-content: space-between;
+		padding: 0.375rem 0;
+		border-bottom: 1px solid #f3f4f6;
+		font-size: 0.875rem;
+	}
+
+	.info-row-last {
+		border-bottom: 0;
+	}
+
+	.info-label {
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #6b7280;
+		align-self: center;
+	}
+
+	.info-label-regular {
+		color: #6b7280;
+	}
+
+	.info-value {
+		font-weight: 500;
+		color: #1f2937;
+	}
+
+	.info-value-right {
+		text-align: right;
+		word-break: break-word;
+	}
+
+	.location-address {
+		color: #111827;
+		text-align: right;
+		word-break: break-word;
+		margin-left: 0.5rem;
+	}
+
+	.info-link {
+		color: #2563eb;
+		text-decoration: none;
+	}
+
+	.info-link:hover {
+		color: #1e40af;
+		text-decoration: underline;
+	}
+
+	.injury-block {
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid #f3f4f6;
+	}
+
+	.injury-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+	}
+
+	.injury-item {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.injury-dot {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 9999px;
+		display: inline-block;
+	}
+
+	.injury-text {
+		font-size: 0.75rem;
+		color: #4b5563;
+	}
+
+	.people-section {
+		margin-bottom: 1.5rem;
+	}
+
+	.people-title {
+		font-size: 0.875rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #6b7280;
+		margin-bottom: 0.75rem;
+	}
+
+	.people-count {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #374151;
+		margin-bottom: 0.5rem;
+	}
+
+	.people-card {
+		background: #fff;
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+		overflow: hidden;
+	}
+
+	.people-empty {
+		font-size: 0.875rem;
+		color: #9ca3af;
+		text-align: center;
+		padding: 1rem 0;
+	}
+
+	.person-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		padding: 0.75rem 1rem;
+	}
+
+	.person-row + .person-row {
+		border-top: 1px solid #f3f4f6;
+	}
+
+	.person-main {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.person-header {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.person-tag {
+		font-size: 0.75rem;
+		font-weight: 500;
+		padding: 0.125rem 0.5rem;
+		border-radius: 9999px;
+		background: #f3f4f6;
+		color: #374151;
+	}
+
+	.person-name {
+		font-size: 0.875rem;
+		color: #1f2937;
+	}
+
+	.person-vehicle {
+		font-size: 0.75rem;
+		color: #6b7280;
+		margin-top: 0.125rem;
+	}
+
+	.person-details {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.125rem 0.75rem;
+		margin-top: 0.25rem;
+	}
+
+	.person-detail {
+		font-size: 0.75rem;
+		color: #9ca3af;
+		font-style: italic;
+	}
+
+	.person-injury {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		flex-shrink: 0;
+	}
+
+	.person-dot {
+		width: 0.625rem;
+		height: 0.625rem;
+		border-radius: 9999px;
+		display: inline-block;
+	}
+
+	.person-injury-label {
+		font-size: 0.875rem;
+	}
+</style>

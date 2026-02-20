@@ -9,41 +9,41 @@
 	}
 </script>
 
-<header class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-	<div class="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between gap-4">
+<header class="site-header">
+	<div class="header-row">
 		<!-- Wordmark -->
-		<a href="{base}/" class="flex items-center gap-2 text-gray-900 no-underline shrink-0">
-			<svg class="w-5 h-5 text-blue-700 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+		<a href="{base}/" class="header-brand">
+			<svg class="brand-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 				<path
 					d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
 					fill="currentColor"
 				/>
 			</svg>
-			<span class="font-bold text-lg leading-none">Chicago Crash Map</span>
+			<span class="brand-title">Chicago Crash Map</span>
 		</a>
 
 		<!-- Desktop nav links -->
-		<nav class="hidden md:flex items-center gap-6" aria-label="Site navigation">
-			<a href="{base}/neighborhoods" class="text-sm font-medium text-gray-600 hover:text-blue-700 transition-colors no-underline">Neighborhoods</a>
-			<a href="{base}/wards" class="text-sm font-medium text-gray-600 hover:text-blue-700 transition-colors no-underline">Wards</a>
-			<a href="{base}/intersections" class="text-sm font-medium text-gray-600 hover:text-blue-700 transition-colors no-underline">Intersections</a>
+		<nav class="desktop-nav" aria-label="Site navigation">
+			<a href="{base}/neighborhoods" class="nav-link">Neighborhoods</a>
+			<a href="{base}/wards" class="nav-link">Wards</a>
+			<a href="{base}/intersections" class="nav-link">Intersections</a>
 		</nav>
 
 		<!-- Mobile hamburger -->
 		<button
-			class="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors p-2.5 -mr-2"
+			class="mobile-toggle"
 			onclick={toggleMobileMenu}
 			aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
 			aria-expanded={mobileMenuOpen}
 		>
 			{#if mobileMenuOpen}
 				<!-- X icon -->
-				<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+				<svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 				</svg>
 			{:else}
 				<!-- Hamburger icon -->
-				<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+				<svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
 				</svg>
 			{/if}
@@ -51,18 +51,176 @@
 	</div>
 
 	<!-- Search bar — always visible below the wordmark row -->
-	<div class="border-t border-gray-100 bg-gray-50/80">
-		<div class="max-w-7xl mx-auto px-4 md:px-6 py-2 min-w-0">
+	<div class="search-bar">
+		<div class="search-inner">
 			<SiteNav />
 		</div>
 	</div>
 
 	<!-- Mobile nav drawer -->
 	{#if mobileMenuOpen}
-		<nav class="md:hidden flex flex-col border-t border-gray-200 bg-white" aria-label="Mobile site navigation">
-			<a href="{base}/neighborhoods" class="px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-700 transition-colors no-underline border-b border-gray-100 last:border-b-0 min-h-[44px] flex items-center" onclick={() => (mobileMenuOpen = false)}>Neighborhoods</a>
-			<a href="{base}/wards" class="px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-700 transition-colors no-underline border-b border-gray-100 last:border-b-0 min-h-[44px] flex items-center" onclick={() => (mobileMenuOpen = false)}>Wards</a>
-			<a href="{base}/intersections" class="px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-700 transition-colors no-underline border-b border-gray-100 last:border-b-0 min-h-[44px] flex items-center" onclick={() => (mobileMenuOpen = false)}>Intersections</a>
+		<nav class="mobile-nav" aria-label="Mobile site navigation">
+			<a href="{base}/neighborhoods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Neighborhoods</a>
+			<a href="{base}/wards" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Wards</a>
+			<a href="{base}/intersections" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Intersections</a>
 		</nav>
 	{/if}
 </header>
+
+<style>
+	.site-header {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(8px);
+		border-bottom: 1px solid #e5e7eb;
+	}
+
+	.header-row {
+		max-width: 80rem;
+		margin: 0 auto;
+		padding: 0 1rem;
+		height: 3.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	@media (min-width: 768px) {
+		.header-row {
+			padding: 0 1.5rem;
+		}
+	}
+
+	.header-brand {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: #111827;
+		text-decoration: none;
+		flex-shrink: 0;
+	}
+
+	.brand-icon {
+		width: 1.25rem;
+		height: 1.25rem;
+		color: #1d4ed8;
+		flex-shrink: 0;
+	}
+
+	.brand-title {
+		font-size: 1.125rem;
+		font-weight: 700;
+		line-height: 1;
+	}
+
+	.desktop-nav {
+		display: none;
+		align-items: center;
+		gap: 1.5rem;
+	}
+
+	@media (min-width: 768px) {
+		.desktop-nav {
+			display: flex;
+		}
+	}
+
+	.nav-link {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #4b5563;
+		text-decoration: none;
+		transition: color 120ms ease;
+	}
+
+	.nav-link:hover {
+		color: #1d4ed8;
+	}
+
+	.mobile-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 0.5rem;
+		color: #4b5563;
+		background: transparent;
+		border: none;
+		padding: 0.625rem;
+		margin-right: -0.5rem;
+		transition: color 120ms ease, background-color 120ms ease;
+	}
+
+	.mobile-toggle:hover {
+		color: #111827;
+		background: #f3f4f6;
+	}
+
+	@media (min-width: 768px) {
+		.mobile-toggle {
+			display: none;
+		}
+	}
+
+	.toggle-icon {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+
+	.search-bar {
+		border-top: 1px solid #f3f4f6;
+		background: rgba(249, 250, 251, 0.8);
+	}
+
+	.search-inner {
+		max-width: 80rem;
+		margin: 0 auto;
+		padding: 0.5rem 1rem;
+		min-width: 0;
+	}
+
+	@media (min-width: 768px) {
+		.search-inner {
+			padding: 0.5rem 1.5rem;
+		}
+	}
+
+	.mobile-nav {
+		display: flex;
+		flex-direction: column;
+		border-top: 1px solid #e5e7eb;
+		background: #fff;
+	}
+
+	@media (min-width: 768px) {
+		.mobile-nav {
+			display: none;
+		}
+	}
+
+	.mobile-link {
+		padding: 0.75rem 1rem;
+		font-size: 1rem;
+		font-weight: 500;
+		color: #374151;
+		text-decoration: none;
+		border-bottom: 1px solid #f3f4f6;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		transition: color 120ms ease, background-color 120ms ease;
+	}
+
+	.mobile-link:last-child {
+		border-bottom: 0;
+	}
+
+	.mobile-link:hover {
+		background: #f9fafb;
+		color: #1d4ed8;
+	}
+</style>

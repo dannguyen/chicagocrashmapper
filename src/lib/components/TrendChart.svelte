@@ -75,28 +75,28 @@
 </script>
 
 {#if loading}
-	<div class="text-sm text-gray-400 py-2">Loading trend data...</div>
+	<div class="trend-loading">Loading trend data...</div>
 {:else if !error && periods.length > 0 && !hasData}
-	<div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-		<div class="flex items-center justify-center h-32 text-sm text-gray-400">No trend data available</div>
+	<div class="trend-card">
+		<div class="trend-empty">No trend data available</div>
 	</div>
 {:else if !error && periods.length > 0}
-	<div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+	<div class="trend-card">
 		<!-- Header -->
-		<div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-			<h3 class="text-sm font-semibold text-gray-700">18-Month Injury Trend</h3>
-			<div class="flex gap-3 text-xs">
-				<span class="text-red-600 font-semibold">{totalFatal} killed</span>
-				<span class="text-purple-600 font-semibold">{totalIncap} seriously injured</span>
+		<div class="trend-header">
+			<h3 class="trend-title">18-Month Injury Trend</h3>
+			<div class="trend-stats">
+				<span class="trend-stat trend-stat-fatal">{totalFatal} killed</span>
+				<span class="trend-stat trend-stat-serious">{totalIncap} seriously injured</span>
 			</div>
 		</div>
 
 		<!-- Chart -->
-		<div class="overflow-x-auto">
+		<div class="trend-chart">
 			<svg
 				width={periods.length * (barWidth + barGap)}
 				height={chartHeight + 22}
-				class="block"
+				class="trend-svg"
 				role="img"
 				aria-label="Monthly injury trend chart"
 			>
@@ -104,7 +104,6 @@
 					{@const inCapH = barH(p.injuries_incapacitating)}
 					{@const fatalH = barH(p.injuries_fatal)}
 					{@const x = i * (barWidth + barGap)}
-					<title>{formatTooltip(p)}</title>
 					<rect {x} y={chartHeight - inCapH} width={barWidth} height={inCapH} fill="#9333ea">
 						<title>{formatTooltip(p)}</title>
 					</rect>
@@ -133,15 +132,110 @@
 		</div>
 
 		<!-- Legend -->
-		<div class="flex gap-4 mt-3">
-			<span class="text-xs text-gray-500 flex items-center gap-1.5">
-				<span class="inline-block w-3 h-3 rounded-sm bg-red-600"></span>
+		<div class="trend-legend">
+			<span class="legend-item">
+				<span class="legend-swatch legend-fatal"></span>
 				Fatal
 			</span>
-			<span class="text-xs text-gray-500 flex items-center gap-1.5">
-				<span class="inline-block w-3 h-3 rounded-sm bg-purple-600"></span>
+			<span class="legend-item">
+				<span class="legend-swatch legend-serious"></span>
 				Serious injury
 			</span>
 		</div>
 	</div>
 {/if}
+
+<style>
+	.trend-loading {
+		font-size: 0.875rem;
+		color: #9ca3af;
+		padding: 0.5rem 0;
+	}
+
+	.trend-card {
+		background: #fff;
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		padding: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.trend-empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 8rem;
+		font-size: 0.875rem;
+		color: #9ca3af;
+	}
+
+	.trend-header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.trend-title {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #374151;
+	}
+
+	.trend-stats {
+		display: flex;
+		gap: 0.75rem;
+		font-size: 0.75rem;
+	}
+
+	.trend-stat {
+		font-weight: 600;
+	}
+
+	.trend-stat-fatal {
+		color: #dc2626;
+	}
+
+	.trend-stat-serious {
+		color: #7c3aed;
+	}
+
+	.trend-chart {
+		overflow-x: auto;
+	}
+
+	.trend-svg {
+		display: block;
+	}
+
+	.trend-legend {
+		display: flex;
+		gap: 1rem;
+		margin-top: 0.75rem;
+	}
+
+	.legend-item {
+		font-size: 0.75rem;
+		color: #6b7280;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.legend-swatch {
+		display: inline-block;
+		width: 0.75rem;
+		height: 0.75rem;
+		border-radius: 0.125rem;
+	}
+
+	.legend-fatal {
+		background: #dc2626;
+	}
+
+	.legend-serious {
+		background: #7c3aed;
+	}
+</style>

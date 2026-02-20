@@ -64,107 +64,125 @@
 </script>
 
 {#if loading}
-	<div class="overflow-x-auto">
-		<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-			<div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
-				<div class="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+	<div class="table-shell">
+		<div class="table-card">
+			<div class="table-head-skeleton">
+				<div class="skeleton-line skeleton-title"></div>
 			</div>
 			{#each Array(8) as _}
-				<div class="flex items-center gap-4 px-4 py-3 border-b border-gray-100">
-					<div class="h-4 bg-gray-200 rounded animate-pulse w-36"></div>
-					<div class="h-4 bg-gray-200 rounded animate-pulse w-20 ml-auto"></div>
-					<div class="h-4 bg-gray-200 rounded animate-pulse w-12"></div>
-					<div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
-					<div class="h-4 bg-gray-200 rounded animate-pulse w-14"></div>
-					<div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+				<div class="skeleton-row">
+					<div class="skeleton-line skeleton-wide"></div>
+					<div class="skeleton-line skeleton-medium skeleton-spacer"></div>
+					<div class="skeleton-line skeleton-narrow"></div>
+					<div class="skeleton-line skeleton-small"></div>
+					<div class="skeleton-line skeleton-smallest"></div>
+					<div class="skeleton-line skeleton-medium"></div>
 				</div>
 			{/each}
 		</div>
 	</div>
 {:else if error}
-	<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-		<p class="text-sm text-red-700">{error}</p>
+	<div class="error-card">
+		<p class="error-text">{error}</p>
 	</div>
 {:else if stats.length === 0}
-	<p class="py-8 text-center text-sm text-gray-500">No {category} found.</p>
+	<p class="empty-text">No {category} found.</p>
 {:else}
-	<div class="overflow-x-auto">
-		<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-			<table class="min-w-full">
-				<thead class="bg-gray-50 border-b border-gray-200">
+	<div class="table-shell">
+		<div class="table-card">
+			<table class="area-table">
+				<thead class="table-head">
 					<tr>
 						<th
 							scope="col"
-							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide cursor-pointer select-none {sortField === 'name' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							class="table-th"
+							class:sort-active={sortField === 'name'}
+							tabindex="0"
 							onclick={() => toggleSort('name')}
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('name'); } }}
 						>
-							{singularLabel}{#if sortIcon('name')}&nbsp;<span class="text-blue-700">{sortIcon('name')}</span>{/if}
+							{singularLabel}{#if sortIcon('name')}&nbsp;<span class="sort-icon">{sortIcon('name')}</span>{/if}
 						</th>
 						<th
 							scope="col"
-							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'totalIncidents' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							class="table-th table-th-nowrap"
+							class:sort-active={sortField === 'totalIncidents'}
+							tabindex="0"
 							onclick={() => toggleSort('totalIncidents')}
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('totalIncidents'); } }}
 						>
-							Total Crashes{#if sortIcon('totalIncidents')}&nbsp;<span class="text-blue-700">{sortIcon('totalIncidents')}</span>{/if}
+							Total Crashes{#if sortIcon('totalIncidents')}&nbsp;<span class="sort-icon">{sortIcon('totalIncidents')}</span>{/if}
 						</th>
 						<th
 							scope="col"
-							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'totalFatal' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							class="table-th table-th-nowrap"
+							class:sort-active={sortField === 'totalFatal'}
+							tabindex="0"
 							onclick={() => toggleSort('totalFatal')}
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('totalFatal'); } }}
 						>
-							Fatal{#if sortIcon('totalFatal')}&nbsp;<span class="text-blue-700">{sortIcon('totalFatal')}</span>{/if}
+							Fatal{#if sortIcon('totalFatal')}&nbsp;<span class="sort-icon">{sortIcon('totalFatal')}</span>{/if}
 						</th>
 						<th
 							scope="col"
-							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'totalSeriousInjuries' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							class="table-th table-th-nowrap"
+							class:sort-active={sortField === 'totalSeriousInjuries'}
+							tabindex="0"
 							onclick={() => toggleSort('totalSeriousInjuries')}
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('totalSeriousInjuries'); } }}
 						>
-							Serious Inj.{#if sortIcon('totalSeriousInjuries')}&nbsp;<span class="text-blue-700">{sortIcon('totalSeriousInjuries')}</span>{/if}
+							Serious Inj.{#if sortIcon('totalSeriousInjuries')}&nbsp;<span class="sort-icon">{sortIcon('totalSeriousInjuries')}</span>{/if}
 						</th>
 						<th
 							scope="col"
-							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'avgPerYear' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							class="table-th table-th-nowrap"
+							class:sort-active={sortField === 'avgPerYear'}
+							tabindex="0"
 							onclick={() => toggleSort('avgPerYear')}
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('avgPerYear'); } }}
 						>
-							Avg/Year{#if sortIcon('avgPerYear')}&nbsp;<span class="text-blue-700">{sortIcon('avgPerYear')}</span>{/if}
+							Avg/Year{#if sortIcon('avgPerYear')}&nbsp;<span class="sort-icon">{sortIcon('avgPerYear')}</span>{/if}
 						</th>
 						<th
 							scope="col"
-							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'mostRecent' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							class="table-th table-th-nowrap"
+							class:sort-active={sortField === 'mostRecent'}
+							tabindex="0"
 							onclick={() => toggleSort('mostRecent')}
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('mostRecent'); } }}
 						>
-							Last Crash{#if sortIcon('mostRecent')}&nbsp;<span class="text-blue-700">{sortIcon('mostRecent')}</span>{/if}
+							Last Crash{#if sortIcon('mostRecent')}&nbsp;<span class="sort-icon">{sortIcon('mostRecent')}</span>{/if}
 						</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-100">
+				<tbody class="table-body">
 					{#each sortedStats as item (item.id)}
-						<tr class="hover:bg-blue-50 transition-colors">
-							<td class="px-4 py-3 text-sm font-medium text-gray-900">
+						<tr class="table-row">
+							<td class="table-cell table-cell-strong">
 								<a
 									href="{base}/{category}/{item.id}"
-									class="text-blue-700 hover:underline"
+									class="table-link"
 								>
 									{item.name}
 								</a>
 							</td>
-							<td class="px-4 py-3 text-sm text-gray-700 tabular-nums whitespace-nowrap">
+							<td class="table-cell table-num">
 								{item.totalIncidents.toLocaleString()}
 							</td>
-							<td class="px-4 py-3 text-sm font-semibold text-red-600 tabular-nums whitespace-nowrap">
+							<td class="table-cell table-num table-fatal">
 								{item.totalFatal}
 							</td>
-							<td class="px-4 py-3 text-sm text-gray-700 tabular-nums whitespace-nowrap">
+							<td class="table-cell table-num">
 								{item.totalSeriousInjuries}
 							</td>
-							<td class="px-4 py-3 text-sm text-gray-700 tabular-nums whitespace-nowrap">
+							<td class="table-cell table-num">
 								{item.avgPerYear.toFixed(1)}
 							</td>
-							<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+							<td class="table-cell table-date">
 								{#if item.mostRecent}
 									{@const d = parseAreaDate(item.mostRecent)}
-									<span class="block">{prettifyDate(d)}</span>
-									<span class="block italic text-gray-400">{currentAgeSimplified(d)}</span>
+									<span class="table-date-main">{prettifyDate(d)}</span>
+									<span class="table-date-sub">{currentAgeSimplified(d)}</span>
 								{:else}
 									N/A
 								{/if}
@@ -176,3 +194,194 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	.table-shell {
+		overflow-x: auto;
+	}
+
+	.table-card {
+		background: #fff;
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		overflow: hidden;
+		box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+	}
+
+	.table-head-skeleton {
+		background: #f9fafb;
+		border-bottom: 1px solid #e5e7eb;
+		padding: 0.75rem 1rem;
+	}
+
+	.skeleton-row {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid #f3f4f6;
+	}
+
+	.skeleton-line {
+		height: 1rem;
+		border-radius: 0.375rem;
+		background: #e5e7eb;
+		animation: pulse 1.2s ease-in-out infinite;
+	}
+
+	.skeleton-title {
+		width: 8rem;
+		height: 0.75rem;
+	}
+
+	.skeleton-wide {
+		width: 9rem;
+	}
+
+	.skeleton-medium {
+		width: 6rem;
+	}
+
+	.skeleton-narrow {
+		width: 3rem;
+	}
+
+	.skeleton-small {
+		width: 4rem;
+	}
+
+	.skeleton-smallest {
+		width: 3.5rem;
+	}
+
+	.skeleton-spacer {
+		margin-left: auto;
+	}
+
+	.error-card {
+		border-radius: 0.75rem;
+		border: 1px solid #fecaca;
+		background: #fef2f2;
+		padding: 0.75rem 1rem;
+	}
+
+	.error-text {
+		font-size: 0.875rem;
+		color: #b91c1c;
+	}
+
+	.empty-text {
+		padding: 2rem 0;
+		text-align: center;
+		font-size: 0.875rem;
+		color: #6b7280;
+	}
+
+	.area-table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+
+	.table-head {
+		background: #f9fafb;
+		border-bottom: 1px solid #e5e7eb;
+	}
+
+	.table-th {
+		padding: 0.75rem 1rem;
+		text-align: left;
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #6b7280;
+		cursor: pointer;
+		user-select: none;
+		transition: color 120ms ease;
+	}
+
+	.table-th:hover {
+		color: #1d4ed8;
+	}
+
+	.table-th-nowrap {
+		white-space: nowrap;
+	}
+
+	.sort-active {
+		color: #1d4ed8;
+	}
+
+	.sort-icon {
+		color: #1d4ed8;
+	}
+
+	.table-body {
+		border-top: 1px solid #f3f4f6;
+	}
+
+	.table-row {
+		transition: background-color 120ms ease;
+	}
+
+	.table-row:hover {
+		background: #eff6ff;
+	}
+
+	.table-cell {
+		padding: 0.75rem 1rem;
+		font-size: 0.875rem;
+		color: #374151;
+		white-space: nowrap;
+	}
+
+	.table-cell-strong {
+		font-weight: 500;
+		color: #111827;
+	}
+
+	.table-link {
+		color: #1d4ed8;
+		text-decoration: none;
+	}
+
+	.table-link:hover {
+		text-decoration: underline;
+	}
+
+	.table-num {
+		font-variant-numeric: tabular-nums;
+	}
+
+	.table-fatal {
+		color: #dc2626;
+		font-weight: 600;
+	}
+
+	.table-date {
+		font-size: 0.75rem;
+		color: #6b7280;
+	}
+
+	.table-date-main {
+		display: block;
+	}
+
+	.table-date-sub {
+		display: block;
+		font-style: italic;
+		color: #9ca3af;
+	}
+
+	@keyframes pulse {
+		0% {
+			opacity: 0.85;
+		}
+		50% {
+			opacity: 0.4;
+		}
+		100% {
+			opacity: 0.85;
+		}
+	}
+</style>

@@ -14,7 +14,7 @@
 	let mapEl: HTMLDivElement | undefined = $state(undefined);
 	const MapperInstance = new Mapper();
 
-	const crashDateTitle = $derived(() => {
+	const crashDateTitle = $derived.by(() => {
 		const d = incident.date;
 		return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' Crash';
 	});

@@ -90,12 +90,12 @@
 	});
 </script>
 
-<div class="flex flex-col gap-6">
+<div class="location-detail">
 	<!-- Summary stats -->
 	<LocationSummary {incidents} {location} summary={allTimeSummary} />
 
 	<!-- Map -->
-	<div class="rounded-xl overflow-hidden border border-gray-200 mb-6">
+	<div class="map-card">
 		<MapContainer
 			bind:this={mapRef}
 			selectedLocation={location}
@@ -108,13 +108,13 @@
 
 	<!-- Pagination + incident list -->
 	{#if totalIncidents > 0}
-		<div class="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-4 py-3">
-			<span class="text-sm text-gray-600">
+		<div class="pagination-bar">
+			<span class="pagination-text">
 				Showing {rangeStart}–{rangeEnd} of {totalIncidents} incidents
 			</span>
-			<div class="flex items-center gap-2">
+			<div class="pager-controls">
 				<button
-					class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+					class="pager-button pager-nav"
 					disabled={!hasPrev || loading}
 					onclick={goToPrev}
 				>
@@ -122,10 +122,10 @@
 				</button>
 				{#each pageNumbers as pg}
 					{#if pg === null}
-						<span class="px-1 text-sm text-gray-400 self-center">…</span>
+						<span class="pager-ellipsis">…</span>
 					{:else}
 						<button
-							class="px-3 py-1.5 rounded-lg text-sm border transition-colors min-w-[2.25rem] disabled:cursor-not-allowed"
+							class="pager-button pager-page"
 							class:active-page={pg === currentPage}
 							class:inactive-page={pg !== currentPage}
 							disabled={loading}
@@ -136,7 +136,7 @@
 					{/if}
 				{/each}
 				<button
-					class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+					class="pager-button pager-nav"
 					disabled={!hasNext || loading}
 					onclick={goToNext}
 				>
@@ -147,16 +147,16 @@
 	{/if}
 
 	{#if loading}
-		<div class="space-y-3">
+		<div class="loading-stack">
 			{#each Array(5) as _}
-				<div class="rounded-xl border border-gray-200 bg-white p-4">
-					<div class="h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
-					<div class="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+				<div class="loading-card">
+					<div class="loading-line loading-line-wide"></div>
+					<div class="loading-line loading-line-narrow"></div>
 				</div>
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm font-semibold text-gray-700 mb-3">
+		<p class="incident-heading">
 			{#if totalPages > 1}
 				Incidents &mdash; Page {currentPage + 1} of {totalPages}
 			{:else}
@@ -165,8 +165,8 @@
 		</p>
 
 		{#if incidents.length === 0}
-			<div class="text-center py-12 text-gray-400">
-				<p class="text-sm">No incidents found for this location.</p>
+			<div class="empty-state">
+				<p class="empty-text">No incidents found for this location.</p>
 			</div>
 		{:else}
 			<IncidentList
@@ -180,9 +180,9 @@
 
 	<!-- Bottom pagination (only when there are multiple pages) -->
 	{#if totalPages > 1 && !loading}
-		<div class="flex items-center gap-2 justify-center mt-6">
+		<div class="pager-footer">
 			<button
-				class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+				class="pager-button pager-nav"
 				disabled={!hasPrev || loading}
 				onclick={goToPrev}
 			>
@@ -190,10 +190,10 @@
 			</button>
 			{#each pageNumbers as pg}
 				{#if pg === null}
-					<span class="px-1 text-sm text-gray-400 self-center">…</span>
+					<span class="pager-ellipsis">…</span>
 				{:else}
 					<button
-						class="px-3 py-1.5 rounded-lg text-sm border transition-colors min-w-[2.25rem] disabled:cursor-not-allowed"
+						class="pager-button pager-page"
 						class:active-page={pg === currentPage}
 						class:inactive-page={pg !== currentPage}
 						disabled={loading}
@@ -204,7 +204,7 @@
 				{/if}
 			{/each}
 			<button
-				class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+				class="pager-button pager-nav"
 				disabled={!hasNext || loading}
 				onclick={goToNext}
 			>
@@ -215,6 +215,126 @@
 </div>
 
 <style>
+	.location-detail {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.map-card {
+		border-radius: 0.75rem;
+		overflow: hidden;
+		border: 1px solid #e5e7eb;
+		margin-bottom: 1.5rem;
+		background: #fff;
+	}
+
+	.pagination-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1rem;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.75rem;
+		background: #fff;
+	}
+
+	.pagination-text {
+		font-size: 0.875rem;
+		color: #4b5563;
+	}
+
+	.pager-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.pager-button {
+		padding: 0.375rem 0.75rem;
+		border-radius: 0.5rem;
+		font-size: 0.875rem;
+		border: 1px solid #d1d5db;
+		background: #fff;
+		transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+	}
+
+	.pager-button:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.pager-nav:hover:not(:disabled) {
+		border-color: #3b82f6;
+		color: #1d4ed8;
+	}
+
+	.pager-page {
+		min-width: 2.25rem;
+	}
+
+	.pager-ellipsis {
+		padding: 0 0.25rem;
+		font-size: 0.875rem;
+		color: #9ca3af;
+		align-self: center;
+	}
+
+	.loading-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.loading-card {
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		background: #fff;
+		padding: 1rem;
+	}
+
+	.loading-line {
+		background: #e5e7eb;
+		border-radius: 0.375rem;
+		animation: pulse 1.2s ease-in-out infinite;
+	}
+
+	.loading-line-wide {
+		height: 1rem;
+		width: 75%;
+		margin-bottom: 0.5rem;
+	}
+
+	.loading-line-narrow {
+		height: 0.75rem;
+		width: 50%;
+	}
+
+	.incident-heading {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #374151;
+		margin-bottom: 0.75rem;
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: 3rem 0;
+		color: #9ca3af;
+	}
+
+	.empty-text {
+		font-size: 0.875rem;
+	}
+
+	.pager-footer {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		margin-top: 1.5rem;
+	}
+
 	.active-page {
 		background-color: #1d4ed8;
 		color: white;
@@ -228,5 +348,17 @@
 	.inactive-page:hover {
 		border-color: rgb(59 130 246);
 		color: #1d4ed8;
+	}
+
+	@keyframes pulse {
+		0% {
+			opacity: 0.8;
+		}
+		50% {
+			opacity: 0.4;
+		}
+		100% {
+			opacity: 0.8;
+		}
 	}
 </style>
