@@ -199,14 +199,17 @@
 
 <div id="map"></div>
 
-<style lang="postcss">
-	@reference "$lib/styles/app.css";
-
-	/* Leaflet requires a height to be set explicitly if not using Tailwind classes or if they don't propagate */
+<style>
+	/* Leaflet requires a height to be set explicitly — cannot use Tailwind utilities on Leaflet-injected elements */
 	:global(#map) {
-		height: 400px;
-		z-index: 0; /* Ensure map stays below autocomplete */
-		@apply h-96 w-full rounded-md border border-gray-200 shadow-sm mb-4 z-0;
+		height: 24rem; /* h-96 */
+		width: 100%; /* w-full */
+		border-radius: 0.375rem; /* rounded-md */
+		border-width: 1px;
+		border-color: rgb(229 231 235); /* border-gray-200 */
+		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
+		margin-bottom: 1rem; /* mb-4 */
+		z-index: 0;
 	}
 
 	/* Incident markers — injected by Leaflet outside Svelte scope, must be :global */

@@ -214,14 +214,19 @@
 	{/if}
 </div>
 
-<style lang="postcss">
-	@reference "$lib/styles/app.css";
-
+<style>
 	.active-page {
-		@apply bg-blue-700 text-white border-blue-700;
+		background-color: #1d4ed8;
+		color: white;
+		border-color: #1d4ed8;
 	}
 
 	.inactive-page {
-		@apply border-gray-300 hover:border-blue-500 hover:text-blue-700;
+		border-color: rgb(209 213 219);
+	}
+
+	.inactive-page:hover {
+		border-color: rgb(59 130 246);
+		color: #1d4ed8;
 	}
 </style>

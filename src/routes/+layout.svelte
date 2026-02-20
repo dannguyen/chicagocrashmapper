@@ -20,14 +20,17 @@
 	<SiteFooter />
 </div>
 
-<style lang="postcss">
-	@reference "$lib/styles/app.css";
-
+<style>
 	.app-shell {
-		@apply min-h-screen flex flex-col bg-gray-50 font-sans;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		background-color: rgb(249 250 251); /* gray-50 */
+		font-family: 'Inter', system-ui, -apple-system, sans-serif;
 	}
 
 	.app-shell.env-dev {
-		@apply outline outline-4 outline-yellow-400 outline-offset-[-4px];
+		outline: 4px solid rgb(250 204 21); /* yellow-400 */
+		outline-offset: -4px;
 	}
 </style>
