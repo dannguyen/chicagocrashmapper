@@ -45,9 +45,17 @@
 			'USAGE UNKNOWN',
 			'UNKNOWN',
 			'DEPLOYMENT UNKNOWN',
-			'NOT EJECTED'
+			'NOT EJECTED',
+			'NOT DEPLOYED',
+			'CLEAR',
+			'NO OBSTRUCTION',
+			'NORMAL',
+			'APPEARED NORMAL',
+			'HAD NOT BEEN DRINKING',
+			'STRAIGHT AHEAD',
+			'DROVE STRAIGHT'
 		];
-		return !skip.includes(val.toUpperCase());
+		return !skip.includes(val.toUpperCase().trim());
 	}
 
 	const address = $derived(
@@ -243,6 +251,12 @@
 						{#if vh.reportableType}
 							<span class="vehicle-tag">{vh.reportableType}</span>
 						{/if}
+						{#if isRelevantDetail(vh.travel_direction)}
+							<span class="vehicle-tag">↑ {vh.travel_direction}</span>
+						{/if}
+						{#if isRelevantDetail(vh.maneuver)}
+							<span class="vehicle-tag">{vh.maneuver}</span>
+						{/if}
 					</div>
 					{#each vh.passengers as p}
 						<div class="person-row">
@@ -256,11 +270,23 @@
 							{#if isRelevantDetail(p.safety_equipment)}
 								<span class="person-extra">Safety: {p.safety_equipment}</span>
 							{/if}
+							{#if isRelevantDetail(p.airbag_deployed)}
+								<span class="person-extra">Airbag: {p.airbag_deployed}</span>
+							{/if}
 							{#if isRelevantDetail(p.ejection)}
 								<span class="person-extra">Ejection: {p.ejection}</span>
 							{/if}
 							{#if isRelevantDetail(p.physical_condition)}
 								<span class="person-extra">Condition: {p.physical_condition}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_action)}
+								<span class="person-extra">Action: {p.driver_action}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_vision)}
+								<span class="person-extra">Visibility: {p.driver_vision}</span>
+							{/if}
+							{#if isRelevantDetail(p.hospital)}
+								<span class="person-extra">Hospital: {p.hospital}</span>
 							{/if}
 						</div>
 					{/each}
@@ -284,11 +310,23 @@
 							{#if isRelevantDetail(p.safety_equipment)}
 								<span class="person-extra">Safety: {p.safety_equipment}</span>
 							{/if}
+							{#if isRelevantDetail(p.airbag_deployed)}
+								<span class="person-extra">Airbag: {p.airbag_deployed}</span>
+							{/if}
 							{#if isRelevantDetail(p.ejection)}
 								<span class="person-extra">Ejection: {p.ejection}</span>
 							{/if}
 							{#if isRelevantDetail(p.physical_condition)}
 								<span class="person-extra">Condition: {p.physical_condition}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_action)}
+								<span class="person-extra">Action: {p.driver_action}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_vision)}
+								<span class="person-extra">Visibility: {p.driver_vision}</span>
+							{/if}
+							{#if isRelevantDetail(p.hospital)}
+								<span class="person-extra">Hospital: {p.hospital}</span>
 							{/if}
 						</div>
 					{/each}
