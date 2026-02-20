@@ -29,7 +29,27 @@
 	</div>
 
 	{#if loading}
-		<p class="py-8 text-center text-sm text-gray-500">Loading...</p>
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+			{#each Array(2) as _}
+				<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+					<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
+						<div class="h-3 bg-gray-200 rounded w-40 animate-pulse"></div>
+					</div>
+					<ul class="divide-y divide-gray-100">
+						{#each Array(10) as _}
+							<li class="flex items-center gap-4 px-5 py-3">
+								<div class="h-6 bg-gray-200 rounded animate-pulse w-8 shrink-0"></div>
+								<div class="flex-1 min-w-0 flex flex-col gap-1.5">
+									<div class="h-4 bg-gray-200 rounded animate-pulse w-4/5"></div>
+									<div class="h-3 bg-gray-200 rounded animate-pulse w-24"></div>
+								</div>
+								<div class="h-5 bg-gray-200 rounded-full animate-pulse w-16 shrink-0"></div>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/each}
+		</div>
 	{:else if error}
 		<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
 			<p class="text-sm text-red-700">{error}</p>

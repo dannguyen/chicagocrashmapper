@@ -99,7 +99,7 @@
 <div class="flex flex-col lg:flex-row min-h-[calc(100vh-8rem)] gap-0" id="main-results-section">
 
 	<!-- LEFT PANEL: controls + list -->
-	<div class="lg:w-[40%] flex flex-col overflow-y-auto lg:max-h-[calc(100vh-8rem)] border-r border-gray-200 bg-gray-50">
+	<div class="order-2 lg:order-1 lg:w-[40%] flex flex-col overflow-y-auto lg:max-h-[calc(100vh-8rem)] border-r border-gray-200 bg-gray-50">
 
 		<!-- Filters collapsible -->
 		<div class="p-4 border-b border-gray-200 bg-white">
@@ -116,7 +116,7 @@
 				</p>
 
 				<details class="group">
-					<summary class="text-sm font-medium text-gray-700 cursor-pointer select-none list-none flex items-center gap-1 hover:text-blue-700 transition-colors">
+					<summary class="text-sm font-medium text-gray-700 cursor-pointer select-none list-none flex items-center gap-1 hover:text-blue-700 transition-colors py-2 px-3 min-h-[44px] -mx-3">
 						<svg class="w-3.5 h-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 						</svg>
@@ -134,7 +134,7 @@
 									min="1"
 									value={appState.maxDistance}
 									oninput={handleMaxDistanceChange}
-									class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+									class="w-full px-2 h-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 								/>
 							</div>
 						{/if}
@@ -148,7 +148,7 @@
 								min="1"
 								value={appState.maxDaysAgo}
 								oninput={handleMaxDaysAgoChange}
-								class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								class="w-full px-2 h-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 							/>
 						</div>
 						<div>
@@ -160,7 +160,7 @@
 								type="date"
 								value={formatDateInput(appState.selectedDate)}
 								oninput={handleSelectedDateChange}
-								class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								class="w-full px-2 h-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 							/>
 						</div>
 					</div>
@@ -235,8 +235,8 @@
 		{/if}
 	</div>
 
-	<!-- RIGHT PANEL: map (desktop), or stacked between filters+list (mobile) -->
-	<div class="order-first lg:order-none lg:flex-1 h-64 sm:h-80 lg:h-auto lg:min-h-[calc(100vh-8rem)]">
+	<!-- RIGHT PANEL: map (desktop), or stacked above list (mobile) -->
+	<div class="order-1 lg:order-2 lg:flex-1 h-72 sm:h-96 lg:h-auto lg:min-h-[calc(100vh-8rem)]">
 		<MapContainer
 			selectedLocation={appState.selectedLocation}
 			incidents={appState.incidents}

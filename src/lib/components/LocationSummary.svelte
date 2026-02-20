@@ -114,29 +114,29 @@
 		<!-- Stat chips row -->
 		<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
 			<div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-				<div class="text-2xl font-bold text-blue-700">{stats.total}</div>
+				<div class="text-2xl font-bold text-blue-700 leading-tight truncate">{stats.total}</div>
 				<div class="text-xs text-gray-500 mt-1">Total Incidents</div>
 			</div>
 
 			<div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-				<div class="text-2xl font-bold text-red-600">{stats.fatalCount}</div>
+				<div class="text-2xl font-bold text-red-600 leading-tight truncate">{stats.fatalCount}</div>
 				<div class="text-xs text-gray-500 mt-1">Fatal</div>
 			</div>
 
 			<div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-				<div class="text-2xl font-bold text-purple-600">{stats.incapCount}</div>
+				<div class="text-2xl font-bold text-purple-600 leading-tight truncate">{stats.incapCount}</div>
 				<div class="text-xs text-gray-500 mt-1">Serious Injury</div>
 			</div>
 
-			<div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+			<div class="bg-white rounded-xl border border-gray-200 p-4 text-center overflow-hidden">
 				{#if stats.yearRange}
-					<div class="text-2xl font-bold text-blue-700">{stats.yearRange}</div>
+					<div class="text-2xl font-bold text-blue-700 leading-tight truncate" title={stats.yearRange}>{stats.yearRange}</div>
 					<div class="text-xs text-gray-500 mt-1">Year Range</div>
 				{:else if stats.oldest && stats.mostRecent}
-					<div class="text-sm font-bold text-blue-700">{shortDate(stats.oldest)}</div>
+					<div class="text-sm font-bold text-blue-700 leading-tight truncate">{shortDate(stats.oldest)}</div>
 					<div class="text-xs text-gray-500 mt-1">to {shortDate(stats.mostRecent)}</div>
 				{:else}
-					<div class="text-2xl font-bold text-gray-400">—</div>
+					<div class="text-2xl font-bold text-gray-400 leading-tight">—</div>
 					<div class="text-xs text-gray-500 mt-1">Date Range</div>
 				{/if}
 			</div>

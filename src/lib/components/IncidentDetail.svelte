@@ -157,7 +157,7 @@
 
 {#if incident}
 	<!-- ── Hero card ─────────────────────────────────────────────────────────── -->
-	<div class="rounded-xl border-l-4 border border-gray-200 bg-white p-6 mb-6 shadow-sm {heroBorderClass(severity)}">
+	<div class="rounded-xl border-l-4 border border-gray-200 bg-white p-4 sm:p-6 mb-6 shadow-sm {heroBorderClass(severity)}">
 		<div class="flex items-start justify-between gap-4">
 			<div class="flex-1 min-w-0">
 				<!-- Severity badge + optional hit-and-run -->
@@ -173,10 +173,10 @@
 				</div>
 
 				<!-- Primary cause -->
-				<p class="text-xl font-semibold text-gray-900 mt-2">{incident.primary_cause}</p>
+				<p class="text-xl font-semibold text-gray-900 mt-2 break-words">{incident.primary_cause}</p>
 
 				<!-- Location line -->
-				<p class="text-sm text-gray-600 mt-1">
+				<p class="text-sm text-gray-600 mt-1 break-words">
 					{address}{#if ward || neighborhood}&ensp;·&ensp;{/if}{#if ward}<a href="/wards/{ward.id}" class="hover:underline text-blue-600">{ward.name}</a>{/if}{#if ward && neighborhood}&ensp;·&ensp;{/if}{#if neighborhood}<a href="/neighborhoods/{neighborhood.id}" class="hover:underline text-blue-600">{neighborhood.name}</a>{/if}
 				</p>
 			</div>
@@ -198,14 +198,14 @@
 			{#if incident.weather_condition}
 				<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
 					<span class="text-gray-500">Weather</span>
-					<span class="text-gray-900 text-right">{incident.weather_condition}</span>
+					<span class="text-gray-900 text-right break-words">{incident.weather_condition}</span>
 				</div>
 			{/if}
 
 			{#if incident.trafficway_type}
 				<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
 					<span class="text-gray-500">Trafficway</span>
-					<span class="text-gray-900 text-right">{incident.trafficway_type}</span>
+					<span class="text-gray-900 text-right break-words">{incident.trafficway_type}</span>
 				</div>
 			{/if}
 
@@ -218,13 +218,13 @@
 
 			<div class="flex justify-between py-1.5 border-b border-gray-100 last:border-0 text-sm">
 				<span class="text-gray-500">Crash type</span>
-				<span class="text-gray-900 text-right">{incident.category}</span>
+				<span class="text-gray-900 text-right break-words">{incident.category}</span>
 			</div>
 
 			{#if showSecondaryCause}
 				<div class="flex justify-between py-1.5 last:border-0 text-sm">
 					<span class="text-gray-500">Secondary cause</span>
-					<span class="text-gray-900 text-right">{incident.secondary_cause}</span>
+					<span class="text-gray-900 text-right break-words">{incident.secondary_cause}</span>
 				</div>
 			{/if}
 		</div>
@@ -235,7 +235,7 @@
 
 			<div class="flex justify-between py-1.5 border-b border-gray-100 text-sm">
 				<span class="text-gray-500">Address</span>
-				<span class="text-gray-900 text-right">{address}</span>
+				<span class="text-gray-900 text-right break-words ml-2">{address}</span>
 			</div>
 
 			{#if ward}
@@ -276,7 +276,7 @@
 			<div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
 				{#each incident.vehicles as vh}
 					{#each vh.passengers as p}
-						<div class="flex items-center justify-between px-4 py-3 gap-4">
+						<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
 							<!-- Left: role + vehicle info -->
 							<div class="flex flex-col min-w-0">
 								<div class="flex items-center gap-2 flex-wrap">
@@ -326,7 +326,7 @@
 				{/each}
 
 				{#each incident.non_passengers as p}
-					<div class="flex items-center justify-between px-4 py-3 gap-4">
+					<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
 						<!-- Left: role + description -->
 						<div class="flex flex-col min-w-0">
 							<div class="flex items-center gap-2 flex-wrap">

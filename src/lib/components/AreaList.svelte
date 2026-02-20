@@ -64,7 +64,23 @@
 </script>
 
 {#if loading}
-	<p class="py-8 text-center text-sm text-gray-500">Loading...</p>
+	<div class="overflow-x-auto">
+		<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+			<div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+				<div class="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+			</div>
+			{#each Array(8) as _}
+				<div class="flex items-center gap-4 px-4 py-3 border-b border-gray-100">
+					<div class="h-4 bg-gray-200 rounded animate-pulse w-36"></div>
+					<div class="h-4 bg-gray-200 rounded animate-pulse w-20 ml-auto"></div>
+					<div class="h-4 bg-gray-200 rounded animate-pulse w-12"></div>
+					<div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+					<div class="h-4 bg-gray-200 rounded animate-pulse w-14"></div>
+					<div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+				</div>
+			{/each}
+		</div>
+	</div>
 {:else if error}
 	<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
 		<p class="text-sm text-red-700">{error}</p>

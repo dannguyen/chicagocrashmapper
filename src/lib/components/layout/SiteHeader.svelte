@@ -102,7 +102,7 @@
 
 	/* Mobile hamburger */
 	.mobile-menu-btn {
-		@apply md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors;
+		@apply md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors p-2.5 -mr-2;
 	}
 
 	.menu-icon {
@@ -115,7 +115,7 @@
 	}
 
 	.search-bar-inner {
-		@apply max-w-7xl mx-auto px-4 md:px-6 py-2;
+		@apply max-w-7xl mx-auto px-4 md:px-6 py-2 min-w-0;
 	}
 
 	/* Mobile nav drawer */
@@ -124,6 +124,6 @@
 	}
 
 	.mobile-nav-link {
-		@apply px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-700 transition-colors no-underline border-b border-gray-100 last:border-b-0;
+		@apply px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-700 transition-colors no-underline border-b border-gray-100 last:border-b-0 min-h-[44px] flex items-center;
 	}
 </style>
