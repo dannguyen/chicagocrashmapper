@@ -24,7 +24,7 @@
 </script>
 
 {#if incident}
-	<article class="incident-detail" incident-id={incident.crash_record_id}>
+	<article class="incident-detail" data-incident-id={incident.crash_record_id}>
 		<!-- Date + age -->
 		<div class="incident-date">
 			<time datetime={incident.date.toISOString()}>{incident.prettyDate}</time>

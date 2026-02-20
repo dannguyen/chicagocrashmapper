@@ -1,13 +1,35 @@
 <script lang="ts">
 	import type { Incident } from '$lib/incident';
 	import type { Location } from '$lib/location';
+	import type { IncidentSummary } from '$lib/db/types';
 
-	let { incidents, location } = $props<{
+	let { incidents, location, summary = null } = $props<{
 		incidents: Incident[];
 		location: Location | null;
+		summary?: IncidentSummary | null;
 	}>();
 
 	let stats = $derived.by(() => {
+		// If a pre-computed all-time summary is provided, use it directly.
+		if (summary) {
+			const topCauses = summary.top_causes.slice(0, 5).map((t: { cause: string; count: number }) => [t.cause, t.count] as [string, number]);
+			const maxCauseCount = topCauses[0]?.[1] ?? 1;
+			const byYear = Object.entries(summary.by_year).sort((a, b) => a[0].localeCompare(b[0]));
+			const maxYearCount = byYear.reduce((m, [, c]) => Math.max(m, c as number), 1);
+			return {
+				total: summary.total,
+				fatalCount: summary.fatal_injuries,
+				incapCount: summary.incapacitating_injuries,
+				topCauses,
+				maxCauseCount,
+				mostRecent: null as Date | null,
+				oldest: null as Date | null,
+				byYear,
+				maxYearCount
+			};
+		}
+
+		// Otherwise compute from the passed incidents array.
 		if (incidents.length === 0) return null;
 
 		const total = incidents.length;
@@ -31,7 +53,6 @@
 		const mostRecent = dates[0];
 		const oldest = dates[dates.length - 1];
 
-		// Compute incidents by year
 		const yearCounts = new Map<string, number>();
 		for (const inc of incidents) {
 			const yr = String(inc.date.getFullYear());
@@ -71,10 +92,12 @@
 				<span class="stat-num">{stats.incapCount}</span>
 				<span class="stat-label">serious injury</span>
 			</div>
+			{#if stats.oldest && stats.mostRecent}
 			<div class="stat-block stat-dates">
 				<span class="stat-num date-range">{shortDate(stats.oldest)}</span>
 				<span class="stat-label">to {shortDate(stats.mostRecent)}</span>
 			</div>
+		{/if}
 		</div>
 
 		{#if stats.topCauses.length > 0}
@@ -99,7 +122,7 @@
 					<div class="cause-row">
 						<div class="year-label">{year}</div>
 						<div class="cause-bar-track">
-							<div class="year-bar" style="width: {(count / stats.maxYearCount) * 100}%"></div>
+							<div class="year-bar" style="width: {((count as number) / stats.maxYearCount) * 100}%"></div>
 						</div>
 						<div class="cause-count">{count}</div>
 					</div>

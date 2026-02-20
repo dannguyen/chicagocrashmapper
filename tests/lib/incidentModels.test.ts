@@ -180,6 +180,7 @@ describe('Vehicle', () => {
 describe('Incident vehicles and non_passengers parsing', () => {
 	it('parses JSON string vehicles/non_passengers into instances', () => {
 		const incident = new Incident({
+			crash_record_id: 'TEST-1',
 			longitude: -87.7,
 			latitude: 41.9,
 			injuries_fatal: 0,
@@ -200,6 +201,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 	it('handles array inputs and bad JSON safely', () => {
 		// array input
 		const incidentFromArrays = new Incident({
+			crash_record_id: 'TEST-2',
 			longitude: 0,
 			latitude: 0,
 			injuries_fatal: 0,
@@ -214,6 +216,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 
 		// bad JSON should not throw
 		const incidentBadJson = new Incident({
+			crash_record_id: 'TEST-3',
 			longitude: 0,
 			latitude: 0,
 			injuries_fatal: 0,
@@ -229,6 +232,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 
 	it('formats title and distance with fallbacks', () => {
 		const incident = new Incident({
+			crash_record_id: 'TEST-4',
 			longitude: -87.7,
 			latitude: 41.9,
 			injuries_fatal: 0,
@@ -248,6 +252,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 
 	it('builds title from injury counts and location fields', () => {
 		const incident = new Incident({
+			crash_record_id: 'TEST-5',
 			longitude: -87.7,
 			latitude: 41.9,
 			injuries_fatal: 1,

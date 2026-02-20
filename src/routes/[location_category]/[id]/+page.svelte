@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Dashboard from '$lib/components/Dashboard.svelte';
+	import LocationDetail from '$lib/components/LocationDetail.svelte';
 	import { base } from '$app/paths';
 	import type { PageData } from './$types';
 
@@ -14,7 +14,7 @@
 	/ {location.name}
 </h1>
 
-<Dashboard initialLocationId={location.id} />
+<LocationDetail {location} />
 
 <style lang="postcss">
 	@reference "$lib/styles/app.css";
