@@ -22,68 +22,61 @@
 	});
 </script>
 
-<div class="page-container">
-	<h1 class="page-title">Top Intersections</h1>
+<div class="mx-auto max-w-7xl px-4 py-8">
+	<div class="mb-6">
+		<h1 class="text-2xl font-bold text-gray-900">Dangerous Intersections</h1>
+		<p class="mt-1 text-sm text-gray-500">Chicago intersections with the most crashes</p>
+	</div>
 
 	{#if loading}
-		<div class="loading-container">
-			<div class="spinner"></div>
-			<p class="loading-text">Loading intersection data...</p>
-		</div>
+		<p class="py-8 text-center text-sm text-gray-500">Loading...</p>
 	{:else if error}
-		<div class="error-container">
-			<p class="error-text">{error}</p>
+		<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+			<p class="text-sm text-red-700">{error}</p>
 		</div>
 	{:else}
-		<div class="lists-grid">
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 			<!-- Most Incidents List -->
-			<div class="list-card">
-				<div class="card-header">
-					<h2 class="card-title">Most Incidents (within 500ft)</h2>
+			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
+					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Most Incidents (within 500ft)</h2>
 				</div>
-				<ul class="stats-list">
+				<ul class="divide-y divide-gray-100">
 					{#each topByCount as item, i}
-						<li class="list-item">
-							<div class="item-content">
-								<div class="item-main">
-									<span class="rank-badge">{i + 1}</span>
-									<a href="{base}/intersections/{item.id}" class="location-link">
-										{item.name}
-									</a>
-								</div>
-								<span class="count-badge">
-									{item.count} incidents
-								</span>
+						<li class="flex items-center gap-4 px-5 py-3 hover:bg-blue-50 transition-colors">
+							<span class="text-2xl font-bold text-gray-300 w-8 shrink-0 tabular-nums">{i + 1}</span>
+							<div class="min-w-0 flex-1">
+								<a href="{base}/intersections/{item.id}" class="font-semibold text-gray-900 hover:text-blue-700 hover:underline text-sm leading-snug block truncate">
+									{item.name}
+								</a>
+								<span class="text-sm text-gray-600">{item.count} crashes</span>
 							</div>
+							<span class="shrink-0 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+								{item.count} crashes
+							</span>
 						</li>
 					{/each}
 				</ul>
 			</div>
 
 			<!-- Most Recent List -->
-			<div class="list-card">
-				<div class="card-header">
-					<h2 class="card-title">Most Recent Incidents</h2>
+			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
+					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Most Recent Incidents</h2>
 				</div>
-				<ul class="stats-list">
+				<ul class="divide-y divide-gray-100">
 					{#each topByRecency as item, i}
-						<li class="list-item">
-							<div class="item-content">
-								<div class="item-main">
-									<span class="rank-badge">{i + 1}</span>
-									<div class="location-details">
-										<a href="{base}/intersections/{item.id}" class="location-link">
-											{item.name}
-										</a>
-										<span class="detail-subtext">
-											Approx. {item.distance} ft from incident
-										</span>
-									</div>
-								</div>
-								<span class="date-text">
-									{item.mostRecentDate}
-								</span>
+						<li class="flex items-center gap-4 px-5 py-3 hover:bg-blue-50 transition-colors">
+							<span class="text-2xl font-bold text-gray-300 w-8 shrink-0 tabular-nums">{i + 1}</span>
+							<div class="min-w-0 flex-1">
+								<a href="{base}/intersections/{item.id}" class="font-semibold text-gray-900 hover:text-blue-700 hover:underline text-sm leading-snug block truncate">
+									{item.name}
+								</a>
+								<span class="text-xs text-gray-500">Approx. {item.distance} ft from incident</span>
 							</div>
+							<span class="shrink-0 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+								{item.mostRecentDate}
+							</span>
 						</li>
 					{/each}
 				</ul>
@@ -91,91 +84,3 @@
 		</div>
 	{/if}
 </div>
-
-<style lang="postcss">
-	@reference "$lib/styles/app.css";
-
-	.page-container {
-		@apply mx-auto max-w-7xl p-4;
-	}
-
-	.page-title {
-		@apply mb-6 text-3xl font-bold;
-	}
-
-	.loading-container {
-		@apply flex flex-col items-center justify-center p-12;
-	}
-
-	.spinner {
-		@apply mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent;
-	}
-
-	.loading-text {
-		@apply text-xl text-gray-500;
-	}
-
-	.error-container {
-		@apply rounded-md bg-red-50 p-4;
-	}
-
-	.error-text {
-		@apply text-red-700;
-	}
-
-	.lists-grid {
-		@apply grid grid-cols-1 gap-8 md:grid-cols-2;
-	}
-
-	.list-card {
-		@apply overflow-hidden rounded-lg border border-gray-200 shadow-sm;
-	}
-
-	.card-header {
-		@apply bg-gray-50 px-6 py-4 border-b border-gray-200;
-	}
-
-	.card-title {
-		@apply text-lg font-semibold text-gray-800;
-	}
-
-	.stats-list {
-		@apply divide-y divide-gray-200 bg-white;
-	}
-
-	.list-item {
-		@apply p-4 hover:bg-gray-50;
-	}
-
-	.item-content {
-		@apply flex flex-col items-start gap-2;
-	}
-
-	.item-main {
-		@apply flex items-center gap-3;
-	}
-
-	.rank-badge {
-		@apply flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600;
-	}
-
-	.location-link {
-		@apply font-medium text-blue-600 hover:text-blue-800;
-	}
-
-	.count-badge {
-		@apply rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800;
-	}
-
-	.location-details {
-		@apply flex flex-col;
-	}
-
-	.detail-subtext {
-		@apply text-xs text-gray-500;
-	}
-
-	.date-text {
-		@apply text-sm font-medium text-gray-600;
-	}
-</style>

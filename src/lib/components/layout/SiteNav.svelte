@@ -13,8 +13,7 @@
 	}
 </script>
 
-<nav class="navigation">
-	<div class="search-label">Search crashes by neighborhood, ward, or intersection</div>
+<nav class="site-nav" aria-label="Search navigation">
 	<div class="search-row">
 		<div class="search-wrapper">
 			<LocationSearch onSelect={onLocationSelectGlobal} />
@@ -25,6 +24,10 @@
 			disabled={appState.geoLoading}
 			title="Find crashes near your current location"
 		>
+			<svg class="near-me-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+				<circle cx="12" cy="12" r="3" />
+				<path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+			</svg>
 			{#if appState.geoLoading}
 				Locating...
 			{:else}
@@ -35,35 +38,17 @@
 	{#if appState.geoError}
 		<p class="geo-error">{appState.geoError}</p>
 	{/if}
-	<ul class="navigation-items">
-		<li class="nav-link">
-			<a href="{base}/">Home</a>
-		</li>
-		<li class="nav-link">
-			<a href="{base}/neighborhoods">Neighborhoods</a>
-		</li>
-		<li class="nav-link">
-			<a href="{base}/wards">Wards</a>
-		</li>
-		<li class="nav-link">
-			<a href="{base}/intersections">Intersections</a>
-		</li>
-	</ul>
 </nav>
 
 <style lang="postcss">
 	@reference "$lib/styles/app.css";
 
-	.navigation {
+	.site-nav {
 		@apply w-full;
 	}
 
-	.search-label {
-		@apply text-sm text-gray-600 text-center mb-1;
-	}
-
 	.search-row {
-		@apply flex items-stretch gap-2 max-w-lg mx-auto mb-2;
+		@apply flex items-stretch gap-2;
 	}
 
 	.search-wrapper {
@@ -71,22 +56,14 @@
 	}
 
 	.near-me-btn {
-		@apply px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 transition-colors;
+		@apply inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 transition-colors;
+	}
+
+	.near-me-icon {
+		@apply w-4 h-4 shrink-0;
 	}
 
 	.geo-error {
-		@apply text-xs text-red-600 text-center mb-1;
-	}
-
-	.navigation-items {
-		@apply flex flex-row flex-wrap justify-center gap-4;
-	}
-
-	li.nav-link {
-		@apply text-blue-600;
-	}
-
-	.nav-link a {
-		@apply hover:text-purple-600 font-medium transition-colors;
+		@apply mt-1.5 text-xs text-red-600;
 	}
 </style>

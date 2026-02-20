@@ -98,7 +98,7 @@
 			case 'neighborhood':
 				return { label: 'Neighborhood', classes: 'bg-blue-100 text-blue-700' };
 			case 'ward':
-				return { label: 'Ward', classes: 'bg-purple-100 text-purple-700' };
+				return { label: 'Ward', classes: 'bg-orange-100 text-orange-600' };
 			case 'intersection':
 				return { label: 'Intersection', classes: 'bg-gray-100 text-gray-600' };
 			default:
@@ -119,6 +119,7 @@
 		placeholder={locationName || 'Enter location name...'}
 		id="search-input-field"
 		autocomplete="off"
+		class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
 	/>
 
 	{#if showAutocomplete && locationResults.length > 0}
@@ -131,12 +132,12 @@
 					onclick={() => selectLocation(result)}
 					onmouseenter={() => (selectedIndex = index)}
 				>
-					<span class="location-item-name"
-						>{@html highlightFilteredText(result.name, searchQuery)}</span
-					>
 					<span class="category-badge {categoryBadge(result.category).classes}">
 						{categoryBadge(result.category).label}
 					</span>
+					<span class="location-item-name"
+						>{@html highlightFilteredText(result.name, searchQuery)}</span
+					>
 				</button>
 			{/each}
 		</div>
@@ -146,32 +147,27 @@
 <style lang="postcss">
 	@reference "$lib/styles/app.css";
 
+	.search-container {
+		@apply relative z-[1000] flex-1;
+	}
+
 	.location-results-list {
-		@apply absolute w-full max-h-72 overflow-y-auto bg-white border border-gray-300 border-t-0 rounded-b-md shadow-lg z-[1001];
+		@apply absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden max-h-72 overflow-y-auto;
 	}
 
-	.location-results-list .location-item {
-		@apply p-3 cursor-pointer border-b border-gray-100 last:border-0 flex items-center justify-between gap-2;
+	.location-item {
+		@apply w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0 cursor-pointer;
 	}
 
-	.location-results-list .location-item:hover,
-	.location-results-list .location-item.selected {
-		@apply bg-gray-100;
+	.location-item.selected {
+		@apply bg-blue-50;
 	}
 
 	.location-item-name {
-		@apply flex-1 min-w-0 truncate;
+		@apply flex-1 min-w-0 truncate text-sm font-medium text-gray-900;
 	}
 
 	.category-badge {
-		@apply shrink-0 text-xs font-medium px-2 py-0.5 rounded-full;
-	}
-
-	#search-input-field {
-		@apply w-full p-3 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
-	}
-
-	.search-container {
-		@apply relative z-[1000] flex-1;
+		@apply shrink-0 text-xs px-2 py-0.5 rounded-full font-medium;
 	}
 </style>

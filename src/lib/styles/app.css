@@ -1,25 +1,39 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
+  --color-accent: #f97316;
+  --color-accent-hover: #ea580c;
+  --color-fatal: #dc2626;
+  --color-serious: #9333ea;
+  --color-minor: #f59e0b;
+  --color-uninjured: #16a34a;
+}
+
+/* Incident list styles — referenced by IncidentList.svelte and other components */
 .incident-list {
-	@apply pl-4 list-disc text-gray-700;
+  @apply pl-4 list-disc text-gray-700;
 }
 
 .incident-list--dense {
-	@apply space-y-1;
+  @apply space-y-1;
 }
 
 .incident-list--spaced {
-	@apply space-y-2;
+  @apply space-y-2;
 }
 
 .incident-sublist {
-	@apply pl-6 list-disc text-gray-600 mt-1 space-y-1;
+  @apply pl-6 list-disc text-gray-600 mt-1 space-y-1;
 }
 
 .incident-item-label {
-	@apply font-semibold text-gray-800;
+  @apply font-semibold text-gray-800;
 }
 
 .incident-item-role {
-	@apply text-gray-500;
+  @apply text-gray-500;
 }

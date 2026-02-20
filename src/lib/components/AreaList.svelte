@@ -53,8 +53,8 @@
 	}
 
 	function sortIcon(field: SortField): string {
-		if (sortField === field) return sortDirection === 1 ? '▲' : '▼';
-		return '↕';
+		if (sortField === field) return sortDirection === 1 ? '↑' : '↓';
+		return '';
 	}
 
 	// Singular label for the name column header
@@ -63,118 +63,100 @@
 	);
 </script>
 
-<div class="mx-auto max-w-7xl p-4">
-	<h1 class="mb-6 text-3xl font-bold">{title}</h1>
-
-	{#if loading}
-		<div class="flex flex-col items-center justify-center p-12">
-			<div
-				class="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"
-			></div>
-			<p class="text-xl text-gray-500">Loading statistics...</p>
-		</div>
-	{:else if error}
-		<div class="rounded-md bg-red-50 p-4">
-			<p class="text-red-700">{error}</p>
-		</div>
-	{:else if stats.length === 0}
-		<p class="text-gray-600">No {category} found.</p>
-	{:else}
-		<div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-			<table class="min-w-full divide-y divide-gray-200 text-sm">
-				<thead class="bg-gray-50">
+{#if loading}
+	<p class="py-8 text-center text-sm text-gray-500">Loading...</p>
+{:else if error}
+	<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+		<p class="text-sm text-red-700">{error}</p>
+	</div>
+{:else if stats.length === 0}
+	<p class="py-8 text-center text-sm text-gray-500">No {category} found.</p>
+{:else}
+	<div class="overflow-x-auto">
+		<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+			<table class="min-w-full">
+				<thead class="bg-gray-50 border-b border-gray-200">
 					<tr>
 						<th
 							scope="col"
-							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100"
+							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide cursor-pointer select-none {sortField === 'name' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
 							onclick={() => toggleSort('name')}
 						>
-							{singularLabel}
-							<span class="text-gray-400 group-hover:text-gray-600">{sortIcon('name')}</span>
+							{singularLabel}{#if sortIcon('name')}&nbsp;<span class="text-blue-700">{sortIcon('name')}</span>{/if}
 						</th>
 						<th
 							scope="col"
-							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
-							onclick={() => toggleSort('mostRecent')}
-						>
-							Most Recent <span class="text-gray-400 group-hover:text-gray-600"
-								>{sortIcon('mostRecent')}</span
-							>
-						</th>
-						<th
-							scope="col"
-							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
-							onclick={() => toggleSort('avgPerYear')}
-						>
-							Avg/Year <span class="text-gray-400 group-hover:text-gray-600"
-								>{sortIcon('avgPerYear')}</span
-							>
-						</th>
-						<th
-							scope="col"
-							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
+							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'totalIncidents' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
 							onclick={() => toggleSort('totalIncidents')}
 						>
-							Serious Crashes <span class="text-gray-400 group-hover:text-gray-600"
-								>{sortIcon('totalIncidents')}</span
-							>
+							Total Crashes{#if sortIcon('totalIncidents')}&nbsp;<span class="text-blue-700">{sortIcon('totalIncidents')}</span>{/if}
 						</th>
 						<th
 							scope="col"
-							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
-							onclick={() => toggleSort('totalSeriousInjuries')}
-						>
-							Serious Inj. <span class="text-gray-400 group-hover:text-gray-600"
-								>{sortIcon('totalSeriousInjuries')}</span
-							>
-						</th>
-						<th
-							scope="col"
-							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
+							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'totalFatal' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
 							onclick={() => toggleSort('totalFatal')}
 						>
-							Fatalities <span class="text-gray-400 group-hover:text-gray-600"
-								>{sortIcon('totalFatal')}</span
-							>
+							Fatal{#if sortIcon('totalFatal')}&nbsp;<span class="text-blue-700">{sortIcon('totalFatal')}</span>{/if}
+						</th>
+						<th
+							scope="col"
+							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'totalSeriousInjuries' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							onclick={() => toggleSort('totalSeriousInjuries')}
+						>
+							Serious Inj.{#if sortIcon('totalSeriousInjuries')}&nbsp;<span class="text-blue-700">{sortIcon('totalSeriousInjuries')}</span>{/if}
+						</th>
+						<th
+							scope="col"
+							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'avgPerYear' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							onclick={() => toggleSort('avgPerYear')}
+						>
+							Avg/Year{#if sortIcon('avgPerYear')}&nbsp;<span class="text-blue-700">{sortIcon('avgPerYear')}</span>{/if}
+						</th>
+						<th
+							scope="col"
+							class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap cursor-pointer select-none {sortField === 'mostRecent' ? 'text-blue-700' : 'text-gray-500 hover:text-blue-700'}"
+							onclick={() => toggleSort('mostRecent')}
+						>
+							Last Crash{#if sortIcon('mostRecent')}&nbsp;<span class="text-blue-700">{sortIcon('mostRecent')}</span>{/if}
 						</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-200 bg-white">
+				<tbody class="divide-y divide-gray-100">
 					{#each sortedStats as item (item.id)}
-						<tr class="hover:bg-gray-50">
-							<td class="px-3 py-2">
+						<tr class="hover:bg-blue-50 transition-colors">
+							<td class="px-4 py-3 text-sm font-medium text-gray-900">
 								<a
 									href="{base}/{category}/{item.id}"
-									class="font-medium text-blue-600 hover:text-blue-900"
+									class="text-blue-700 hover:underline"
 								>
 									{item.name}
 								</a>
 							</td>
-							<td class="px-3 py-2 text-gray-500">
+							<td class="px-4 py-3 text-sm text-gray-700 tabular-nums whitespace-nowrap">
+								{item.totalIncidents.toLocaleString()}
+							</td>
+							<td class="px-4 py-3 text-sm font-semibold text-red-600 tabular-nums whitespace-nowrap">
+								{item.totalFatal}
+							</td>
+							<td class="px-4 py-3 text-sm text-gray-700 tabular-nums whitespace-nowrap">
+								{item.totalSeriousInjuries}
+							</td>
+							<td class="px-4 py-3 text-sm text-gray-700 tabular-nums whitespace-nowrap">
+								{item.avgPerYear.toFixed(1)}
+							</td>
+							<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
 								{#if item.mostRecent}
 									{@const d = parseAreaDate(item.mostRecent)}
-									<span class="block text-xs">{prettifyDate(d)}</span>
-									<span class="block text-xs italic text-gray-400">{currentAgeSimplified(d)}</span>
+									<span class="block">{prettifyDate(d)}</span>
+									<span class="block italic text-gray-400">{currentAgeSimplified(d)}</span>
 								{:else}
 									N/A
 								{/if}
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-gray-500">
-								{item.avgPerYear.toFixed(1)}
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-gray-500">
-								{item.totalIncidents}
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 font-medium text-orange-600">
-								{item.totalSeriousInjuries}
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 font-medium text-red-600">
-								{item.totalFatal}
 							</td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}

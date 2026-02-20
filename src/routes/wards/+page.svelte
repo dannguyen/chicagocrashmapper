@@ -19,4 +19,11 @@
 	});
 </script>
 
-<AreaList title="Chicago Wards" {stats} {loading} {error} category="wards" />
+<div class="mx-auto max-w-7xl px-4 py-8">
+	<div class="mb-6">
+		<h1 class="text-2xl font-bold text-gray-900">Chicago City Council Wards</h1>
+		<p class="mt-1 text-sm text-gray-500">Crash statistics by ward, 2019–present</p>
+	</div>
+
+	<AreaList title="Chicago City Council Wards" {stats} {loading} {error} category="wards" />
+</div>

@@ -74,21 +74,24 @@
 </script>
 
 {#if loading}
-	<div class="trend-loading">Loading trend data...</div>
+	<div class="text-sm text-gray-400 py-2">Loading trend data...</div>
 {:else if !error && periods.length > 0}
-	<div class="trend-chart">
-		<div class="chart-header">
-			<h3 class="chart-title">City-wide serious injuries — last 18 months</h3>
-			<div class="chart-totals">
-				<span class="total-fatal">{totalFatal} killed</span>
-				<span class="total-incap">{totalIncap} seriously injured</span>
+	<div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+		<!-- Header -->
+		<div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+			<h3 class="text-sm font-semibold text-gray-700">City-wide serious injuries — last 18 months</h3>
+			<div class="flex gap-3 text-xs">
+				<span class="text-red-600 font-semibold">{totalFatal} killed</span>
+				<span class="text-purple-600 font-semibold">{totalIncap} seriously injured</span>
 			</div>
 		</div>
-		<div class="chart-wrap">
+
+		<!-- Chart -->
+		<div class="overflow-x-auto">
 			<svg
 				width={periods.length * (barWidth + barGap)}
 				height={chartHeight + 22}
-				class="chart-svg"
+				class="block"
 				role="img"
 				aria-label="Monthly injury trend chart"
 			>
@@ -97,7 +100,7 @@
 					{@const fatalH = barH(p.injuries_fatal)}
 					{@const x = i * (barWidth + barGap)}
 					<title>{formatTooltip(p)}</title>
-					<rect {x} y={chartHeight - inCapH} width={barWidth} height={inCapH} class="bar-incap">
+					<rect {x} y={chartHeight - inCapH} width={barWidth} height={inCapH} fill="#9333ea">
 						<title>{formatTooltip(p)}</title>
 					</rect>
 					<rect
@@ -105,100 +108,35 @@
 						y={chartHeight - inCapH - fatalH}
 						width={barWidth}
 						height={fatalH}
-						class="bar-fatal"
+						fill="#dc2626"
 					>
 						<title>{formatTooltip(p)}</title>
 					</rect>
 					{#if i % 3 === 0}
-						<text x={x + barWidth / 2} y={chartHeight + 14} class="bar-label" text-anchor="middle">
+						<text
+							x={x + barWidth / 2}
+							y={chartHeight + 14}
+							text-anchor="middle"
+							font-size="9"
+							fill="#9ca3af"
+						>
 							{formatPeriod(p.period)}
 						</text>
 					{/if}
 				{/each}
 			</svg>
 		</div>
-		<div class="chart-legend">
-			<span class="legend-item">
-				<span class="swatch swatch-fatal"></span>
+
+		<!-- Legend -->
+		<div class="flex gap-4 mt-3">
+			<span class="text-xs text-gray-500 flex items-center gap-1.5">
+				<span class="inline-block w-3 h-3 rounded-sm bg-red-600"></span>
 				Fatal
 			</span>
-			<span class="legend-item">
-				<span class="swatch swatch-incap"></span>
+			<span class="text-xs text-gray-500 flex items-center gap-1.5">
+				<span class="inline-block w-3 h-3 rounded-sm bg-purple-600"></span>
 				Serious injury
 			</span>
 		</div>
 	</div>
 {/if}
-
-<style lang="postcss">
-	@reference "$lib/styles/app.css";
-
-	.trend-loading {
-		@apply text-sm text-gray-400 py-2;
-	}
-
-	.trend-chart {
-		@apply bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4;
-	}
-
-	.chart-header {
-		@apply flex flex-wrap items-baseline justify-between gap-2 mb-3;
-	}
-
-	.chart-title {
-		@apply text-sm font-semibold text-gray-600;
-	}
-
-	.chart-totals {
-		@apply flex gap-3 text-xs;
-	}
-
-	.total-fatal {
-		@apply text-red-700 font-semibold;
-	}
-
-	.total-incap {
-		@apply text-purple-500 font-semibold;
-	}
-
-	.chart-wrap {
-		@apply overflow-x-auto;
-	}
-
-	.chart-svg {
-		@apply block;
-	}
-
-	:global(.bar-fatal) {
-		fill: #dc2626;
-	}
-
-	:global(.bar-incap) {
-		fill: #8b5cf6; /* purple-500 */
-	}
-
-	:global(.bar-label) {
-		font-size: 9px;
-		fill: #9ca3af;
-	}
-
-	.chart-legend {
-		@apply flex gap-4 mt-2;
-	}
-
-	.legend-item {
-		@apply text-xs text-gray-500 flex items-center gap-1;
-	}
-
-	.swatch {
-		@apply inline-block w-3 h-3 rounded-sm;
-	}
-
-	.swatch-fatal {
-		@apply bg-red-600;
-	}
-
-	.swatch-incap {
-		@apply bg-purple-500;
-	}
-</style>

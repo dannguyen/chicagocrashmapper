@@ -90,44 +90,64 @@
 	});
 </script>
 
-<div class="location-detail">
+<div class="flex flex-col gap-6">
+	<!-- Summary stats -->
 	<LocationSummary {incidents} {location} summary={allTimeSummary} />
 
-	<MapContainer
-		bind:this={mapRef}
-		selectedLocation={location}
-		{incidents}
-		{setIncidentDetail}
-		defaultGeoCenter={[location.latitude, location.longitude]}
-		maxDistance={5280}
-	/>
+	<!-- Map -->
+	<div class="rounded-xl overflow-hidden border border-gray-200 mb-6">
+		<MapContainer
+			bind:this={mapRef}
+			selectedLocation={location}
+			{incidents}
+			{setIncidentDetail}
+			defaultGeoCenter={[location.latitude, location.longitude]}
+			maxDistance={5280}
+		/>
+	</div>
 
+	<!-- Pagination + incident list -->
 	{#if totalIncidents > 0}
-		<div class="pagination-bar">
-			<span class="pagination-info">
+		<div class="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-4 py-3">
+			<span class="text-sm text-gray-600">
 				Showing {rangeStart}–{rangeEnd} of {totalIncidents} incidents
 			</span>
-			<div class="pagination-buttons">
-				<button class="btn-page" disabled={!hasPrev || loading} onclick={goToPrev}> Prev </button>
+			<div class="flex items-center gap-2">
+				<button
+					class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+					disabled={!hasPrev || loading}
+					onclick={goToPrev}
+				>
+					Prev
+				</button>
 				{#each pageNumbers as pg}
 					{#if pg === null}
-						<span class="page-ellipsis">…</span>
+						<span class="px-1 text-sm text-gray-400 self-center">…</span>
 					{:else}
 						<button
-							class="btn-page btn-page-num"
-							class:active={pg === currentPage}
+							class="px-3 py-1.5 rounded-lg text-sm border transition-colors min-w-[2.25rem] disabled:cursor-not-allowed"
+							class:active-page={pg === currentPage}
+							class:inactive-page={pg !== currentPage}
 							disabled={loading}
-							onclick={() => fetchPage(pg)}>{pg + 1}</button
+							onclick={() => fetchPage(pg)}
 						>
+							{pg + 1}
+						</button>
 					{/if}
 				{/each}
-				<button class="btn-page" disabled={!hasNext || loading} onclick={goToNext}> Next </button>
+				<button
+					class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+					disabled={!hasNext || loading}
+					onclick={goToNext}
+				>
+					Next
+				</button>
 			</div>
 		</div>
 	{/if}
 
 	{#if loading}
-		<p class="loading-text">Loading incidents...</p>
+		<p class="text-sm text-gray-500 text-center py-8">Loading incidents...</p>
 	{:else}
 		<IncidentList
 			{incidents}
@@ -136,44 +156,51 @@
 			{showIncidentOnMap}
 		/>
 	{/if}
+
+	<!-- Bottom pagination (only when there are multiple pages) -->
+	{#if totalPages > 1 && !loading}
+		<div class="flex items-center gap-2 justify-center mt-6">
+			<button
+				class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+				disabled={!hasPrev || loading}
+				onclick={goToPrev}
+			>
+				Prev
+			</button>
+			{#each pageNumbers as pg}
+				{#if pg === null}
+					<span class="px-1 text-sm text-gray-400 self-center">…</span>
+				{:else}
+					<button
+						class="px-3 py-1.5 rounded-lg text-sm border transition-colors min-w-[2.25rem] disabled:cursor-not-allowed"
+						class:active-page={pg === currentPage}
+						class:inactive-page={pg !== currentPage}
+						disabled={loading}
+						onclick={() => fetchPage(pg)}
+					>
+						{pg + 1}
+					</button>
+				{/if}
+			{/each}
+			<button
+				class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:border-blue-500 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+				disabled={!hasNext || loading}
+				onclick={goToNext}
+			>
+				Next
+			</button>
+		</div>
+	{/if}
 </div>
 
 <style lang="postcss">
 	@reference "$lib/styles/app.css";
 
-	.location-detail {
-		@apply flex flex-col gap-4;
+	.active-page {
+		@apply bg-blue-700 text-white border-blue-700;
 	}
 
-	.pagination-bar {
-		@apply flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-2;
-	}
-
-	.pagination-info {
-		@apply text-sm text-gray-600;
-	}
-
-	.pagination-buttons {
-		@apply flex gap-2;
-	}
-
-	.btn-page {
-		@apply px-3 py-1 text-sm font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
-	}
-
-	.btn-page-num {
-		@apply min-w-[2rem] px-2;
-	}
-
-	.btn-page-num.active {
-		@apply bg-blue-600 border-blue-600 text-white hover:bg-blue-700;
-	}
-
-	.page-ellipsis {
-		@apply px-1 text-sm text-gray-400 self-center;
-	}
-
-	.loading-text {
-		@apply text-sm text-gray-500 text-center py-4;
+	.inactive-page {
+		@apply border-gray-300 hover:border-blue-500 hover:text-blue-700;
 	}
 </style>
