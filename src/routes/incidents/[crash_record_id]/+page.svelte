@@ -48,7 +48,7 @@
 </script>
 
 <svelte:head>
-	<title>{incident ? `${crashDateTitle()} — Chicago Crash Map` : 'Incident — Chicago Crash Map'}</title>
+	<title>{incident ? `${crashDateTitle} — Chicago Crash Map` : 'Incident — Chicago Crash Map'}</title>
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -58,7 +58,7 @@
 	</nav>
 
 	<!-- Page title -->
-	<h1 class="text-2xl font-bold text-gray-900">{crashDateTitle()}</h1>
+	<h1 class="text-2xl font-bold text-gray-900">{crashDateTitle}</h1>
 
 	<!-- Map -->
 	<div class="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
