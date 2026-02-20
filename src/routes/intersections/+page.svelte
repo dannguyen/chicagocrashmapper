@@ -15,7 +15,6 @@
 			topByCount = data.by_count;
 			topByRecency = data.by_recency;
 		} catch (e) {
-			console.error(e);
 			error = 'Failed to load intersection statistics.';
 		} finally {
 			loading = false;

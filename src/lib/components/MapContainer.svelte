@@ -21,7 +21,7 @@
 	// Create a local instance of Mapper
 	const MapperInstance = new Mapper();
 
-	let activeMarker: any = null;
+	let activeMarker: import('leaflet').Layer | null = null;
 	let mapCircleLayer: any = null;
 	let markerLayerGroup: any;
 
@@ -88,7 +88,6 @@
 		if (!MapperInstance.map || !MapperInstance.L || !markerLayerGroup) return;
 
 		markerLayerGroup.clearLayers();
-		// incidentMarkers = []; // This needs to be managed externally if Dashboard uses it
 
 		items.forEach((item, index) => {
 			const lat = item.latitude;
@@ -96,18 +95,17 @@
 
 			if (!isNaN(lat) && !isNaN(lon)) {
 				const popupHtml = item.title;
-				const icon = MapperInstance.L.divIcon({
+				const icon = MapperInstance.L!.divIcon({
 					html: markerIconHtml(index, item.isFatal),
 					className: '',
 					iconSize: [24, 24],
 					iconAnchor: [12, 12]
 				});
-				const incidentMarker = MapperInstance.L.marker([lat, lon], { icon }).bindPopup(popupHtml);
+				const incidentMarker = MapperInstance.L!.marker([lat, lon], { icon }).bindPopup(popupHtml);
 
 				incidentMarker.on('click', () => setIncidentDetail(item));
 
 				incidentMarker.addTo(markerLayerGroup);
-				// incidentMarkers[index] = incidentMarker; // This needs to be managed externally
 			}
 		});
 

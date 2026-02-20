@@ -326,7 +326,6 @@ function parseVehicles(raw: IncidentRecord['vehicles']): Vehicle[] {
 		try {
 			vehicles = JSON.parse(raw) as VehicleRecord[];
 		} catch (e) {
-			console.warn('Failed to parse vehicles JSON', e);
 			return [];
 		}
 	} else {
@@ -345,7 +344,6 @@ function parsePeople(raw: IncidentRecord['non_passengers']): Person[] {
 		try {
 			people = JSON.parse(raw) as PersonRecord[];
 		} catch (e) {
-			console.warn('Failed to parse non_passengers JSON', e);
 			return [];
 		}
 	} else {

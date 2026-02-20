@@ -1,9 +1,10 @@
 import type { Location } from '$lib/location';
-import type { Map, LayerGroup, Circle, Marker, GeoJSON } from 'leaflet';
+import type { Map, LayerGroup, Circle, Marker, GeoJSON, Layer } from 'leaflet';
+import type L_Type from 'leaflet';
 import wellknown from 'wellknown';
 
 export class Mapper {
-	L: any = null;
+	L: typeof L_Type | null = null;
 	map: Map | null = null;
 
 	async init(elementId: string, center: [number, number], zoom: number) {
@@ -35,7 +36,7 @@ export class Mapper {
 		opacity: number = 0.1
 	): Circle {
 		// radius should be in meters
-		const circle = this.L.circle([latitude, longitude], {
+		const circle = this.L!.circle([latitude, longitude], {
 			color: color,
 			fillColor: color,
 			fillOpacity: opacity,
@@ -46,7 +47,7 @@ export class Mapper {
 	}
 
 	makePointMarker(location: Location): Marker {
-		const mk = this.L.marker([location.latitude, location.longitude]);
+		const mk = this.L!.marker([location.latitude, location.longitude]);
 		mk.bindPopup(location.name).openPopup();
 		return mk;
 	}
@@ -65,21 +66,21 @@ export class Mapper {
 			}
 		];
 
-		const mk = this.L.geoJSON(
+		const mk = this.L!.geoJSON(
 			{
 				type: 'FeatureCollection',
 				features
-			},
+			} as import('geojson').FeatureCollection,
 			{
 				style: () => ({
 					weight: 1,
 					color: '#4455bb',
 					fillOpacity: 0.4
 				}),
-				onEachFeature: (feature: Record<string, unknown>, layer: any) => {
+				onEachFeature: (feature: import("geojson").Feature, layer: Layer) => {
 					const p = feature.properties as Record<string, unknown>;
 					if (p?.name) {
-						layer.bindPopup(p.name);
+						layer.bindPopup(String(p.name));
 					}
 				}
 			}

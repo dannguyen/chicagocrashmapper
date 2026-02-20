@@ -15,9 +15,7 @@
 	<section class="incidents-list">
 		{#each incidents as item, index}
 			<div class="incident-record">
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="marker-icon" onclick={() => showIncidentOnMap(index)}>{index + 1}</div>
+				<button type="button" class="marker-icon" onclick={() => showIncidentOnMap(index)}>{index + 1}</button>
 				<a href="/incidents/{item.crash_record_id}" class="incident-link">
 					<IncidentDetail incident={item} {selectedLocation} {distanceUnits} />
 					<span class="view-details">View details →</span>

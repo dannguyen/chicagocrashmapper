@@ -3,6 +3,7 @@
 	import { slide } from 'svelte/transition';
 
 	import { appState } from '$lib/components/AppState.svelte';
+	import { SEARCH_DEBOUNCE_MS } from '$lib/constants';
 	import { getLocationById } from '$lib/api/client';
 	import { Location } from '$lib/location';
 	import type { Incident } from '$lib/incident';
@@ -17,7 +18,7 @@
 	}>();
 
 	const defaultGeoCenter: [number, number] = [41.8781, -87.6298];
-	const searchDelayMs = 700;
+	const searchDelayMs = SEARCH_DEBOUNCE_MS;
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let lastSearchedLocation: Location | null = null;
 

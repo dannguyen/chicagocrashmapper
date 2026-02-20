@@ -94,10 +94,6 @@
 			incident.secondary_cause !== incident.primary_cause
 	);
 
-	const showCrashType = $derived(
-		incident.category !== incident.category // first_crash_type already stored as category
-	);
-
 	onMount(() => {
 		let destroyed = false;
 		(async () => {

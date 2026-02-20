@@ -6,6 +6,7 @@
 	import { Location } from '$lib/location';
 	import { searchLocations } from '$lib/api/client';
 	import type { LocationRecord } from '$lib/db/types';
+	import { AUTOCOMPLETE_DEBOUNCE_MS, BLUR_DELAY_MS } from '$lib/constants';
 
 	let { onSelect, locationName = '' } = $props<{
 		onSelect: (loc: Location) => void;
@@ -38,13 +39,13 @@
 		clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
 			searchQuery = inputValue;
-		}, 300);
+		}, AUTOCOMPLETE_DEBOUNCE_MS);
 	}
 
 	function handleInputBlur() {
 		setTimeout(() => {
 			showAutocomplete = false;
-		}, 200);
+		}, BLUR_DELAY_MS);
 	}
 
 	function handleInputFocus() {
@@ -123,9 +124,8 @@
 	{#if showAutocomplete && locationResults.length > 0}
 		<div class="location-results-list">
 			{#each locationResults as result, index}
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div
+				<button
+					type="button"
 					class="location-item"
 					class:selected={index === selectedIndex}
 					onclick={() => selectLocation(result)}
@@ -137,7 +137,7 @@
 					<span class="category-badge {categoryBadge(result.category).classes}">
 						{categoryBadge(result.category).label}
 					</span>
-				</div>
+				</button>
 			{/each}
 		</div>
 	{/if}

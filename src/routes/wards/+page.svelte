@@ -12,7 +12,6 @@
 		try {
 			stats = await getWardStats();
 		} catch (e) {
-			console.error(e);
 			error = 'Failed to load ward statistics.';
 		} finally {
 			loading = false;

@@ -12,7 +12,6 @@
 		try {
 			stats = await getNeighborhoodStats();
 		} catch (e) {
-			console.error(e);
 			error = 'Failed to load neighborhood statistics.';
 		} finally {
 			loading = false;

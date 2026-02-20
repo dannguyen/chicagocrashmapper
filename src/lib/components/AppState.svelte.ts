@@ -3,6 +3,7 @@ import type { Incident } from '$lib/incident';
 import { reifyIncidents } from '$lib/incident';
 import { getIncidentsNearPoint, getIncidentsWithin, getRecentIncidents } from '$lib/api/client';
 import type { LocationRecord } from '$lib/db/types';
+import { DEFAULT_MAX_DISTANCE_FT, DEFAULT_MAX_DAYS } from '$lib/constants';
 
 function toDateStr(d: Date): string {
 	return d.toISOString().split('T')[0];
@@ -19,9 +20,9 @@ class AppStateManager {
 		selectedLocation: null as Location | null,
 		incidents: [] as Incident[],
 		selectedIncident: null as Incident | null,
-		maxDaysAgo: 540,
+		maxDaysAgo: DEFAULT_MAX_DAYS,
 		selectedDate: new Date(),
-		maxDistance: 2500,
+		maxDistance: DEFAULT_MAX_DISTANCE_FT,
 		distanceUnits: 'feet' as 'feet' | 'meters',
 		loading: false,
 		causeFilter: null as string | null,
@@ -189,7 +190,6 @@ class AppStateManager {
 			}
 			this.#state.incidents = reifyIncidents(records);
 		} catch (e) {
-			console.error('Failed to fetch incidents:', e);
 			this.#state.incidents = [];
 		} finally {
 			this.#state.loading = false;
@@ -204,7 +204,6 @@ class AppStateManager {
 			const records = await getRecentIncidents(limit);
 			this.#state.incidents = reifyIncidents(records);
 		} catch (e) {
-			console.error('Failed to fetch recent serious incidents:', e);
 			this.#state.incidents = [];
 		} finally {
 			this.#state.loading = false;
@@ -226,9 +225,9 @@ class AppStateManager {
 		this.#state.selectedLocation = null;
 		this.#state.incidents = [];
 		this.#state.selectedIncident = null;
-		this.#state.maxDaysAgo = 540;
+		this.#state.maxDaysAgo = DEFAULT_MAX_DAYS;
 		this.#state.selectedDate = new Date();
-		this.#state.maxDistance = 2500;
+		this.#state.maxDistance = DEFAULT_MAX_DISTANCE_FT;
 		this.#state.causeFilter = null;
 		this.#state.geoError = null;
 	}

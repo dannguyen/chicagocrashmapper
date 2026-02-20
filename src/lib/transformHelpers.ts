@@ -1,5 +1,3 @@
-import numeral from 'numeral';
-// import { DateTime, Duration } from 'luxon';
 
 export function currentAgeInDays(dateVal: string | Date): number {
 	let pastDate: Date | null = null;
@@ -79,12 +77,7 @@ export function currentAgeSimplified(dayVal: number | Date): string {
 }
 
 export function prettifyInteger(num: number): string {
-	// let fmt = '0';
-	// if (num >= 1000) {
-	//     fmt = '0.0 a';
-	// }
-
-	return numeral(num).format('0,0');
+	return num.toLocaleString();
 }
 
 export function prettifyDate(date: Date): string {

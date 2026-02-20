@@ -37,7 +37,7 @@ describe('Mapper', () => {
 		// Since we are mocking the dynamic import, we need to manually assign L for synchronous tests
 		// OR simply call init() in an async beforeEach if we want to test the full flow.
 		// For simplicity in unit testing methods like makeMapCircle, we can manually inject the mock:
-		mapper.L = mockLeaflet;
+		mapper.L = mockLeaflet as unknown as typeof import('leaflet');
 		mapper.map = { remove: vi.fn() } as unknown as import('leaflet').Map;
 	});
 
