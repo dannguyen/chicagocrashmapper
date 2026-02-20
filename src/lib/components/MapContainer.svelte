@@ -115,16 +115,41 @@
 	export function fitToIncidents(items: Incident[]) {
 		if (!MapperInstance.map || !MapperInstance.L) return;
 
-		if (items.length > 0) {
-			const latLngs: L.LatLngExpression[] = items.map((item) => [item.latitude, item.longitude]);
-			if (selectedLocation) {
-				latLngs.push([selectedLocation.latitude, selectedLocation.longitude]);
+		// Only include coordinates that are valid and non-zero (lat=0/lng=0 means missing data)
+		const validLatLngs: L.LatLngExpression[] = items
+			.filter((item) => !isNaN(item.latitude) && !isNaN(item.longitude) && (item.latitude !== 0 || item.longitude !== 0))
+			.map((item) => [item.latitude, item.longitude]);
+
+		if (validLatLngs.length > 0) {
+			// For shape locations (neighborhoods/wards), extend bounds using the shape layer's
+			// actual geographic extent rather than the centroid point — the centroid lat/lng
+			// may be 0,0 for polygon records that don't store a separate centroid.
+			if (selectedLocation?.isShape && activeMarker && 'getBounds' in activeMarker) {
+				try {
+					const shapeBounds = (activeMarker as import('leaflet').GeoJSON).getBounds();
+					const bounds = MapperInstance.L.latLngBounds(validLatLngs).extend(shapeBounds);
+					MapperInstance.map.fitBounds(bounds, { padding: [40, 40] });
+				} catch {
+					MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), { padding: [50, 50] });
+				}
+			} else {
+				if (selectedLocation && selectedLocation.latitude !== 0 && selectedLocation.longitude !== 0) {
+					validLatLngs.push([selectedLocation.latitude, selectedLocation.longitude]);
+				}
+				MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), { padding: [50, 50] });
 			}
-			const bounds = MapperInstance.L.latLngBounds(latLngs);
-			MapperInstance.map.fitBounds(bounds, { padding: [50, 50] });
 			MapperInstance.map.invalidateSize();
 		} else if (selectedLocation) {
-			MapperInstance.map.setView([selectedLocation.latitude, selectedLocation.longitude], 16);
+			// No valid incident coords — just show the shape/location
+			if (selectedLocation.isShape && activeMarker && 'getBounds' in activeMarker) {
+				try {
+					MapperInstance.map.fitBounds((activeMarker as import('leaflet').GeoJSON).getBounds(), { padding: [40, 40] });
+				} catch {
+					MapperInstance.map.setView([selectedLocation.latitude, selectedLocation.longitude], 13);
+				}
+			} else {
+				MapperInstance.map.setView([selectedLocation.latitude, selectedLocation.longitude], 16);
+			}
 			MapperInstance.map.invalidateSize();
 		}
 	}
