@@ -1,89 +1,22 @@
 <script lang="ts">
 	import type { Incident, Person } from '$lib/incident';
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
+	import {
+		incidentSeverity,
+		severityBorderClass,
+		severityBadgeClass,
+		severityLabel,
+		personInjuryLevel,
+		injuryDotClass,
+		injuryTextClass,
+		injuryLabel
+	} from '$lib/severity';
 
 	let { incident, neighborhood, ward } = $props<{
 		incident: Incident | null;
 		neighborhood: { id: string; name: string } | null;
 		ward: { id: string; name: string } | null;
 	}>();
-
-	// ── severity helpers ────────────────────────────────────────────────────────
-
-	function severityLevel(inc: Incident): 'fatal' | 'serious' | 'minor' | 'none' {
-		if (inc.isFatal) return 'fatal';
-		if (inc.injuries_incapacitating > 0) return 'serious';
-		if ((inc.injuries_non_incapacitating ?? 0) > 0) return 'minor';
-		return 'none';
-	}
-
-	function heroBorderClass(lvl: ReturnType<typeof severityLevel>): string {
-		if (lvl === 'fatal') return 'border-l-red-600';
-		if (lvl === 'serious') return 'border-l-purple-600';
-		if (lvl === 'minor') return 'border-l-amber-500';
-		return 'border-l-gray-200';
-	}
-
-	function badgeBgClass(lvl: ReturnType<typeof severityLevel>): string {
-		if (lvl === 'fatal') return 'bg-red-100 text-red-700';
-		if (lvl === 'serious') return 'bg-purple-100 text-purple-700';
-		if (lvl === 'minor') return 'bg-amber-100 text-amber-700';
-		return 'bg-gray-100 text-gray-600';
-	}
-
-	function badgeLabel(lvl: ReturnType<typeof severityLevel>): string {
-		if (lvl === 'fatal') return 'Fatal';
-		if (lvl === 'serious') return 'Serious';
-		if (lvl === 'minor') return 'Minor';
-		return 'No injury';
-	}
-
-	// ── person helpers ──────────────────────────────────────────────────────────
-
-	function injuryLevel(p: Person): 'fatal' | 'serious' | 'minor' | 'unclear' | 'none' | 'unknown' {
-		const lvl = p.injury_level;
-		if (lvl === 'fatal') return 'fatal';
-		if (lvl === 'incapacitating') return 'serious';
-		if (lvl === 'non-incapacitating') return 'minor';
-		if (lvl === 'unclear') return 'unclear';
-		if (lvl === 'none') return 'none';
-		return 'unknown';
-	}
-
-	function injuryDotClass(p: Person): string {
-		const lvl = injuryLevel(p);
-		if (lvl === 'fatal') return 'bg-red-600';
-		if (lvl === 'serious') return 'bg-purple-600';
-		if (lvl === 'minor') return 'bg-amber-500';
-		if (lvl === 'none') return 'bg-green-600';
-		return 'bg-gray-400';
-	}
-
-	function injuryTextClass(p: Person): string {
-		const lvl = injuryLevel(p);
-		if (lvl === 'fatal') return 'text-red-600 font-semibold';
-		if (lvl === 'serious') return 'text-purple-600 font-semibold';
-		if (lvl === 'minor') return 'text-amber-600';
-		if (lvl === 'none') return 'text-green-600';
-		return 'text-gray-400';
-	}
-
-	function outcomeText(p: Person): string | null {
-		switch (p.injury_level) {
-			case 'fatal':
-				return 'Fatal';
-			case 'incapacitating':
-				return 'Serious';
-			case 'non-incapacitating':
-				return 'Minor';
-			case 'none':
-				return 'Uninjured';
-			case 'unclear':
-				return 'Not evident';
-			default:
-				return null;
-		}
-	}
 
 	// ── filter helper ───────────────────────────────────────────────────────────
 
@@ -110,7 +43,7 @@
 
 	// ── derived values ──────────────────────────────────────────────────────────
 
-	const severity = $derived(incident ? severityLevel(incident) : 'none');
+	const severity = $derived(incident ? incidentSeverity(incident) : 'none');
 
 	const address = $derived(
 		incident
@@ -157,13 +90,13 @@
 
 {#if incident}
 	<!-- ── Hero card ─────────────────────────────────────────────────────────── -->
-	<div class="rounded-xl border-l-4 border border-gray-200 bg-white p-4 sm:p-6 mb-6 shadow-sm {heroBorderClass(severity)}">
+	<div class="rounded-xl border-l-4 border border-gray-200 bg-white p-4 sm:p-6 mb-6 shadow-sm {severityBorderClass(severity)}">
 		<div class="flex items-start justify-between gap-4">
 			<div class="flex-1 min-w-0">
 				<!-- Severity badge + optional hit-and-run -->
 				<div class="flex flex-wrap gap-2 mb-2">
-					<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase {badgeBgClass(severity)}">
-						{badgeLabel(severity)}
+					<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase {severityBadgeClass(severity)}">
+						{severityLabel(severity)}
 					</span>
 					{#if incident.hit_and_run}
 						<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-700">
@@ -276,6 +209,8 @@
 			<div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
 				{#each incident.vehicles as vh}
 					{#each vh.passengers as p}
+						{@const pLevel = personInjuryLevel(p)}
+						{@const pLabel = injuryLabel(pLevel)}
 						<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
 							<!-- Left: role + vehicle info -->
 							<div class="flex flex-col min-w-0">
@@ -315,10 +250,10 @@
 							</div>
 
 							<!-- Right: injury indicator -->
-							{#if outcomeText(p)}
+							{#if pLabel}
 								<div class="flex items-center gap-1.5 flex-shrink-0">
-									<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(p)}"></span>
-									<span class="text-sm {injuryTextClass(p)}">{outcomeText(p)}</span>
+									<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(pLevel)}"></span>
+									<span class="text-sm {injuryTextClass(pLevel)}">{pLabel}</span>
 								</div>
 							{/if}
 						</div>
@@ -326,6 +261,8 @@
 				{/each}
 
 				{#each incident.non_passengers as p}
+					{@const pLevel = personInjuryLevel(p)}
+					{@const pLabel = injuryLabel(pLevel)}
 					<div class="flex items-center justify-between flex-wrap gap-y-1 px-4 py-3 gap-x-4">
 						<!-- Left: role + description -->
 						<div class="flex flex-col min-w-0">
@@ -362,10 +299,10 @@
 						</div>
 
 						<!-- Right: injury indicator -->
-						{#if outcomeText(p)}
+						{#if pLabel}
 							<div class="flex items-center gap-1.5 flex-shrink-0">
-								<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(p)}"></span>
-								<span class="text-sm {injuryTextClass(p)}">{outcomeText(p)}</span>
+								<span class="w-2.5 h-2.5 rounded-full inline-block {injuryDotClass(pLevel)}"></span>
+								<span class="text-sm {injuryTextClass(pLevel)}">{pLabel}</span>
 							</div>
 						{/if}
 					</div>

@@ -96,7 +96,7 @@ describe('Mapper', () => {
 			name: 'Test Shape',
 			latitude: 41,
 			longitude: -87,
-			category: 'community_area',
+			category: 'neighborhood' as import('$lib/db/types').LocationCategory,
 			the_geom: 'POLYGON(...)'
 		});
 

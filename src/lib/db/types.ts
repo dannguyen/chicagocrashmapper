@@ -2,9 +2,11 @@
  * Shared types and interfaces for the data layer
  */
 
+export type LocationCategory = 'neighborhood' | 'ward' | 'intersection';
+
 export interface LocationRecord {
 	name: string;
-	category: string;
+	category: LocationCategory;
 	latitude: number;
 	longitude: number;
 	id: string;

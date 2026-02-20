@@ -13,7 +13,7 @@
 			case 'neighborhood':
 				return { label: 'Neighborhood', classes: 'bg-blue-100 text-blue-700' };
 			case 'ward':
-				return { label: 'Ward', classes: 'bg-orange-100 text-orange-600' };
+				return { label: 'Ward', classes: 'bg-orange-100 text-orange-700' };
 			case 'intersection':
 				return { label: 'Intersection', classes: 'bg-gray-100 text-gray-600' };
 			default:
@@ -21,6 +21,10 @@
 		}
 	}
 </script>
+
+<svelte:head>
+	<title>{location?.name ?? 'Location'} — Chicago Crash Map</title>
+</svelte:head>
 
 <div class="mb-6">
 	<nav class="text-sm text-gray-500 mb-2">

@@ -1,9 +1,10 @@
 import { getSearchTokens } from '$lib/inputHelpers';
 import type { LocationRecord } from '$lib/db';
+import type { LocationCategory } from '$lib/db/types';
 
 export class Location {
 	name: string;
-	category: string;
+	category: LocationCategory;
 	longitude: number;
 	latitude: number;
 	id: string;

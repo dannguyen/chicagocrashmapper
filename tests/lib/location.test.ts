@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { filterLocationsBySearchString, Location } from '$lib/location';
+import type { LocationCategory } from '$lib/db/types';
 
 describe('Location class', () => {
-	const mockData = {
+	const mockData: Record<string, { id: string; name: string; category: LocationCategory; latitude: number; longitude: number; the_geom: string }> = {
 		intersection: {
 			id: 'apple',
 			name: 'Apple',
@@ -65,9 +66,9 @@ describe('Location class', () => {
 });
 
 describe('filterLocationsBySearchString', () => {
-	const mockData: Location[] = [
+	const mockData: Location[] = (([
 		{
-			category: 'placeholder',
+			category: 'neighborhood' as LocationCategory,
 			name: 'STATE & LAKE',
 			latitude: 0,
 			longitude: 0,
@@ -122,14 +123,14 @@ describe('filterLocationsBySearchString', () => {
 			id: 'g',
 			the_geom: 'hello'
 		}
-	].map((d) => new Location(d));
+	]) as import('$lib/db/types').LocationRecord[]).map((d) => new Location(d));
 
 	it('should return matches based on all tokens', () => {
 		const results = filterLocationsBySearchString(mockData, 'State Lake');
 		expect(results).toHaveLength(1);
 		expect(results[0].name).toBe('STATE & LAKE');
 		expect(results[0].id).toBe('aaa');
-		expect(results[0].category).toBe('placeholder');
+		expect(results[0].category).toBe('neighborhood');
 
 		const results2 = filterLocationsBySearchString(mockData, 'w ohio lake');
 		expect(results2[0].name).toBe('W OHIO ST & LAKE');

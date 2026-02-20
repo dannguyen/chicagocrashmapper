@@ -62,6 +62,11 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			showAutocomplete = false;
+			return;
+		}
+
 		if (locationResults.length === 0) return;
 
 		if (event.key === 'ArrowDown') {
@@ -98,7 +103,7 @@
 			case 'neighborhood':
 				return { label: 'Neighborhood', classes: 'bg-blue-100 text-blue-700' };
 			case 'ward':
-				return { label: 'Ward', classes: 'bg-orange-100 text-orange-600' };
+				return { label: 'Ward', classes: 'bg-orange-100 text-orange-700' };
 			case 'intersection':
 				return { label: 'Intersection', classes: 'bg-gray-100 text-gray-600' };
 			default:
@@ -119,28 +124,38 @@
 		placeholder={locationName || 'Enter location name...'}
 		id="search-input-field"
 		autocomplete="off"
-		class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+		class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white"
 	/>
 
-	{#if showAutocomplete && locationResults.length > 0}
+	{#if showAutocomplete && searchQuery.trim().length >= 1}
 		<div class="location-results-list">
-			{#each locationResults as result, index}
-				<button
-					type="button"
-					class="location-item"
-					class:selected={index === selectedIndex}
-					onclick={() => selectLocation(result)}
-					onmouseenter={() => (selectedIndex = index)}
-				>
-					<span class="category-badge {categoryBadge(result.category).classes}">
-						{categoryBadge(result.category).label}
-					</span>
-					<span class="location-item-name"
-						>{@html highlightFilteredText(result.name, searchQuery)}</span
+			{#if locationResults.length > 0}
+				{#each locationResults as result, index}
+					<button
+						type="button"
+						class="location-item"
+						class:selected={index === selectedIndex}
+						onclick={() => selectLocation(result)}
+						onmouseenter={() => (selectedIndex = index)}
 					>
-				</button>
-			{/each}
+						<span class="category-badge {categoryBadge(result.category).classes}">
+							{categoryBadge(result.category).label}
+						</span>
+						<span class="location-item-name"
+							>{@html highlightFilteredText(result.name, searchQuery)}</span
+						>
+					</button>
+				{/each}
+			{:else}
+				<div class="px-4 py-6 text-center text-sm text-gray-400">
+					No locations found for "{searchQuery}"
+				</div>
+			{/if}
 		</div>
+	{/if}
+
+	{#if showAutocomplete && searchQuery.trim().length >= 1}
+		<p class="text-xs text-gray-400 mt-1">&#8593;&#8595; to navigate, Enter to select, Esc to close</p>
 	{/if}
 </div>
 

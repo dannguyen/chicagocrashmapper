@@ -73,6 +73,15 @@
 		setIncidentDetail(filtered[index]);
 	}
 
+	function isToday(date: Date): boolean {
+		const today = new Date();
+		return (
+			date.getFullYear() === today.getFullYear() &&
+			date.getMonth() === today.getMonth() &&
+			date.getDate() === today.getDate()
+		);
+	}
+
 	$effect(() => {
 		const loc = appState.selectedLocation;
 		if (loc && loc !== lastSearchedLocation) {
@@ -99,21 +108,32 @@
 <div class="flex flex-col lg:flex-row min-h-[calc(100vh-8rem)] gap-0" id="main-results-section">
 
 	<!-- LEFT PANEL: controls + list -->
+	<!-- Task 4: added border-r border-gray-200 for visual separation from map -->
 	<div class="order-2 lg:order-1 lg:w-[40%] flex flex-col overflow-y-auto lg:max-h-[calc(100vh-8rem)] border-r border-gray-200 bg-gray-50">
 
 		<!-- Filters collapsible -->
 		<div class="p-4 border-b border-gray-200 bg-white">
 			{#if appState.selectedLocation}
-				<!-- Active filter summary line -->
-				<p class="text-sm text-gray-500 mb-2">
+				<!-- Task 3: filter summary as chips -->
+				<div class="flex flex-wrap items-center gap-1.5 mb-2">
 					{#if appState.selectedLocation.isPoint}
-						Within {appState.maxDistance.toLocaleString()} {appState.distanceUnits}
+						<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+							Within {appState.maxDistance.toLocaleString()} {appState.distanceUnits}
+						</span>
 					{:else}
-						Within {appState.selectedLocation.name}
+						<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+							Within {appState.selectedLocation.name}
+						</span>
 					{/if}
-					&bull;
-					Last {appState.maxDaysAgo} days
-				</p>
+					<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+						Last {appState.maxDaysAgo} days
+					</span>
+					{#if !isToday(appState.selectedDate)}
+						<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+							As of {formatDateInput(appState.selectedDate)}
+						</span>
+					{/if}
+				</div>
 
 				<details class="group">
 					<summary class="text-sm font-medium text-gray-700 cursor-pointer select-none list-none flex items-center gap-1 hover:text-blue-700 transition-colors py-2 px-3 min-h-[44px] -mx-3">
@@ -170,8 +190,8 @@
 			{/if}
 		</div>
 
-		<!-- Results header -->
-		<div class="px-4 py-2.5 border-b border-gray-100 bg-white flex items-center gap-2">
+		<!-- Task 2: Results header — sticky, polished count + location badge -->
+		<div class="sticky top-0 bg-white border-b border-gray-100 z-10 px-4 py-2 flex items-center gap-2">
 			{#if appState.loading}
 				<svg class="animate-spin h-3.5 w-3.5 text-blue-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
 					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -179,8 +199,10 @@
 				</svg>
 				<span class="text-sm font-medium text-gray-500">Loading...</span>
 			{:else if appState.selectedLocation}
-				<span class="text-sm font-medium text-gray-600">
-					{appState.filteredIncidents.length} incident{appState.filteredIncidents.length !== 1 ? 's' : ''} found
+				<span class="font-medium text-gray-900 truncate max-w-[150px]">{appState.selectedLocation.name}</span>
+				<span class="text-gray-300 flex-shrink-0">&middot;</span>
+				<span class="text-sm text-gray-600 flex-shrink-0">
+					<span class="font-bold text-blue-700">{appState.filteredIncidents.length.toLocaleString()}</span> crashes
 				</span>
 			{:else}
 				<span class="text-sm font-medium text-gray-600">
@@ -216,12 +238,29 @@
 
 		<!-- Incident list (scrollable on desktop, stacked below map on mobile) -->
 		{#if !appState.selectedLocation && appState.incidents.length === 0 && !appState.loading}
-			<!-- Empty state -->
-			<div class="flex flex-col items-center justify-center flex-1 px-8 py-16 text-center">
-				<svg class="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+			<!-- Task 1: Compelling welcome empty state -->
+			<div class="flex flex-col items-center justify-center flex-1 px-6 py-12 text-center gap-3">
+				<!-- Map pin icon, 48px, blue-700 -->
+				<svg
+					class="w-12 h-12 text-blue-700 mb-1"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="1.5"
+						d="M12 2C8.686 2 6 4.686 6 8c0 4.418 6 12 6 12s6-7.582 6-12c0-3.314-2.686-6-6-6z"
+					/>
+					<circle cx="12" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
 				</svg>
-				<p class="text-sm text-gray-500 max-w-xs">Search for a location or use Near Me to see nearby crashes</p>
+				<h2 class="text-xl font-bold text-gray-900">Chicago Crash Data</h2>
+				<p class="text-sm text-gray-500 max-w-xs leading-relaxed">
+					Explore traffic crash data for any Chicago neighborhood, ward, or intersection.
+				</p>
+				<p class="text-xs text-gray-400">Search above or use Near Me to get started.</p>
 			</div>
 		{:else}
 			<div class="px-4 py-3 lg:flex-1">
@@ -236,14 +275,17 @@
 	</div>
 
 	<!-- RIGHT PANEL: map (desktop), or stacked above list (mobile) -->
-	<div class="order-1 lg:order-2 lg:flex-1 h-72 sm:h-96 lg:h-auto lg:min-h-[calc(100vh-8rem)]">
-		<MapContainer
-			selectedLocation={appState.selectedLocation}
-			incidents={appState.incidents}
-			{setIncidentDetail}
-			{defaultGeoCenter}
-			maxDistance={appState.maxDistance}
-		/>
+	<!-- Task 4: sticky positioning + full viewport height on desktop -->
+	<div class="order-1 lg:order-2 lg:flex-1 h-72 sm:h-96 lg:h-auto lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)]">
+		<div class="h-full">
+			<MapContainer
+				selectedLocation={appState.selectedLocation}
+				incidents={appState.incidents}
+				{setIncidentDetail}
+				{defaultGeoCenter}
+				maxDistance={appState.maxDistance}
+			/>
+		</div>
 	</div>
 
 </div>
