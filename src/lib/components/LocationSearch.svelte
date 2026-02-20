@@ -131,7 +131,9 @@
 					onclick={() => selectLocation(result)}
 					onmouseenter={() => (selectedIndex = index)}
 				>
-					<span class="location-item-name">{@html highlightFilteredText(result.name, searchQuery)}</span>
+					<span class="location-item-name"
+						>{@html highlightFilteredText(result.name, searchQuery)}</span
+					>
 					<span class="category-badge {categoryBadge(result.category).classes}">
 						{categoryBadge(result.category).label}
 					</span>

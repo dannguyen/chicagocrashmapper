@@ -10,13 +10,7 @@
 
 	type AreaStat = NeighborhoodStat | WardStat;
 
-	let {
-		title,
-		stats,
-		loading,
-		error,
-		category
-	} = $props<{
+	let { title, stats, loading, error, category } = $props<{
 		title: string;
 		stats: AreaStat[];
 		loading: boolean;
@@ -24,7 +18,13 @@
 		category: string;
 	}>();
 
-	type SortField = 'name' | 'mostRecent' | 'avgPerYear' | 'totalIncidents' | 'totalFatal' | 'totalSeriousInjuries';
+	type SortField =
+		| 'name'
+		| 'mostRecent'
+		| 'avgPerYear'
+		| 'totalIncidents'
+		| 'totalFatal'
+		| 'totalSeriousInjuries';
 	let sortField: SortField = $state('avgPerYear');
 	let sortDirection: 1 | -1 = $state(-1); // 1 for asc, -1 for desc
 
@@ -89,42 +89,53 @@
 							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100"
 							onclick={() => toggleSort('name')}
 						>
-							{singularLabel} <span class="text-gray-400 group-hover:text-gray-600">{sortIcon('name')}</span>
+							{singularLabel}
+							<span class="text-gray-400 group-hover:text-gray-600">{sortIcon('name')}</span>
 						</th>
 						<th
 							scope="col"
 							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
 							onclick={() => toggleSort('mostRecent')}
 						>
-							Most Recent <span class="text-gray-400 group-hover:text-gray-600">{sortIcon('mostRecent')}</span>
+							Most Recent <span class="text-gray-400 group-hover:text-gray-600"
+								>{sortIcon('mostRecent')}</span
+							>
 						</th>
 						<th
 							scope="col"
 							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
 							onclick={() => toggleSort('avgPerYear')}
 						>
-							Avg/Year <span class="text-gray-400 group-hover:text-gray-600">{sortIcon('avgPerYear')}</span>
+							Avg/Year <span class="text-gray-400 group-hover:text-gray-600"
+								>{sortIcon('avgPerYear')}</span
+							>
 						</th>
 						<th
 							scope="col"
 							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
 							onclick={() => toggleSort('totalIncidents')}
 						>
-							Serious Crashes <span class="text-gray-400 group-hover:text-gray-600">{sortIcon('totalIncidents')}</span>
+							Serious Crashes <span class="text-gray-400 group-hover:text-gray-600"
+								>{sortIcon('totalIncidents')}</span
+							>
 						</th>
 						<th
 							scope="col"
 							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
 							onclick={() => toggleSort('totalSeriousInjuries')}
 						>
-							Serious Inj. <span class="text-gray-400 group-hover:text-gray-600">{sortIcon('totalSeriousInjuries')}</span>
+							Serious Inj. <span class="text-gray-400 group-hover:text-gray-600"
+								>{sortIcon('totalSeriousInjuries')}</span
+							>
 						</th>
 						<th
 							scope="col"
 							class="group cursor-pointer px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 whitespace-nowrap"
 							onclick={() => toggleSort('totalFatal')}
 						>
-							Fatalities <span class="text-gray-400 group-hover:text-gray-600">{sortIcon('totalFatal')}</span>
+							Fatalities <span class="text-gray-400 group-hover:text-gray-600"
+								>{sortIcon('totalFatal')}</span
+							>
 						</th>
 					</tr>
 				</thead>

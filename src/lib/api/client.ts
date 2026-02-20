@@ -81,6 +81,26 @@ export async function getIncidentsWithin(
 	return data.incidents;
 }
 
+export interface IncidentByIdResult {
+	incident: IncidentRecord;
+	neighborhood: {
+		id: string;
+		name: string;
+		category: string;
+		latitude: number;
+		longitude: number;
+	} | null;
+	ward: { id: string; name: string; category: string; latitude: number; longitude: number } | null;
+}
+
+export async function getIncidentById(id: string): Promise<IncidentByIdResult | null> {
+	try {
+		return await apiGet<IncidentByIdResult>(`/api/incidents/${encodeURIComponent(id)}`);
+	} catch {
+		return null;
+	}
+}
+
 export async function getRecentIncidents(limit: number = 10): Promise<IncidentRecord[]> {
 	const data = await apiGet<{ incidents: IncidentRecord[] }>('/api/incidents/recent', {
 		limit

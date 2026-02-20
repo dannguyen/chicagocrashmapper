@@ -13,13 +13,24 @@
 		const lvl = p.injury_level;
 		if (lvl === 'fatal') return 'text-red-600 font-semibold';
 		if (lvl === 'incapacitating') return 'text-purple-500 font-semibold';
-		return 'text-gray-500';
+		return 'text-gray-400';
 	}
 
 	function outcomeText(p: Person): string | null {
-		if (p.isKilled) return 'was killed';
-		if (p.injury_level === 'incapacitating') return 'was seriously injured';
-		return null;
+		switch (p.injury_level) {
+			case 'fatal':
+				return 'was killed';
+			case 'incapacitating':
+				return 'was seriously injured';
+			case 'non-incapacitating':
+				return 'suffered minor injury';
+			case 'none':
+				return 'was uninjured';
+			case 'unclear':
+				return 'reported non-evident injuries';
+			default:
+				return null;
+		}
 	}
 </script>
 
@@ -69,7 +80,8 @@
 			<ul class="vehicle-list">
 				{#each incident.vehicles as vh}
 					<li>
-						<span class="vehicle-desc">{vh.description || 'Unknown vehicle'}</span>
+						<span class="vehicle-desc">{vh.description || 'Unknown vehicle'}</span
+						>{#if vh.reportableType}<span class="vehicle-type">{vh.reportableType}</span>{/if}
 						{#each vh.passengers as p}
 							<span class="passenger">
 								{#if p.person_type}<span class="person-role">{p.person_type}:</span>{/if}
@@ -118,14 +130,21 @@
 		@apply text-xs text-gray-600 space-y-0.5 mt-1;
 	}
 
-	.people-list li,
-	.vehicle-list li {
+	.people-list li {
 		@apply flex flex-wrap gap-x-1 items-baseline;
+	}
+
+	.vehicle-list li {
+		@apply flex flex-col;
 	}
 
 	.person-desc,
 	.vehicle-desc {
 		@apply font-medium text-gray-800;
+	}
+
+	.vehicle-type {
+		@apply ml-1.5 text-xs text-gray-400 uppercase tracking-wide;
 	}
 
 	.person-role {

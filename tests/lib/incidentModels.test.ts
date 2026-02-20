@@ -175,6 +175,17 @@ describe('Vehicle', () => {
 		const partial = new Vehicle({ make: 'Ford' });
 		expect(partial.description).toBe('Ford');
 	});
+
+	it('reportableType is null for DRIVER or null unit_type, else returns unit_type', () => {
+		expect(new Vehicle({ unit_type: 'DRIVER' }).reportableType).toBeNull();
+		expect(new Vehicle({ unit_type: null }).reportableType).toBeNull();
+		expect(new Vehicle({}).reportableType).toBeNull();
+
+		expect(new Vehicle({ unit_type: 'PARKED' }).reportableType).toBe('PARKED');
+		expect(new Vehicle({ unit_type: 'BICYCLE' }).reportableType).toBe('BICYCLE');
+		expect(new Vehicle({ unit_type: 'PEDESTRIAN' }).reportableType).toBe('PEDESTRIAN');
+		expect(new Vehicle({ unit_type: 'DRIVERLESS' }).reportableType).toBe('DRIVERLESS');
+	});
 });
 
 describe('Incident vehicles and non_passengers parsing', () => {
