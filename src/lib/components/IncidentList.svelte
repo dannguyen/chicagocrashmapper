@@ -55,6 +55,7 @@
 	<section class="incident-list-grid">
 		{#each incidents as item, index}
 			{@const severity = incidentSeverity(item)}
+			{@const secondary = secondaryInfo(item, selectedLocation, distanceUnits)}
 			<div class="incident-card {severityBorderClass(severity)}">
 				<a href="/incidents/{item.crash_record_id}" class="incident-link">
 					<!-- Top row: badge + severity label + distance + date -->
@@ -91,7 +92,6 @@
 					</p>
 
 					<!-- Secondary info -->
-					{@const secondary = secondaryInfo(item, selectedLocation, distanceUnits)}
 					{#if secondary}
 						<p class="incident-secondary">{secondary}</p>
 					{/if}
