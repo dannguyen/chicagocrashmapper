@@ -552,6 +552,13 @@
 		height: 100%;
 	}
 
+	@media (min-width: 1024px) {
+		.map-shell :global(#map) {
+			height: 100%;
+			margin-bottom: 0;
+		}
+	}
+
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);

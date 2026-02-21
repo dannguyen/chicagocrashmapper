@@ -237,13 +237,6 @@
 		z-index: 0;
 	}
 
-	/* On desktop the map panel is sticky + full viewport height — fill it */
-	@media (min-width: 1024px) {
-		:global(#map) {
-			height: 100%;
-			margin-bottom: 0;
-		}
-	}
 
 	/* Incident markers — injected by Leaflet outside Svelte scope, must be :global */
 	:global(.marker-icon) {
