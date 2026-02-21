@@ -67,12 +67,6 @@
 		// no-op for now
 	}
 
-	$effect(() => {
-		if (incidents.length > 0 && mapRef) {
-			mapRef.updateNearbyMarkers(incidents);
-		}
-	});
-
 	onMount(async () => {
 		// Fetch all-time summary and first page in parallel
 		const [, summary] = await Promise.all([
@@ -81,10 +75,13 @@
 		]);
 		allTimeSummary = summary;
 
-		// After map mounts and data loads, show location shape/marker
+		// By the time the network requests finish, Leaflet is long initialized.
+		// One RAF to let Svelte flush the new incidents into MapContainer's props,
+		// then explicitly sync both the shape marker and incident markers.
 		requestAnimationFrame(() => {
 			if (mapRef) {
 				mapRef.updateMapWithLocation(location);
+				mapRef.updateNearbyMarkers(incidents);
 			}
 		});
 	});
