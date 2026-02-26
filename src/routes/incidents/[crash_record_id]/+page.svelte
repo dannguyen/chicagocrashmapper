@@ -15,13 +15,6 @@
 	let mapEl: HTMLDivElement | undefined = $state(undefined);
 	const MapperInstance = new Mapper();
 
-	const crashDateTitle = $derived.by(() => {
-		const d = incident.date;
-		return (
-			d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' Crash'
-		);
-	});
-
 	onMount(() => {
 		let destroyed = false;
 		(async () => {
@@ -51,7 +44,7 @@
 </script>
 
 <svelte:head>
-	<title>{incident ? `${crashDateTitle} — ${SITE_NAME}` : `Incident — ${SITE_NAME}`}</title>
+	<title>{incident.title}</title>
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -65,7 +58,7 @@
 	</nav>
 
 	<!-- Page title -->
-	<h1 class="text-2xl font-bold text-gray-900">{crashDateTitle}</h1>
+	<h1 class="text-2xl font-bold text-gray-900">{incident.title}</h1>
 
 	<!-- Map -->
 	<div class="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">

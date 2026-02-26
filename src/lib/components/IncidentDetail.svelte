@@ -120,7 +120,7 @@
 				</div>
 
 				<!-- Primary cause -->
-				<p class="hero-cause">{incident.primary_cause}</p>
+				<p class="hero-cause">{incident.main_cause}</p>
 
 				<!-- Location line -->
 				<p class="hero-location">

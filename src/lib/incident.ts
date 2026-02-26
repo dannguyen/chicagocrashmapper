@@ -1,5 +1,7 @@
 import { prettifyDate } from '$lib/transformHelpers';
 
+const UNKNOWN_CAUSE_LABEL: string = 'UNKNOWN CAUSE';
+
 function normalizeString(value: any): string | null {
 	if (value === undefined) {
 		return null;
@@ -8,6 +10,11 @@ function normalizeString(value: any): string | null {
 	} else {
 		return value != null && value.trim() === '' ? null : (value ?? null);
 	}
+}
+
+function isUnknownCause(cause: string | null | undefined): boolean {
+	if (cause == null || cause.trim() === '') return true;
+	return ['UNABLE TO DETERMINE', 'NOT APPLICABLE', UNKNOWN_CAUSE_LABEL].includes(cause);
 }
 
 export interface PersonRecord {
@@ -274,22 +281,30 @@ export class Incident {
 		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
 		this.vehicles = parseVehicles(record.vehicles);
 		this.non_passengers = parsePeople(record.non_passengers);
-		this.primary_cause = normalizeString(record.prim_contributory_cause) ?? 'UNKNOWN';
+		this.primary_cause = normalizeString(record.prim_contributory_cause) ?? UNKNOWN_CAUSE_LABEL;
+		this.secondary_cause = normalizeString(record.sec_contributory_cause) ?? UNKNOWN_CAUSE_LABEL;
 		this.weather_condition = normalizeString(record.weather_condition);
 		this.trafficway_type = normalizeString(record.trafficway_type);
-		this.secondary_cause = normalizeString(record.sec_contributory_cause) ?? 'UNKNOWN';
 	}
 
-	get cause(): string {
-		if (
-			this.primary_cause === 'UNABLE TO DETERMINE' ||
-			this.primary_cause === 'NOT APPLICABLE' ||
-			this.primary_cause === this.secondary_cause
-		) {
-			return this.primary_cause;
-		} else {
-			return this.secondary_cause;
+	get hasKnownCause(): boolean {
+		return !isUnknownCause(this.primary_cause);
+	}
+
+	get main_cause(): string {
+		return this.hasKnownCause ? this.primary_cause : UNKNOWN_CAUSE_LABEL;
+	}
+
+	get fullCause(): string {
+		if (!this.hasKnownCause) {
+			return UNKNOWN_CAUSE_LABEL;
 		}
+
+		if (this.primary_cause === this.secondary_cause || isUnknownCause(this.secondary_cause)) {
+			return this.primary_cause;
+		}
+
+		return `${this.primary_cause} (${this.secondary_cause})`;
 	}
 
 	get street_address(): string {
@@ -303,11 +318,19 @@ export class Incident {
 		]
 			.filter((d) => d !== null)
 			.join(', ');
+
+		const dateline = this.date.toLocaleDateString('en-US', {
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric'
+		});
+
 		return (
 			headline +
 			` near ` +
 			`${this.street_no ?? ''} ${this.street_direction ?? ''} ` +
-			`${this.street_name ?? 'Unknown Street'}`
+			`${this.street_name ?? 'Unknown Street'}` +
+			` on ${dateline}`
 		);
 	}
 	get isFatal(): boolean {

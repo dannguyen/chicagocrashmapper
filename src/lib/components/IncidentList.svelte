@@ -66,7 +66,7 @@
 
 					<!-- Cause -->
 					<p class="incident-cause">
-						{fmtCause(item.primary_cause)}
+						{fmtCause(item.main_cause)}
 					</p>
 
 					<!-- People involved -->

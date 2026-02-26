@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { Person, Vehicle, type PersonRecord, type VehicleRecord, Incident } from '$lib/incident';
 
+function datelineFor(crashDate: string): string {
+	return new Date(Date.parse(crashDate)).toLocaleDateString('en-US', {
+		month: 'long',
+		day: 'numeric',
+		year: 'numeric'
+	});
+}
+
 describe('Person', () => {
 	it('builds with provided fields', () => {
 		const record: PersonRecord = {
@@ -242,13 +250,14 @@ describe('Incident vehicles and non_passengers parsing', () => {
 	});
 
 	it('formats title and distance with fallbacks', () => {
+		const crashDate = '2024-02-01';
 		const incident = new Incident({
 			crash_record_id: 'TEST-4',
 			longitude: -87.7,
 			latitude: 41.9,
 			injuries_fatal: 0,
 			injuries_incapacitating: 2,
-			crash_date: '2024-02-01',
+			crash_date: crashDate,
 			first_crash_type: 'UNKNOWN',
 			crash_type: '',
 			street_no: null,
@@ -257,7 +266,9 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			distance: 1234.56
 		});
 
-		expect(incident.title).toBe('2 seriously injured near  N Unknown Street');
+		expect(incident.title).toBe(
+			`2 seriously injured near  N Unknown Street on ${datelineFor(crashDate)}`
+		);
 		expect(incident.distance).toBe(1235);
 	});
 
@@ -303,19 +314,76 @@ describe('Incident vehicles and non_passengers parsing', () => {
 	});
 
 	it('builds title from injury counts and location fields', () => {
+		const crashDate = '2024-03-01';
 		const incident = new Incident({
 			crash_record_id: 'TEST-5',
 			longitude: -87.7,
 			latitude: 41.9,
 			injuries_fatal: 1,
 			injuries_incapacitating: 0,
-			crash_date: '2024-03-01',
+			crash_date: crashDate,
 			first_crash_type: 'UNKNOWN',
 			street_no: '1200',
 			street_direction: 'S',
 			street_name: 'State'
 		});
 
-		expect(incident.title).toBe('1 killed near 1200 S State');
+		expect(incident.title).toBe(`1 killed near 1200 S State on ${datelineFor(crashDate)}`);
+	});
+
+	it('derives hasKnownCause and main_cause for known cause values', () => {
+		const incident = new Incident({
+			crash_record_id: 'CAUSE-1',
+			longitude: 0,
+			latitude: 0,
+			injuries_fatal: 0,
+			injuries_incapacitating: 0,
+			crash_date: '2024-04-01',
+			first_crash_type: 'UNKNOWN',
+			prim_contributory_cause: 'FOLLOWING TOO CLOSELY'
+		});
+
+		expect(incident.hasKnownCause).toBe(true);
+		expect(incident.main_cause).toBe('FOLLOWING TOO CLOSELY');
+	});
+
+	it('uses unknown cause fallback for unresolved primary causes', () => {
+		const unableToDetermine = new Incident({
+			crash_record_id: 'CAUSE-2',
+			longitude: 0,
+			latitude: 0,
+			injuries_fatal: 0,
+			injuries_incapacitating: 0,
+			crash_date: '2024-04-01',
+			first_crash_type: 'UNKNOWN',
+			prim_contributory_cause: 'UNABLE TO DETERMINE'
+		});
+		expect(unableToDetermine.hasKnownCause).toBe(false);
+		expect(unableToDetermine.main_cause).toBe('UNKNOWN CAUSE');
+
+		const notApplicable = new Incident({
+			crash_record_id: 'CAUSE-3',
+			longitude: 0,
+			latitude: 0,
+			injuries_fatal: 0,
+			injuries_incapacitating: 0,
+			crash_date: '2024-04-01',
+			first_crash_type: 'UNKNOWN',
+			prim_contributory_cause: 'NOT APPLICABLE'
+		});
+		expect(notApplicable.hasKnownCause).toBe(false);
+		expect(notApplicable.main_cause).toBe('UNKNOWN CAUSE');
+
+		const missingPrimaryCause = new Incident({
+			crash_record_id: 'CAUSE-4',
+			longitude: 0,
+			latitude: 0,
+			injuries_fatal: 0,
+			injuries_incapacitating: 0,
+			crash_date: '2024-04-01',
+			first_crash_type: 'UNKNOWN'
+		});
+		expect(missingPrimaryCause.hasKnownCause).toBe(false);
+		expect(missingPrimaryCause.main_cause).toBe('UNKNOWN CAUSE');
 	});
 });

@@ -3,11 +3,7 @@ import { incidentSeverity, severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
 
 export function fmtCause(cause: string): string {
-	return cause
-		.toLowerCase()
-		.replace(/\b\w/g, (c) => c.toUpperCase())
-		.replace(/Unable To Determine/i, 'Unknown')
-		.replace(/Not Applicable/i, 'N/A');
+	return cause.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function peopleSummary(item: Incident): string {
