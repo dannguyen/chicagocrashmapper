@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { base } from '$app/paths';
 
 	import { appState } from '$lib/components/AppState.svelte';
 	import { SITE_NAME } from '$lib/constants';
@@ -97,7 +98,7 @@
 					Explore traffic crash data for any Chicago neighborhood, ward, or intersection.
 				</p>
 				<p class="empty-note">
-					Search above or click <a class="near-me-link" href="/nearme">Near Me</a> to get started.
+					Search above or click <a class="near-me-link" href={`${base}/nearme`}>Near Me</a> to get started.
 				</p>
 			</div>
 		{:else}

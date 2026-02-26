@@ -1,3 +1,4 @@
+import { base } from '$app/paths';
 import type { Incident, Person } from '$lib/incident';
 import { incidentSeverity, severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
@@ -72,6 +73,6 @@ export function popupHtml(item: Incident, index: number): string {
 <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:2px">${fmtCause(item.main_cause)}</div>
 ${people ? `<div style="font-size:12px;color:#374151;margin-bottom:2px">${people}</div>` : ''}
 ${context ? `<div style="font-size:12px;color:#9ca3af;margin-bottom:4px">${context}</div>` : ''}
-<a href="/incidents/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
+<a href="${base}/incidents/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
 </div>`;
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { Incident } from '$lib/incident';
 	import type { Location } from '$lib/location';
 	import { prettifyInteger } from '$lib/transformHelpers';
@@ -26,7 +27,7 @@
 			{@const people = peopleSummary(item)}
 			{@const context = contextInfo(item)}
 			<div class="incident-card {severityBorderClass(severity)}">
-				<a href="/incidents/{item.crash_record_id}" class="incident-link">
+				<a href={`${base}/incidents/${item.crash_record_id}`} class="incident-link">
 					<!-- Top row: pin + severity label + distance + date -->
 					<div class="incident-row">
 						<button

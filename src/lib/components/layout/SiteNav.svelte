@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import LocationSearch from '$lib/components/LocationSearch.svelte';
 	import { appState } from '$lib/components/AppState.svelte';
 	import type { Location } from '$lib/location';
@@ -10,7 +11,7 @@
 
 <nav class="site-nav" aria-label="Search navigation">
 	<p class="nav-hint">
-		Type in a location name, or click <a class="near-me-link" href="/nearme">Near Me</a>
+		Type in a location name, or click <a class="near-me-link" href={`${base}/nearme`}>Near Me</a>
 	</p>
 
 	<div class="nav-row">

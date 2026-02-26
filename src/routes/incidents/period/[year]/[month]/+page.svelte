@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { SITE_NAME } from '$lib/constants';
 	import PeriodDetail from '$lib/components/PeriodDetail.svelte';
 	import type { PageData } from './$types';
@@ -57,7 +58,7 @@
 	);
 
 	function monthUrl(y: number, m: number): string {
-		return `/incidents/period/${y}/${m}`;
+		return `${base}/incidents/period/${y}/${m}`;
 	}
 
 	const prevLabel = $derived(`${MONTH_SHORT[prev.month - 1]} ${prev.year}`);
@@ -70,9 +71,9 @@
 
 <div class="period-header">
 	<nav class="breadcrumb">
-		<a href="/incidents" class="crumb-link">Incidents</a>
+		<a href={`${base}/incidents`} class="crumb-link">Incidents</a>
 		<span class="crumb-sep">/</span>
-		<a href="/incidents/period/{data.year}" class="crumb-link">{data.year}</a>
+		<a href={`${base}/incidents/period/${data.year}`} class="crumb-link">{data.year}</a>
 		<span class="crumb-sep">/</span>
 		<h1 class="crumb-heading">{monthName} Serious Crashes</h1>
 	</nav>

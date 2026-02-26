@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { SITE_NAME } from '$lib/constants';
 	import PeriodDetail from '$lib/components/PeriodDetail.svelte';
 	import type { PageData } from './$types';
@@ -17,16 +18,24 @@
 
 <div class="period-header">
 	<nav class="breadcrumb">
-		<a href="/incidents" class="crumb-link">Incidents</a>
+		<a href={`${base}/incidents`} class="crumb-link">Incidents</a>
 		<span class="crumb-sep">/</span>
 		<h1 class="crumb-heading">{headline}</h1>
 	</nav>
 	<div class="period-nav">
-		<a href="/incidents/period/{data.year - 1}" class="period-arrow" aria-label="Previous year"
+		<a
+			href={`${base}/incidents/period/${data.year - 1}`}
+			class="period-arrow"
+			aria-label="Previous year"
+		>
 			>&larr; {data.year - 1}</a
 		>
 		{#if hasNext}
-			<a href="/incidents/period/{data.year + 1}" class="period-arrow" aria-label="Next year"
+			<a
+				href={`${base}/incidents/period/${data.year + 1}`}
+				class="period-arrow"
+				aria-label="Next year"
+			>
 				>{data.year + 1} &rarr;</a
 			>
 		{/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { getDateCount } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/db/types';
@@ -87,7 +88,7 @@
 
 	function periodUrl(period: string): string {
 		const [year, month] = period.split('-');
-		return `/incidents/period/${year}/${parseInt(month)}`;
+		return `${base}/incidents/period/${year}/${parseInt(month)}`;
 	}
 
 	function formatTooltipLabel(p: PeriodData): string {

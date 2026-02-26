@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import type { Incident, Person, Vehicle } from '$lib/incident';
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
 	import {
@@ -125,10 +126,10 @@
 				<!-- Location line -->
 				<p class="hero-location">
 					{address}{#if ward || neighborhood}&ensp;·&ensp;{/if}{#if ward}<a
-							href="/wards/{ward.id}"
+							href={`${base}/wards/${ward.id}`}
 							class="hero-link">{ward.name}</a
 						>{/if}{#if ward && neighborhood}&ensp;·&ensp;{/if}{#if neighborhood}<a
-							href="/neighborhoods/{neighborhood.id}"
+							href={`${base}/neighborhoods/${neighborhood.id}`}
 							class="hero-link">{neighborhood.name}</a
 						>{/if}
 				</p>
@@ -191,14 +192,16 @@
 			{#if ward}
 				<div class="info-row {neighborhood ? '' : 'info-row-last'}">
 					<span class="info-label-regular">Ward</span>
-					<a href="/wards/{ward.id}" class="info-link">{ward.name}</a>
+					<a href={`${base}/wards/${ward.id}`} class="info-link">{ward.name}</a>
 				</div>
 			{/if}
 
 			{#if neighborhood}
 				<div class="info-row info-row-last">
 					<span class="info-label-regular">Neighborhood</span>
-					<a href="/neighborhoods/{neighborhood.id}" class="info-link">{neighborhood.name}</a>
+					<a href={`${base}/neighborhoods/${neighborhood.id}`} class="info-link"
+						>{neighborhood.name}</a
+					>
 				</div>
 			{/if}
 
