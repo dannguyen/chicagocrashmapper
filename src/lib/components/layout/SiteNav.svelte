@@ -9,14 +9,15 @@
 </script>
 
 <nav class="site-nav" aria-label="Search navigation">
+	<p class="nav-hint">
+		Type in a location name, or click <a class="near-me-link" href="/nearme">Near Me</a>
+	</p>
+
 	<div class="nav-row">
 		<div class="nav-search">
 			<LocationSearch onSelect={onLocationSelectGlobal} />
 		</div>
 	</div>
-	<p class="nav-hint">
-		Type in a location name, or click <a class="near-me-link" href="/nearme">Near Me</a>
-	</p>
 	{#if appState.geoError}
 		<p class="nav-error">{appState.geoError}</p>
 	{/if}

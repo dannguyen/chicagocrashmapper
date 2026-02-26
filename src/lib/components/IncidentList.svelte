@@ -56,7 +56,7 @@
 							<span class="incident-divider" aria-hidden="true">·</span>
 						{/if}
 
-						<span class="incident-date">{item.prettyDate}</span>
+						<span class="incident-date">{item.prettyDate} · {item.prettyTime}</span>
 					</div>
 
 					<!-- Street address -->

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import SiteNav from '$lib/components/layout/SiteNav.svelte';
 	import { SITE_NAME } from '$lib/constants';
 
 	let mobileMenuOpen = $state(false);
@@ -63,13 +62,6 @@
 				</svg>
 			{/if}
 		</button>
-	</div>
-
-	<!-- Search bar — always visible below the wordmark row -->
-	<div class="search-bar">
-		<div class="search-inner">
-			<SiteNav />
-		</div>
 	</div>
 
 	<!-- Mobile nav drawer -->
@@ -190,24 +182,6 @@
 	.toggle-icon {
 		width: 1.25rem;
 		height: 1.25rem;
-	}
-
-	.search-bar {
-		border-top: 1px solid #f3f4f6;
-		background: rgba(249, 250, 251, 0.8);
-	}
-
-	.search-inner {
-		max-width: 80rem;
-		margin: 0 auto;
-		padding: 0.5rem 1rem;
-		min-width: 0;
-	}
-
-	@media (min-width: 768px) {
-		.search-inner {
-			padding: 0.5rem 1.5rem;
-		}
 	}
 
 	.mobile-nav {

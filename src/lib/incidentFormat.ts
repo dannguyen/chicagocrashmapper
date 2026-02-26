@@ -41,7 +41,7 @@ export function peopleSummary(item: Incident): string {
 
 export function contextInfo(item: Incident): string {
 	const parts: string[] = [];
-	if (item.weather_condition && item.weather_condition !== 'CLEAR') {
+	if (item.weather_condition) {
 		parts.push(item.weather_condition.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()));
 	}
 	if (item.trafficway_type && item.trafficway_type !== 'NOT DIVIDED') {
@@ -69,7 +69,7 @@ export function popupHtml(item: Incident, index: number): string {
 	<span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:${color}">${label}</span>
 	<span style="font-size:11px;color:#9ca3af">${item.prettyDate}</span>
 </div>
-<div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:2px">${fmtCause(item.primary_cause)}</div>
+<div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:2px">${fmtCause(item.main_cause)}</div>
 ${people ? `<div style="font-size:12px;color:#374151;margin-bottom:2px">${people}</div>` : ''}
 ${context ? `<div style="font-size:12px;color:#9ca3af;margin-bottom:4px">${context}</div>` : ''}
 <a href="/incidents/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>

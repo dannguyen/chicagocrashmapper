@@ -1,22 +1,30 @@
 <script lang="ts">
 	import '$lib/styles/app.css';
 	import '$lib/vendor/fontawesome.js';
-	import { dev } from '$app/environment';
+	import { page } from '$app/state';
 	import SiteHeader from '$lib/components/layout/SiteHeader.svelte';
 	import SiteFooter from '$lib/components/layout/SiteFooter.svelte';
+	import SiteNav from '$lib/components/layout/SiteNav.svelte';
 
 	let { children } = $props();
 
-	let envClass = dev ? 'env-dev' : 'env-prod';
+	let isHomepage = $derived(page.url.pathname === '/');
 </script>
 
-<div class="app-shell {envClass}">
+<div class="app-shell">
 	<SiteHeader />
 	<main class="flex-1">
 		<div class="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-8">
 			{@render children()}
 		</div>
 	</main>
+	{#if !isHomepage}
+		<div class="bottom-search">
+			<div class="bottom-search-inner">
+				<SiteNav />
+			</div>
+		</div>
+	{/if}
 	<SiteFooter />
 </div>
 
@@ -33,8 +41,21 @@
 			sans-serif;
 	}
 
-	.app-shell.env-dev {
-		outline: 4px solid rgb(250 204 21); /* yellow-400 */
-		outline-offset: -4px;
+	.bottom-search {
+		border-top: 1px solid #e5e7eb;
+		background: #fff;
+		padding: 1rem 0;
+	}
+
+	.bottom-search-inner {
+		max-width: 80rem;
+		margin: 0 auto;
+		padding: 0 1rem;
+	}
+
+	@media (min-width: 768px) {
+		.bottom-search-inner {
+			padding: 0 1.5rem;
+		}
 	}
 </style>

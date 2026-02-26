@@ -339,6 +339,9 @@ export class Incident {
 	get prettyDate(): string {
 		return prettifyDate(this.date);
 	}
+	get prettyTime(): string {
+		return this.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+	}
 }
 
 export function reifyIncidents(items: IncidentRecord[]): Incident[] {
