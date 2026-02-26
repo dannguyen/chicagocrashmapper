@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Incident } from '$lib/incident';
+	import type { Person } from '$lib/incident';
 	import type { Location } from '$lib/location';
 	import { prettifyInteger } from '$lib/transformHelpers';
 	import {
@@ -25,25 +26,53 @@
 			.replace(/Not Applicable/i, 'N/A');
 	}
 
-	function secondaryInfo(item: Incident, selectedLoc: Location | null, units: string): string {
+	function peopleSummary(item: Incident): string {
+		const all: Person[] = [
+			...item.vehicles.flatMap((v) => v.passengers),
+			...item.non_passengers
+		];
+		if (all.length === 0) return '';
+
+		const killed = all.filter((p) => p.isKilled);
+		const serious = all.filter((p) => p.injury_level === 'incapacitating');
+		const minor = all.filter(
+			(p) => p.injury_level === 'non-incapacitating' || p.injury_level === 'unclear'
+		);
+
+		// Nothing notable to show
+		if (killed.length + serious.length + minor.length === 0) return '';
+
 		const parts: string[] = [];
-		const totalInjured =
-			(item.injuries_fatal ?? 0) +
-			(item.injuries_incapacitating ?? 0) +
-			(item.injuries_non_incapacitating ?? 0);
-		if (totalInjured > 0) parts.push(`${totalInjured} injured`);
+
+		if (killed.length === 1) {
+			parts.push(`${killed[0].description} killed`);
+		} else if (killed.length > 1) {
+			parts.push(`${killed.length} people killed`);
+		}
+
+		if (serious.length === 1) {
+			parts.push(`${serious[0].description} seriously injured`);
+		} else if (serious.length > 1) {
+			parts.push(`${serious.length} seriously injured`);
+		}
+
+		if (minor.length > 0) {
+			parts.push(`${minor.length} minor ${minor.length === 1 ? 'injury' : 'injuries'}`);
+		}
+
+		return parts.join(', ');
+	}
+
+	function contextInfo(item: Incident): string {
+		const parts: string[] = [];
 		if (item.weather_condition && item.weather_condition !== 'CLEAR') {
 			parts.push(
-				item.weather_condition
-					.toLowerCase()
-					.replace(/\b\w/g, (c) => c.toUpperCase())
+				item.weather_condition.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
 			);
 		}
 		if (item.trafficway_type && item.trafficway_type !== 'NOT DIVIDED') {
 			parts.push(
-				item.trafficway_type
-					.toLowerCase()
-					.replace(/\b\w/g, (c) => c.toUpperCase())
+				item.trafficway_type.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
 			);
 		}
 		return parts.join(' · ');
@@ -55,10 +84,11 @@
 	<section class="incident-list-grid">
 		{#each incidents as item, index}
 			{@const severity = incidentSeverity(item)}
-			{@const secondary = secondaryInfo(item, selectedLocation, distanceUnits)}
+			{@const people = peopleSummary(item)}
+			{@const context = contextInfo(item)}
 			<div class="incident-card {severityBorderClass(severity)}">
 				<a href="/incidents/{item.crash_record_id}" class="incident-link">
-					<!-- Top row: badge + severity label + distance + date -->
+					<!-- Top row: pin + severity label + distance + date -->
 					<div class="incident-row">
 						<button
 							type="button"
@@ -91,9 +121,14 @@
 						{fmtCause(item.primary_cause)}
 					</p>
 
-					<!-- Secondary info -->
-					{#if secondary}
-						<p class="incident-secondary">{secondary}</p>
+					<!-- People involved -->
+					{#if people}
+						<p class="incident-people">{people}</p>
+					{/if}
+
+					<!-- Context: weather / trafficway -->
+					{#if context}
+						<p class="incident-secondary">{context}</p>
 					{/if}
 				</a>
 			</div>
@@ -184,8 +219,14 @@
 		margin-bottom: 0.25rem;
 	}
 
+	.incident-people {
+		font-size: 0.75rem;
+		color: #374151;
+		margin-bottom: 0.125rem;
+	}
+
 	.incident-secondary {
 		font-size: 0.75rem;
-		color: #6b7280;
+		color: #9ca3af;
 	}
 </style>
