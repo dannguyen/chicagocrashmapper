@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Incident } from '$lib/incident';
-	import type { Person } from '$lib/incident';
 	import type { Location } from '$lib/location';
 	import { prettifyInteger } from '$lib/transformHelpers';
+	import { fmtCause, peopleSummary, contextInfo } from '$lib/incidentFormat';
 	import {
 		incidentSeverity,
 		severityBorderClass,
@@ -17,67 +17,6 @@
 		distanceUnits: string;
 		showIncidentOnMap: (index: number) => void;
 	}>();
-
-	function fmtCause(cause: string): string {
-		return cause
-			.toLowerCase()
-			.replace(/\b\w/g, (c) => c.toUpperCase())
-			.replace(/Unable To Determine/i, 'Unknown')
-			.replace(/Not Applicable/i, 'N/A');
-	}
-
-	function peopleSummary(item: Incident): string {
-		const all: Person[] = [
-			...item.vehicles.flatMap((v) => v.passengers),
-			...item.non_passengers
-		];
-		if (all.length === 0) return '';
-
-		const killed = all.filter((p) => p.isKilled);
-		const serious = all.filter((p) => p.injury_level === 'incapacitating');
-		const minor = all.filter(
-			(p) => p.injury_level === 'non-incapacitating' || p.injury_level === 'unclear'
-		);
-
-		// Nothing notable to show
-		if (killed.length + serious.length + minor.length === 0) return '';
-
-		const parts: string[] = [];
-
-		if (killed.length === 1) {
-			parts.push(`${killed[0].description} killed`);
-		} else if (killed.length > 1) {
-			parts.push(`${killed.length} people killed`);
-		}
-
-		if (serious.length === 1) {
-			parts.push(`${serious[0].description} seriously injured`);
-		} else if (serious.length > 1) {
-			parts.push(`${serious.length} seriously injured`);
-		}
-
-		if (minor.length > 0) {
-			parts.push(`${minor.length} minor ${minor.length === 1 ? 'injury' : 'injuries'}`);
-		}
-
-		return parts.join(', ');
-	}
-
-	function contextInfo(item: Incident): string {
-		const parts: string[] = [];
-		if (item.weather_condition && item.weather_condition !== 'CLEAR') {
-			parts.push(
-				item.weather_condition.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
-			);
-		}
-		if (item.trafficway_type && item.trafficway_type !== 'NOT DIVIDED') {
-			parts.push(
-				item.trafficway_type.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
-			);
-		}
-		return parts.join(' · ');
-	}
-
 </script>
 
 {#if incidents.length > 0}
@@ -93,7 +32,10 @@
 						<button
 							type="button"
 							class="incident-pin {severityPinClass(severity)}"
-							onclick={(e) => { e.stopPropagation(); showIncidentOnMap(index); }}
+							onclick={(e) => {
+								e.stopPropagation();
+								showIncidentOnMap(index);
+							}}
 							aria-label="Show incident {index + 1} on map"
 						>
 							{index + 1}
@@ -108,13 +50,19 @@
 
 						{#if selectedLocation?.isPoint && item.distance != null}
 							<span class="incident-distance">
-								{prettifyInteger(item.distance)} {distanceUnits} away
+								{prettifyInteger(item.distance)}
+								{distanceUnits} away
 							</span>
 							<span class="incident-divider" aria-hidden="true">·</span>
 						{/if}
 
 						<span class="incident-date">{item.prettyDate}</span>
 					</div>
+
+					<!-- Street address -->
+					{#if item.street_address.trim()}
+						<p class="incident-street">{item.street_address}</p>
+					{/if}
 
 					<!-- Cause -->
 					<p class="incident-cause">
@@ -209,6 +157,15 @@
 		font-size: 0.75rem;
 		color: #9ca3af;
 		flex-shrink: 0;
+	}
+
+	.incident-street {
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: #9ca3af;
+		margin-bottom: 0.125rem;
 	}
 
 	.incident-cause {

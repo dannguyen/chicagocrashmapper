@@ -99,9 +99,16 @@
 							class:sort-active={sortField === 'name'}
 							tabindex="0"
 							onclick={() => toggleSort('name')}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('name'); } }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleSort('name');
+								}
+							}}
 						>
-							{singularLabel}{#if sortIcon('name')}&nbsp;<span class="sort-icon">{sortIcon('name')}</span>{/if}
+							{singularLabel}{#if sortIcon('name')}&nbsp;<span class="sort-icon"
+									>{sortIcon('name')}</span
+								>{/if}
 						</th>
 						<th
 							scope="col"
@@ -109,9 +116,16 @@
 							class:sort-active={sortField === 'totalIncidents'}
 							tabindex="0"
 							onclick={() => toggleSort('totalIncidents')}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('totalIncidents'); } }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleSort('totalIncidents');
+								}
+							}}
 						>
-							Total Crashes{#if sortIcon('totalIncidents')}&nbsp;<span class="sort-icon">{sortIcon('totalIncidents')}</span>{/if}
+							Total Crashes{#if sortIcon('totalIncidents')}&nbsp;<span class="sort-icon"
+									>{sortIcon('totalIncidents')}</span
+								>{/if}
 						</th>
 						<th
 							scope="col"
@@ -119,9 +133,16 @@
 							class:sort-active={sortField === 'totalFatal'}
 							tabindex="0"
 							onclick={() => toggleSort('totalFatal')}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('totalFatal'); } }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleSort('totalFatal');
+								}
+							}}
 						>
-							Fatal{#if sortIcon('totalFatal')}&nbsp;<span class="sort-icon">{sortIcon('totalFatal')}</span>{/if}
+							Fatal{#if sortIcon('totalFatal')}&nbsp;<span class="sort-icon"
+									>{sortIcon('totalFatal')}</span
+								>{/if}
 						</th>
 						<th
 							scope="col"
@@ -129,9 +150,16 @@
 							class:sort-active={sortField === 'totalSeriousInjuries'}
 							tabindex="0"
 							onclick={() => toggleSort('totalSeriousInjuries')}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('totalSeriousInjuries'); } }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleSort('totalSeriousInjuries');
+								}
+							}}
 						>
-							Serious Inj.{#if sortIcon('totalSeriousInjuries')}&nbsp;<span class="sort-icon">{sortIcon('totalSeriousInjuries')}</span>{/if}
+							Serious Inj.{#if sortIcon('totalSeriousInjuries')}&nbsp;<span class="sort-icon"
+									>{sortIcon('totalSeriousInjuries')}</span
+								>{/if}
 						</th>
 						<th
 							scope="col"
@@ -139,9 +167,16 @@
 							class:sort-active={sortField === 'avgPerYear'}
 							tabindex="0"
 							onclick={() => toggleSort('avgPerYear')}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('avgPerYear'); } }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleSort('avgPerYear');
+								}
+							}}
 						>
-							Avg/Year{#if sortIcon('avgPerYear')}&nbsp;<span class="sort-icon">{sortIcon('avgPerYear')}</span>{/if}
+							Avg/Year{#if sortIcon('avgPerYear')}&nbsp;<span class="sort-icon"
+									>{sortIcon('avgPerYear')}</span
+								>{/if}
 						</th>
 						<th
 							scope="col"
@@ -149,9 +184,16 @@
 							class:sort-active={sortField === 'mostRecent'}
 							tabindex="0"
 							onclick={() => toggleSort('mostRecent')}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('mostRecent'); } }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleSort('mostRecent');
+								}
+							}}
 						>
-							Last Crash{#if sortIcon('mostRecent')}&nbsp;<span class="sort-icon">{sortIcon('mostRecent')}</span>{/if}
+							Last Crash{#if sortIcon('mostRecent')}&nbsp;<span class="sort-icon"
+									>{sortIcon('mostRecent')}</span
+								>{/if}
 						</th>
 					</tr>
 				</thead>
@@ -159,10 +201,7 @@
 					{#each sortedStats as item (item.id)}
 						<tr class="table-row">
 							<td class="table-cell table-cell-strong">
-								<a
-									href="{base}/{category}/{item.id}"
-									class="table-link"
-								>
+								<a href="{base}/{category}/{item.id}" class="table-link">
 									{item.name}
 								</a>
 							</td>

@@ -124,7 +124,13 @@
 
 				<!-- Location line -->
 				<p class="hero-location">
-					{address}{#if ward || neighborhood}&ensp;·&ensp;{/if}{#if ward}<a href="/wards/{ward.id}" class="hero-link">{ward.name}</a>{/if}{#if ward && neighborhood}&ensp;·&ensp;{/if}{#if neighborhood}<a href="/neighborhoods/{neighborhood.id}" class="hero-link">{neighborhood.name}</a>{/if}
+					{address}{#if ward || neighborhood}&ensp;·&ensp;{/if}{#if ward}<a
+							href="/wards/{ward.id}"
+							class="hero-link">{ward.name}</a
+						>{/if}{#if ward && neighborhood}&ensp;·&ensp;{/if}{#if neighborhood}<a
+							href="/neighborhoods/{neighborhood.id}"
+							class="hero-link">{neighborhood.name}</a
+						>{/if}
 				</p>
 			</div>
 
@@ -144,7 +150,8 @@
 
 			<div class="info-row">
 				<span class="info-label">Weather</span>
-				<span class="info-value info-value-right">{conditionValue(incident.weather_condition)}</span>
+				<span class="info-value info-value-right">{conditionValue(incident.weather_condition)}</span
+				>
 			</div>
 
 			<div class="info-row">
@@ -176,7 +183,7 @@
 		<div class="info-card">
 			<p class="info-title">Location</p>
 
-			<div class="info-row {(!ward && !neighborhood) ? 'info-row-last' : ''}">
+			<div class="info-row {!ward && !neighborhood ? 'info-row-last' : ''}">
 				<span class="info-label-regular">Address</span>
 				<span class="location-address">{address}</span>
 			</div>
@@ -228,7 +235,9 @@
 				{#each vh.passengers as p}
 					{@const pLevel = personInjuryLevel(p)}
 					{@const pLabel = injuryLabel(pLevel)}
-					{@const vehicleDesc = [vh.vehicle_year, vh.make, vh.model].filter((x) => x != null && x !== '').join(' ')}
+					{@const vehicleDesc = [vh.vehicle_year, vh.make, vh.model]
+						.filter((x) => x != null && x !== '')
+						.join(' ')}
 					<div class="person-row">
 						<!-- Left: role + vehicle info -->
 						<div class="person-main">

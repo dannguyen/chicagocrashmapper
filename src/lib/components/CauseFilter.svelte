@@ -93,7 +93,10 @@
 		background: #fff;
 		color: #4b5563;
 		cursor: pointer;
-		transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+		transition:
+			border-color 120ms ease,
+			color 120ms ease,
+			background-color 120ms ease;
 	}
 
 	.chip-inactive:hover {

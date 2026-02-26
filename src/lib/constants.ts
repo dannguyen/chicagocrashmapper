@@ -1,3 +1,4 @@
+export const SITE_NAME = 'Chicago Crash Mapper';
 export const SEARCH_DEBOUNCE_MS = 700;
 export const AUTOCOMPLETE_DEBOUNCE_MS = 300;
 export const BLUR_DELAY_MS = 200;

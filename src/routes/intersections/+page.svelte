@@ -1,11 +1,8 @@
-<svelte:head>
-	<title>Dangerous Intersections — Chicago Crash Map</title>
-</svelte:head>
-
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { getTopIntersections } from '$lib/api/client';
+	import { SITE_NAME } from '$lib/constants';
 	import type { IntersectionStat } from '$lib/db';
 
 	let topByCount: IntersectionStat[] = $state([]);
@@ -25,6 +22,10 @@
 		}
 	});
 </script>
+
+<svelte:head>
+	<title>Dangerous Intersections — {SITE_NAME}</title>
+</svelte:head>
 
 <div class="mx-auto max-w-7xl px-4 py-8">
 	<div class="mb-8">
@@ -65,19 +66,27 @@
 			<!-- Most Incidents List -->
 			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
 				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
-					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Most Incidents (within 500ft)</h2>
+					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+						Most Incidents (within 500ft)
+					</h2>
 				</div>
 				<ul class="divide-y divide-gray-100">
 					{#each topByCount as item, i}
 						<li class="flex items-center gap-4 px-5 py-3 hover:bg-blue-50 transition-colors">
-							<span class="text-2xl font-bold text-gray-300 w-8 shrink-0 tabular-nums">{i + 1}</span>
+							<span class="text-2xl font-bold text-gray-300 w-8 shrink-0 tabular-nums">{i + 1}</span
+							>
 							<div class="min-w-0 flex-1">
-								<a href="{base}/intersections/{item.id}" class="font-semibold text-gray-900 hover:text-blue-700 hover:underline text-sm leading-snug block truncate">
+								<a
+									href="{base}/intersections/{item.id}"
+									class="font-semibold text-gray-900 hover:text-blue-700 hover:underline text-sm leading-snug block truncate"
+								>
 									{item.name}
 								</a>
 								<span class="text-sm text-gray-600">{item.count} crashes</span>
 							</div>
-							<span class="shrink-0 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+							<span
+								class="shrink-0 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap"
+							>
 								{item.count} crashes
 							</span>
 						</li>
@@ -88,19 +97,27 @@
 			<!-- Most Recent List -->
 			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
 				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
-					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Most Recent Incidents</h2>
+					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+						Most Recent Incidents
+					</h2>
 				</div>
 				<ul class="divide-y divide-gray-100">
 					{#each topByRecency as item, i}
 						<li class="flex items-center gap-4 px-5 py-3 hover:bg-blue-50 transition-colors">
-							<span class="text-2xl font-bold text-gray-300 w-8 shrink-0 tabular-nums">{i + 1}</span>
+							<span class="text-2xl font-bold text-gray-300 w-8 shrink-0 tabular-nums">{i + 1}</span
+							>
 							<div class="min-w-0 flex-1">
-								<a href="{base}/intersections/{item.id}" class="font-semibold text-gray-900 hover:text-blue-700 hover:underline text-sm leading-snug block truncate">
+								<a
+									href="{base}/intersections/{item.id}"
+									class="font-semibold text-gray-900 hover:text-blue-700 hover:underline text-sm leading-snug block truncate"
+								>
 									{item.name}
 								</a>
 								<span class="text-xs text-gray-500">Approx. {item.distance} ft from incident</span>
 							</div>
-							<span class="shrink-0 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+							<span
+								class="shrink-0 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap"
+							>
 								{item.mostRecentDate}
 							</span>
 						</li>

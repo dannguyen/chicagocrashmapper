@@ -54,6 +54,7 @@ export interface IncidentSummary {
 }
 
 export interface DateCountPeriod {
+	incident_count: number;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
 }

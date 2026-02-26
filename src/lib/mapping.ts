@@ -12,7 +12,8 @@ export class Mapper {
 		this.map = this.L.map(elementId).setView(center, zoom);
 
 		this.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+			attribution:
+				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
 			subdomains: 'abcd',
 			maxZoom: 19
 		}).addTo(this.map!); // Non-null assertion because we just assigned it
@@ -77,7 +78,7 @@ export class Mapper {
 					color: '#4455bb',
 					fillOpacity: 0.4
 				}),
-				onEachFeature: (feature: import("geojson").Feature, layer: Layer) => {
+				onEachFeature: (feature: import('geojson').Feature, layer: Layer) => {
 					const p = feature.properties as Record<string, unknown>;
 					if (p?.name) {
 						layer.bindPopup(String(p.name));

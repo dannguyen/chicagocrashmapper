@@ -1,4 +1,3 @@
-
 export function currentAgeInDays(dateVal: string | Date): number {
 	let pastDate: Date | null = null;
 	if (dateVal instanceof Date === true) {

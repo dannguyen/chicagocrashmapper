@@ -26,7 +26,11 @@
 		display: flex;
 		flex-direction: column;
 		background-color: rgb(249 250 251); /* gray-50 */
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
+		font-family:
+			'Inter',
+			system-ui,
+			-apple-system,
+			sans-serif;
 	}
 
 	.app-shell.env-dev {

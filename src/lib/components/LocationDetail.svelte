@@ -110,11 +110,7 @@
 				Showing {rangeStart}–{rangeEnd} of {totalIncidents} incidents
 			</span>
 			<div class="pager-controls">
-				<button
-					class="pager-button pager-nav"
-					disabled={!hasPrev || loading}
-					onclick={goToPrev}
-				>
+				<button class="pager-button pager-nav" disabled={!hasPrev || loading} onclick={goToPrev}>
 					Prev
 				</button>
 				{#each pageNumbers as pg}
@@ -132,11 +128,7 @@
 						</button>
 					{/if}
 				{/each}
-				<button
-					class="pager-button pager-nav"
-					disabled={!hasNext || loading}
-					onclick={goToNext}
-				>
+				<button class="pager-button pager-nav" disabled={!hasNext || loading} onclick={goToNext}>
 					Next
 				</button>
 			</div>
@@ -178,11 +170,7 @@
 	<!-- Bottom pagination (only when there are multiple pages) -->
 	{#if totalPages > 1 && !loading}
 		<div class="pager-footer">
-			<button
-				class="pager-button pager-nav"
-				disabled={!hasPrev || loading}
-				onclick={goToPrev}
-			>
+			<button class="pager-button pager-nav" disabled={!hasPrev || loading} onclick={goToPrev}>
 				Prev
 			</button>
 			{#each pageNumbers as pg}
@@ -200,11 +188,7 @@
 					</button>
 				{/if}
 			{/each}
-			<button
-				class="pager-button pager-nav"
-				disabled={!hasNext || loading}
-				onclick={goToNext}
-			>
+			<button class="pager-button pager-nav" disabled={!hasNext || loading} onclick={goToNext}>
 				Next
 			</button>
 		</div>
@@ -253,7 +237,10 @@
 		font-size: 0.875rem;
 		border: 1px solid #d1d5db;
 		background: #fff;
-		transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+		transition:
+			border-color 120ms ease,
+			color 120ms ease,
+			background-color 120ms ease;
 	}
 
 	.pager-button:disabled {

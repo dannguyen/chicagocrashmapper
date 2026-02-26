@@ -17,9 +17,11 @@ The Chicago Crash Mapper is a SvelteKit 5 frontend for exploring Chicago traffic
 ## Cycle 1 — Code Archaeology (Refactor Only)
 
 ### Goals
+
 Remove dead code, fix type safety, eliminate magic numbers, and make the codebase ready for design work.
 
 ### Tasks
+
 1. **Remove unused files**
    - Delete `src/lib/components/PeopleList.svelte` (not imported anywhere)
 
@@ -56,6 +58,7 @@ Remove dead code, fix type safety, eliminate magic numbers, and make the codebas
    - Route pages (neighborhoods, wards, intersections)
 
 ### Success Criteria
+
 - `svelte-check` passes with no errors
 - No `any` type annotations in mapping code
 - No `console.log/warn/error` in source
@@ -70,6 +73,7 @@ Remove dead code, fix type safety, eliminate magic numbers, and make the codebas
 A purposeful, authoritative look that serves people navigating real crash data. Inspired by the Chicago flag: confident blue + warm orange accent, clean white backgrounds, strong typographic hierarchy.
 
 ### Color Palette
+
 ```
 Primary:    blue-700     (#1d4ed8)  — civic authority, Chicago flag blue
 Accent:     orange-500   (#f97316)  — Chicago flag orange, CTAs and highlights
@@ -83,6 +87,7 @@ Border:     gray-100 (light) / gray-200 (medium)
 ```
 
 ### Typography
+
 - **Font**: Inter (Google Fonts) with `system-ui` fallback
 - `text-2xl font-bold` — page titles
 - `text-lg font-semibold` — section headers
@@ -90,15 +95,18 @@ Border:     gray-100 (light) / gray-200 (medium)
 - `text-3xl font-bold tabular-nums` — large stat numbers
 
 ### Layout
+
 - **Max width**: `max-w-6xl` (widened from current `max-w-5xl`)
 - **Header**: sticky, `h-14`, thin `border-b border-gray-200`, wordmark left + nav right
 - **Dashboard**: `grid-cols-[1fr_2fr]` on desktop (list 33% / map 67%), stacked on mobile
 - **Cards**: `rounded-xl shadow-sm border border-gray-100 bg-white`
 
 ### Component Library: Shadcn-svelte
+
 Install via CLI. Import primitives: `Badge`, `Card`, `Button`, `Separator`, `Table`, `Tooltip`, `Skeleton`.
 
 ### Pages to Redesign
+
 1. **Shell (Header/Nav/Footer)**: sticky header, wordmark, icon, clean nav
 2. **Dashboard**: split-pane with better filter UI, incident card improvements
 3. **Location detail**: stat chips at top, incidents below, better map integration
@@ -106,6 +114,7 @@ Install via CLI. Import primitives: `Badge`, `Card`, `Button`, `Separator`, `Tab
 5. **List pages** (Neighborhoods, Wards, Intersections): sortable table with sticky header, stat chips
 
 ### Success Criteria
+
 - Shadcn-svelte installed and primitives in use
 - All pages redesigned with Civic Bold system
 - Mobile layout verified on 375px viewport
@@ -116,9 +125,11 @@ Install via CLI. Import primitives: `Badge`, `Card`, `Button`, `Separator`, `Tab
 ## Cycle 3 — Polish & Mobile
 
 ### Goals
+
 Refine interactions, ensure accessibility compliance, and eliminate visual rough edges.
 
 ### Tasks
+
 1. **Skeleton loading states** — replace blank/flash with animated skeletons on all async data loads
 2. **Mobile touch targets** — audit and enforce minimum 44×44px on all interactive elements
 3. **Pagination UX** — improve pagination component, preserve page on back-navigation
@@ -128,6 +139,7 @@ Refine interactions, ensure accessibility compliance, and eliminate visual rough
 7. **E2E test pass** — run Playwright tests to confirm no regressions
 
 ### Success Criteria
+
 - No WCAG AA contrast failures (use browser devtools audit)
 - All touch targets ≥ 44px
 - Skeleton states on all loading paths
@@ -164,9 +176,9 @@ Cycle 3: Polish
 
 ## Risks & Mitigations
 
-| Risk | Mitigation |
-|------|-----------|
-| Shadcn-svelte conflicts with Tailwind 4 | Test install in isolation before committing |
-| Map library types (Leaflet) complex | Use `typeof import('leaflet')` pattern, ignore specific edge cases |
-| Redesign breaks existing map integration | Keep Leaflet wrapper isolated; only style wrapper container |
-| Mobile layout regression | Test on 375px at each cycle end |
+| Risk                                     | Mitigation                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| Shadcn-svelte conflicts with Tailwind 4  | Test install in isolation before committing                        |
+| Map library types (Leaflet) complex      | Use `typeof import('leaflet')` pattern, ignore specific edge cases |
+| Redesign breaks existing map integration | Keep Leaflet wrapper isolated; only style wrapper container        |
+| Mobile layout regression                 | Test on 375px at each cycle end                                    |

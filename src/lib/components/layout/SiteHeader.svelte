@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import SiteNav from '$lib/components/layout/SiteNav.svelte';
+	import { SITE_NAME } from '$lib/constants';
 
 	let mobileMenuOpen = $state(false);
 
@@ -19,7 +20,7 @@
 					fill="currentColor"
 				/>
 			</svg>
-			<span class="brand-title">Chicago Crash Map</span>
+			<span class="brand-title">{SITE_NAME}</span>
 		</a>
 
 		<!-- Desktop nav links -->
@@ -38,12 +39,26 @@
 		>
 			{#if mobileMenuOpen}
 				<!-- X icon -->
-				<svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+				<svg
+					class="toggle-icon"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					aria-hidden="true"
+				>
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 				</svg>
 			{:else}
 				<!-- Hamburger icon -->
-				<svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+				<svg
+					class="toggle-icon"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					aria-hidden="true"
+				>
 					<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
 				</svg>
 			{/if}
@@ -60,9 +75,13 @@
 	<!-- Mobile nav drawer -->
 	{#if mobileMenuOpen}
 		<nav class="mobile-nav" aria-label="Mobile site navigation">
-			<a href="{base}/neighborhoods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Neighborhoods</a>
+			<a href="{base}/neighborhoods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
+				>Neighborhoods</a
+			>
 			<a href="{base}/wards" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Wards</a>
-			<a href="{base}/intersections" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Intersections</a>
+			<a href="{base}/intersections" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
+				>Intersections</a
+			>
 		</nav>
 	{/if}
 </header>
@@ -152,7 +171,9 @@
 		border: none;
 		padding: 0.625rem;
 		margin-right: -0.5rem;
-		transition: color 120ms ease, background-color 120ms ease;
+		transition:
+			color 120ms ease,
+			background-color 120ms ease;
 	}
 
 	.mobile-toggle:hover {
@@ -212,7 +233,9 @@
 		min-height: 44px;
 		display: flex;
 		align-items: center;
-		transition: color 120ms ease, background-color 120ms ease;
+		transition:
+			color 120ms ease,
+			background-color 120ms ease;
 	}
 
 	.mobile-link:last-child {

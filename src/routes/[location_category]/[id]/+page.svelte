@@ -1,6 +1,7 @@
 <script lang="ts">
 	import LocationDetail from '$lib/components/LocationDetail.svelte';
 	import { base } from '$app/paths';
+	import { SITE_NAME } from '$lib/constants';
 	import type { PageData } from './$types';
 
 	let { data } = $props<{ data: PageData }>();
@@ -23,15 +24,12 @@
 </script>
 
 <svelte:head>
-	<title>{location?.name ?? 'Location'} — Chicago Crash Map</title>
+	<title>{location?.name ?? 'Location'} — {SITE_NAME}</title>
 </svelte:head>
 
 <div class="mb-6">
 	<nav class="text-sm text-gray-500 mb-2">
-		<a
-			href="{base}/{location.pluralCategory}"
-			class="text-blue-600 hover:text-blue-800 capitalize"
-		>
+		<a href="{base}/{location.pluralCategory}" class="text-blue-600 hover:text-blue-800 capitalize">
 			{location.pluralCategory}
 		</a>
 		<span class="mx-1.5 text-gray-400">/</span>
@@ -41,7 +39,8 @@
 	<div class="flex items-center gap-3 flex-wrap">
 		<h1 class="text-2xl font-bold text-gray-900">{location.name}</h1>
 		<span
-			class="text-xs px-2.5 py-1 rounded-full font-medium {categoryBadge(location.category).classes}"
+			class="text-xs px-2.5 py-1 rounded-full font-medium {categoryBadge(location.category)
+				.classes}"
 		>
 			{categoryBadge(location.category).label}
 		</span>

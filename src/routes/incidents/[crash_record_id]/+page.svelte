@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping';
+	import { SITE_NAME } from '$lib/constants';
 	import { currentAgeSimplified } from '$lib/transformHelpers';
 	import IncidentDetail from '$lib/components/IncidentDetail.svelte';
 	import type { Incident } from '$lib/incident';
@@ -16,7 +17,9 @@
 
 	const crashDateTitle = $derived.by(() => {
 		const d = incident.date;
-		return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' Crash';
+		return (
+			d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' Crash'
+		);
 	});
 
 	onMount(() => {
@@ -48,13 +51,17 @@
 </script>
 
 <svelte:head>
-	<title>{incident ? `${crashDateTitle} — Chicago Crash Map` : 'Incident — Chicago Crash Map'}</title>
+	<title>{incident ? `${crashDateTitle} — ${SITE_NAME}` : `Incident — ${SITE_NAME}`}</title>
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
 	<!-- Back link -->
 	<nav class="text-sm">
-		<button type="button" onclick={() => history.back()} class="text-blue-600 hover:text-blue-800 transition-colors">← Back</button>
+		<button
+			type="button"
+			onclick={() => history.back()}
+			class="text-blue-600 hover:text-blue-800 transition-colors">← Back</button
+		>
 	</nav>
 
 	<!-- Page title -->

@@ -3,15 +3,16 @@
 	import { Mapper } from '$lib/mapping'; // Import the class, not an instance
 	import { Incident } from '$lib/incident';
 	import { Location } from '$lib/location';
+	import { popupHtml } from '$lib/incidentFormat';
 
 	let {
-		selectedLocation,
+		selectedLocation = null,
 		incidents,
 		setIncidentDetail,
 		defaultGeoCenter,
 		maxDistance = 5280
 	} = $props<{
-		selectedLocation: Location | null;
+		selectedLocation?: Location | null;
 		incidents: Incident[];
 		setIncidentDetail: (item: Incident | null) => void;
 		defaultGeoCenter: [number, number];
@@ -94,14 +95,16 @@
 			const lon = item.longitude;
 
 			if (!isNaN(lat) && !isNaN(lon)) {
-				const popupHtml = item.title;
+				const popup = popupHtml(item, index);
 				const icon = MapperInstance.L!.divIcon({
 					html: markerIconHtml(index, item.isFatal),
 					className: '',
 					iconSize: [24, 24],
 					iconAnchor: [12, 12]
 				});
-				const incidentMarker = MapperInstance.L!.marker([lat, lon], { icon }).bindPopup(popupHtml);
+				const incidentMarker = MapperInstance.L!.marker([lat, lon], { icon }).bindPopup(popup, {
+					maxWidth: 280
+				});
 
 				incidentMarker.on('click', () => setIncidentDetail(item));
 
@@ -117,7 +120,12 @@
 
 		// Only include coordinates that are valid and non-zero (lat=0/lng=0 means missing data)
 		const validLatLngs: import('leaflet').LatLngExpression[] = items
-			.filter((item) => !isNaN(item.latitude) && !isNaN(item.longitude) && (item.latitude !== 0 || item.longitude !== 0))
+			.filter(
+				(item) =>
+					!isNaN(item.latitude) &&
+					!isNaN(item.longitude) &&
+					(item.latitude !== 0 || item.longitude !== 0)
+			)
 			.map((item) => [item.latitude, item.longitude]);
 
 		if (validLatLngs.length > 0) {
@@ -130,20 +138,30 @@
 					const bounds = MapperInstance.L.latLngBounds(validLatLngs).extend(shapeBounds);
 					MapperInstance.map.fitBounds(bounds, { padding: [40, 40] });
 				} catch {
-					MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), { padding: [50, 50] });
+					MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), {
+						padding: [50, 50]
+					});
 				}
 			} else {
-				if (selectedLocation && selectedLocation.latitude !== 0 && selectedLocation.longitude !== 0) {
+				if (
+					selectedLocation &&
+					selectedLocation.latitude !== 0 &&
+					selectedLocation.longitude !== 0
+				) {
 					validLatLngs.push([selectedLocation.latitude, selectedLocation.longitude]);
 				}
-				MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), { padding: [50, 50] });
+				MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), {
+					padding: [50, 50]
+				});
 			}
 			MapperInstance.map.invalidateSize();
 		} else if (selectedLocation) {
 			// No valid incident coords — just show the shape/location
 			if (selectedLocation.isShape && activeMarker && 'getBounds' in activeMarker) {
 				try {
-					MapperInstance.map.fitBounds((activeMarker as import('leaflet').GeoJSON).getBounds(), { padding: [40, 40] });
+					MapperInstance.map.fitBounds((activeMarker as import('leaflet').GeoJSON).getBounds(), {
+						padding: [40, 40]
+					});
 				} catch {
 					MapperInstance.map.setView([selectedLocation.latitude, selectedLocation.longitude], 13);
 				}
@@ -237,7 +255,6 @@
 		z-index: 0;
 	}
 
-
 	/* Incident markers — injected by Leaflet outside Svelte scope, must be :global */
 	:global(.marker-icon) {
 		display: flex;
@@ -256,5 +273,15 @@
 
 	:global(.marker-icon.fatal) {
 		background: #dc2626; /* red-600 */
+	}
+
+	/* Rich popup content — Leaflet injects popups outside Svelte scope */
+	:global(.popup-content) {
+		min-width: 200px;
+		line-height: 1.4;
+	}
+
+	:global(.popup-content a:hover) {
+		text-decoration: underline;
 	}
 </style>

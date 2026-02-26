@@ -141,9 +141,7 @@
 						<span class={categoryBadge(result.category).classes}>
 							{categoryBadge(result.category).label}
 						</span>
-						<span class="option-name"
-							>{@html highlightFilteredText(result.name, searchQuery)}</span
-						>
+						<span class="option-name">{@html highlightFilteredText(result.name, searchQuery)}</span>
 					</button>
 				{/each}
 			{:else}
@@ -173,7 +171,9 @@
 		padding: 0.625rem 1rem;
 		font-size: 0.875rem;
 		background: #fff;
-		transition: border-color 120ms ease, box-shadow 120ms ease;
+		transition:
+			border-color 120ms ease,
+			box-shadow 120ms ease;
 	}
 
 	.search-input:focus {

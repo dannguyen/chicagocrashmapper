@@ -1,10 +1,7 @@
-<svelte:head>
-	<title>Chicago Neighborhoods — Chicago Crash Map</title>
-</svelte:head>
-
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getNeighborhoodStats } from '$lib/api/client';
+	import { SITE_NAME } from '$lib/constants';
 	import type { NeighborhoodStat } from '$lib/db';
 	import AreaList from '$lib/components/AreaList.svelte';
 
@@ -22,6 +19,10 @@
 		}
 	});
 </script>
+
+<svelte:head>
+	<title>Chicago Neighborhoods — {SITE_NAME}</title>
+</svelte:head>
 
 <div class="mx-auto max-w-7xl px-4 py-8">
 	<div class="mb-8">

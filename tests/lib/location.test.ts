@@ -3,7 +3,17 @@ import { filterLocationsBySearchString, Location } from '$lib/location';
 import type { LocationCategory } from '$lib/db/types';
 
 describe('Location class', () => {
-	const mockData: Record<string, { id: string; name: string; category: LocationCategory; latitude: number; longitude: number; the_geom: string }> = {
+	const mockData: Record<
+		string,
+		{
+			id: string;
+			name: string;
+			category: LocationCategory;
+			latitude: number;
+			longitude: number;
+			the_geom: string;
+		}
+	> = {
 		intersection: {
 			id: 'apple',
 			name: 'Apple',
@@ -66,64 +76,66 @@ describe('Location class', () => {
 });
 
 describe('filterLocationsBySearchString', () => {
-	const mockData: Location[] = (([
-		{
-			category: 'neighborhood' as LocationCategory,
-			name: 'STATE & LAKE',
-			latitude: 0,
-			longitude: 0,
-			id: 'aaa',
-			the_geom: 'hello'
-		},
-		{
-			category: 'intersection',
-			name: 'STATE & MADISON',
-			latitude: 0,
-			longitude: 0,
-			id: 'bb',
-			the_geom: 'hello'
-		},
-		{
-			category: 'intersection',
-			name: 'MICHIGAN & LAKE',
-			latitude: 0,
-			longitude: 0,
-			id: 'cc',
-			the_geom: 'hello'
-		},
-		{
-			category: 'intersection',
-			name: 'CLARK & LAKE',
-			latitude: 0,
-			longitude: 0,
-			id: 'd',
-			the_geom: 'hello'
-		},
-		{
-			category: 'intersection',
-			name: 'W OHIO ST & LAKE',
-			latitude: 0,
-			longitude: 0,
-			id: 'e',
-			the_geom: 'hello'
-		},
-		{
-			category: 'intersection',
-			name: 'W OHIO ST & STATE',
-			latitude: 0,
-			longitude: 0,
-			id: 'f',
-			the_geom: 'hello'
-		},
-		{
-			category: 'intersection',
-			name: 'E OHIO ST & LAKE',
-			latitude: 0,
-			longitude: 0,
-			id: 'g',
-			the_geom: 'hello'
-		}
-	]) as import('$lib/db/types').LocationRecord[]).map((d) => new Location(d));
+	const mockData: Location[] = (
+		[
+			{
+				category: 'neighborhood' as LocationCategory,
+				name: 'STATE & LAKE',
+				latitude: 0,
+				longitude: 0,
+				id: 'aaa',
+				the_geom: 'hello'
+			},
+			{
+				category: 'intersection',
+				name: 'STATE & MADISON',
+				latitude: 0,
+				longitude: 0,
+				id: 'bb',
+				the_geom: 'hello'
+			},
+			{
+				category: 'intersection',
+				name: 'MICHIGAN & LAKE',
+				latitude: 0,
+				longitude: 0,
+				id: 'cc',
+				the_geom: 'hello'
+			},
+			{
+				category: 'intersection',
+				name: 'CLARK & LAKE',
+				latitude: 0,
+				longitude: 0,
+				id: 'd',
+				the_geom: 'hello'
+			},
+			{
+				category: 'intersection',
+				name: 'W OHIO ST & LAKE',
+				latitude: 0,
+				longitude: 0,
+				id: 'e',
+				the_geom: 'hello'
+			},
+			{
+				category: 'intersection',
+				name: 'W OHIO ST & STATE',
+				latitude: 0,
+				longitude: 0,
+				id: 'f',
+				the_geom: 'hello'
+			},
+			{
+				category: 'intersection',
+				name: 'E OHIO ST & LAKE',
+				latitude: 0,
+				longitude: 0,
+				id: 'g',
+				the_geom: 'hello'
+			}
+		] as import('$lib/db/types').LocationRecord[]
+	).map((d) => new Location(d));
 
 	it('should return matches based on all tokens', () => {
 		const results = filterLocationsBySearchString(mockData, 'State Lake');

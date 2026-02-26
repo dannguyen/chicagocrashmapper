@@ -2,13 +2,13 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --color-primary: #1d4ed8;
-  --color-primary-hover: #1e40af;
-  --color-accent: #f97316;
-  --color-accent-hover: #ea580c;
-  --color-fatal: #dc2626;
-  --color-serious: #9333ea;
-  --color-minor: #f59e0b;
-  --color-uninjured: #16a34a;
+	--font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+	--color-primary: #1d4ed8;
+	--color-primary-hover: #1e40af;
+	--color-accent: #f97316;
+	--color-accent-hover: #ea580c;
+	--color-fatal: #dc2626;
+	--color-serious: #9333ea;
+	--color-minor: #f59e0b;
+	--color-uninjured: #16a34a;
 }

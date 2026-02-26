@@ -292,6 +292,10 @@ export class Incident {
 		}
 	}
 
+	get street_address(): string {
+		return [this.street_no, this.street_direction, this.street_name].join(' ');
+	}
+
 	get title(): string {
 		const headline = [
 			this.injuries_fatal > 0 ? `${this.injuries_fatal} killed` : null,

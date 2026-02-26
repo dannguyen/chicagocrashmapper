@@ -130,7 +130,9 @@
 
 			<div class="summary-card summary-card-tight">
 				{#if stats.yearRange}
-					<div class="summary-value summary-value-total" title={stats.yearRange}>{stats.yearRange}</div>
+					<div class="summary-value summary-value-total" title={stats.yearRange}>
+						{stats.yearRange}
+					</div>
 					<div class="summary-label">Year Range</div>
 				{:else if stats.oldest && stats.mostRecent}
 					<div class="summary-value summary-value-range">{shortDate(stats.oldest)}</div>
@@ -145,19 +147,14 @@
 		<!-- Top Contributing Causes -->
 		{#if stats.topCauses.length > 0}
 			<div class="summary-card summary-card-block">
-				<h4 class="summary-heading">
-					Top Contributing Causes
-				</h4>
+				<h4 class="summary-heading">Top Contributing Causes</h4>
 				{#each stats.topCauses as [cause, count]}
 					<div class="chart-row">
 						<div class="chart-label" title={cause}>
 							{fmt(cause)}
 						</div>
 						<div class="chart-track">
-							<div
-								class="chart-bar"
-								style="width: {(count / stats.maxCauseCount) * 100}%"
-							></div>
+							<div class="chart-bar" style="width: {(count / stats.maxCauseCount) * 100}%"></div>
 						</div>
 						<div class="chart-count">{count}</div>
 					</div>
@@ -168,9 +165,7 @@
 		<!-- Year by Year -->
 		{#if stats.byYear.length > 1}
 			<div class="summary-card summary-card-block">
-				<h4 class="summary-heading">
-					Year by Year
-				</h4>
+				<h4 class="summary-heading">Year by Year</h4>
 				{#each stats.byYear as [year, count]}
 					<div class="chart-row">
 						<div class="chart-year">{year}</div>

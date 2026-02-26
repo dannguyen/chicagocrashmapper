@@ -6,7 +6,6 @@ Notes TK
 
 Aggregate accidents by street
 
-
 ## Data notes
 
 When the driver has fled the scene:

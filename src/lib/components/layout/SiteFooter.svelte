@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SITE_NAME } from '$lib/constants';
 	const year = new Date().getFullYear();
 </script>
 
@@ -11,10 +12,17 @@
 					fill="currentColor"
 				/>
 			</svg>
-			<span class="footer-title">Chicago Crash Map</span>
+			<span class="footer-title">{SITE_NAME}</span>
 		</div>
 		<div class="footer-meta">
-			<span>Data from the <a href="https://data.cityofchicago.org/" target="_blank" rel="noopener noreferrer" class="footer-link">Chicago Data Portal</a></span>
+			<span
+				>Data from the <a
+					href="https://data.cityofchicago.org/Transportation/Traffic-Crashes-Crashes/85ca-t3if/about_data"
+					target="_blank"
+					rel="noopener"
+					class="footer-link">Chicago Data Portal: Traffic Crashes</a
+				></span
+			>
 			<span class="footer-divider" aria-hidden="true">&middot;</span>
 			<span>&copy; {year}</span>
 		</div>

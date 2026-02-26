@@ -261,6 +261,47 @@ describe('Incident vehicles and non_passengers parsing', () => {
 		expect(incident.distance).toBe(1235);
 	});
 
+	it('builds street_address from street parts', () => {
+		const full = new Incident({
+			crash_record_id: 'SFN-1',
+			longitude: -87.7,
+			latitude: 41.9,
+			injuries_fatal: 0,
+			injuries_incapacitating: 0,
+			crash_date: '2024-01-01',
+			first_crash_type: 'UNKNOWN',
+			street_no: '1200',
+			street_direction: 'S',
+			street_name: 'State'
+		});
+		expect(full.street_address).toBe('1200 S State');
+
+		const missingNo = new Incident({
+			crash_record_id: 'SFN-2',
+			longitude: 0,
+			latitude: 0,
+			injuries_fatal: 0,
+			injuries_incapacitating: 0,
+			crash_date: '2024-01-01',
+			first_crash_type: 'UNKNOWN',
+			street_direction: 'N',
+			street_name: 'Michigan'
+		});
+		expect(full.street_address).toBe('1200 S State');
+		expect(missingNo.street_address).toMatch(/N Michigan/);
+
+		const allNull = new Incident({
+			crash_record_id: 'SFN-3',
+			longitude: 0,
+			latitude: 0,
+			injuries_fatal: 0,
+			injuries_incapacitating: 0,
+			crash_date: '2024-01-01',
+			first_crash_type: 'UNKNOWN'
+		});
+		expect(allNull.street_address.trim()).toBe('');
+	});
+
 	it('builds title from injury counts and location fields', () => {
 		const incident = new Incident({
 			crash_record_id: 'TEST-5',
