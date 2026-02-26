@@ -40,9 +40,13 @@ export interface WardStat {
 export interface IntersectionStat {
 	id: string;
 	name: string;
-	count?: number;
-	mostRecentDate?: string;
-	distance?: number;
+	latitude: number;
+	longitude: number;
+	boundary_wkt?: string | null;
+	count: number;
+	fatal_injuries: number;
+	serious_injuries: number;
+	mostRecentDate: string | null;
 }
 
 export interface IncidentSummary {

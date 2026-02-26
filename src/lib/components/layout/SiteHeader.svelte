@@ -26,7 +26,6 @@
 		<nav class="desktop-nav" aria-label="Site navigation">
 			<a href="{base}/neighborhoods" class="nav-link">Neighborhoods</a>
 			<a href="{base}/wards" class="nav-link">Wards</a>
-			<a href="{base}/intersections" class="nav-link">Intersections</a>
 		</nav>
 
 		<!-- Mobile hamburger -->
@@ -71,9 +70,6 @@
 				>Neighborhoods</a
 			>
 			<a href="{base}/wards" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Wards</a>
-			<a href="{base}/intersections" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
-				>Intersections</a
-			>
 		</nav>
 	{/if}
 </header>

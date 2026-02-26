@@ -19,6 +19,8 @@
 	let loading: boolean = $state(true);
 	let allTimeSummary: IncidentSummary | null = $state(null);
 	let mapRef: MapContainer | undefined = $state(undefined);
+	const isIntersection = $derived(location.category === 'intersection');
+	const mapRadiusFeet = $derived(isIntersection ? 500 : 5280);
 
 	const rangeStart = $derived(totalIncidents === 0 ? 0 : currentPage * perPage + 1);
 	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalIncidents));
@@ -39,7 +41,11 @@
 				page,
 				sort: 'desc'
 			});
-			incidents = reifyIncidents(result.incidents);
+			const hydrated = reifyIncidents(result.incidents);
+			if (location.category === 'intersection') {
+				hydrated.sort((a, b) => b.date.getTime() - a.date.getTime());
+			}
+			incidents = hydrated;
 			totalIncidents = result.total;
 			perPage = result.per_page;
 			currentPage = result.page;
@@ -87,21 +93,42 @@
 	});
 </script>
 
-<div class="location-detail">
-	<!-- Summary stats -->
-	<LocationSummary {incidents} {location} summary={allTimeSummary} />
+<div class="location-detail" class:compact-layout={isIntersection}>
+	{#if isIntersection}
+		<!-- Keep map visible immediately on intersection pages -->
+		<div class="map-card map-card-compact">
+			<MapContainer
+				bind:this={mapRef}
+				selectedLocation={location}
+				{incidents}
+				{setIncidentDetail}
+				defaultGeoCenter={[location.latitude, location.longitude]}
+				maxDistance={mapRadiusFeet}
+			/>
+		</div>
+	{/if}
 
-	<!-- Map -->
-	<div class="map-card">
-		<MapContainer
-			bind:this={mapRef}
-			selectedLocation={location}
-			{incidents}
-			{setIncidentDetail}
-			defaultGeoCenter={[location.latitude, location.longitude]}
-			maxDistance={5280}
-		/>
-	</div>
+	<!-- Summary stats -->
+	<LocationSummary
+		{incidents}
+		{location}
+		summary={allTimeSummary}
+		compact={isIntersection}
+		showTopCauses={!isIntersection}
+	/>
+
+	{#if !isIntersection}
+		<div class="map-card">
+			<MapContainer
+				bind:this={mapRef}
+				selectedLocation={location}
+				{incidents}
+				{setIncidentDetail}
+				defaultGeoCenter={[location.latitude, location.longitude]}
+				maxDistance={mapRadiusFeet}
+			/>
+		</div>
+	{/if}
 
 	<!-- Pagination + incident list -->
 	{#if totalIncidents > 0}
@@ -109,29 +136,31 @@
 			<span class="pagination-text">
 				Showing {rangeStart}–{rangeEnd} of {totalIncidents} incidents
 			</span>
-			<div class="pager-controls">
-				<button class="pager-button pager-nav" disabled={!hasPrev || loading} onclick={goToPrev}>
-					Prev
-				</button>
-				{#each pageNumbers as pg}
-					{#if pg === null}
-						<span class="pager-ellipsis">…</span>
-					{:else}
-						<button
-							class="pager-button pager-page"
-							class:active-page={pg === currentPage}
-							class:inactive-page={pg !== currentPage}
-							disabled={loading}
-							onclick={() => fetchPage(pg)}
-						>
-							{pg + 1}
-						</button>
-					{/if}
-				{/each}
-				<button class="pager-button pager-nav" disabled={!hasNext || loading} onclick={goToNext}>
-					Next
-				</button>
-			</div>
+			{#if totalPages > 1}
+				<div class="pager-controls">
+					<button class="pager-button pager-nav" disabled={!hasPrev || loading} onclick={goToPrev}>
+						Prev
+					</button>
+					{#each pageNumbers as pg}
+						{#if pg === null}
+							<span class="pager-ellipsis">…</span>
+						{:else}
+							<button
+								class="pager-button pager-page"
+								class:active-page={pg === currentPage}
+								class:inactive-page={pg !== currentPage}
+								disabled={loading}
+								onclick={() => fetchPage(pg)}
+							>
+								{pg + 1}
+							</button>
+						{/if}
+					{/each}
+					<button class="pager-button pager-nav" disabled={!hasNext || loading} onclick={goToNext}>
+						Next
+					</button>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -202,12 +231,19 @@
 		gap: 1.5rem;
 	}
 
+	.location-detail.compact-layout {
+		gap: 1rem;
+	}
+
 	.map-card {
 		border-radius: 0.75rem;
 		overflow: hidden;
 		border: 1px solid #e5e7eb;
-		margin-bottom: 1.5rem;
 		background: #fff;
+	}
+
+	.map-card-compact {
+		margin-bottom: 0;
 	}
 
 	.pagination-bar {

@@ -29,9 +29,16 @@
 
 <div class="mb-6">
 	<nav class="text-sm text-gray-500 mb-2">
-		<a href="{base}/{location.pluralCategory}" class="text-blue-600 hover:text-blue-800 capitalize">
-			{location.pluralCategory}
-		</a>
+		{#if location.category === 'intersection'}
+			<span class="capitalize text-gray-600">{location.pluralCategory}</span>
+		{:else}
+			<a
+				href="{base}/{location.pluralCategory}"
+				class="text-blue-600 hover:text-blue-800 capitalize"
+			>
+				{location.pluralCategory}
+			</a>
+		{/if}
 		<span class="mx-1.5 text-gray-400">/</span>
 		<span class="text-gray-700">{location.name}</span>
 	</nav>

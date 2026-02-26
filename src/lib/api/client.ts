@@ -37,9 +37,11 @@ export async function searchLocations(q: string): Promise<LocationRecord[]> {
 	return data.locations;
 }
 
-export async function getLocationById(id: string): Promise<LocationRecord | null> {
+export interface LocationByIdRecord extends LocationRecord {}
+
+export async function getLocationById(id: string): Promise<LocationByIdRecord | null> {
 	try {
-		const data = await apiGet<{ location: LocationRecord }>(`/api/locations/${id}`);
+		const data = await apiGet<{ location: LocationByIdRecord }>(`/api/locations/${id}`);
 		return data.location;
 	} catch {
 		return null;
@@ -120,9 +122,10 @@ export async function getWardStats(): Promise<WardStat[]> {
 
 export async function getTopIntersections(): Promise<{
 	by_count: IntersectionStat[];
+	by_recent_90_days: IntersectionStat[];
 	by_recency: IntersectionStat[];
 }> {
-	return apiGet('/api/intersections/top');
+	return apiGet('/api/intersections/top', { limit: 20, recent_days: 90 });
 }
 
 export async function getIncidentSummary(params: {

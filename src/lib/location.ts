@@ -9,11 +9,18 @@ export class Location {
 	latitude: number;
 	id: string;
 	the_geom: string;
+	private get geomType(): string {
+		return this.the_geom.trim().toUpperCase();
+	}
 	get isShape(): boolean {
-		return this.category !== 'intersection';
+		return (
+			this.category !== 'intersection' ||
+			this.geomType.startsWith('POLYGON') ||
+			this.geomType.startsWith('MULTIPOLYGON')
+		);
 	}
 	get isPoint(): boolean {
-		return this.category === 'intersection';
+		return this.category === 'intersection' && !this.isShape;
 	}
 
 	get pluralCategory(): string {

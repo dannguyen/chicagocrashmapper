@@ -6,11 +6,15 @@
 	let {
 		incidents,
 		location,
-		summary = null
+		summary = null,
+		compact = false,
+		showTopCauses = true
 	} = $props<{
 		incidents: Incident[];
 		location: Location | null;
 		summary?: IncidentSummary | null;
+		compact?: boolean;
+		showTopCauses?: boolean;
 	}>();
 
 	let stats = $derived.by(() => {
@@ -110,7 +114,7 @@
 </script>
 
 {#if stats}
-	<div>
+	<div class:summary-compact={compact}>
 		<!-- Stat chips row -->
 		<div class="summary-grid">
 			<div class="summary-card">
@@ -145,7 +149,7 @@
 		</div>
 
 		<!-- Top Contributing Causes -->
-		{#if stats.topCauses.length > 0}
+		{#if showTopCauses && stats.topCauses.length > 0}
 			<div class="summary-card summary-card-block">
 				<h4 class="summary-heading">Top Contributing Causes</h4>
 				{#each stats.topCauses as [cause, count]}
@@ -205,6 +209,16 @@
 		text-align: center;
 	}
 
+	.summary-compact .summary-grid {
+		margin-bottom: 0.75rem;
+		gap: 0.5rem;
+	}
+
+	.summary-compact .summary-card {
+		padding: 0.625rem 0.5rem;
+		border-radius: 0.625rem;
+	}
+
 	.summary-card-tight {
 		overflow: hidden;
 	}
@@ -221,6 +235,10 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	.summary-compact .summary-value {
+		font-size: 1.125rem;
 	}
 
 	.summary-value-total {
@@ -249,6 +267,11 @@
 		margin-top: 0.25rem;
 		font-size: 0.75rem;
 		color: #6b7280;
+	}
+
+	.summary-compact .summary-label {
+		font-size: 0.6875rem;
+		margin-top: 0.125rem;
 	}
 
 	.summary-heading {
