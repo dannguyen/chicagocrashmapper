@@ -1,20 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping'; // Import the class, not an instance
-	import { Incident } from '$lib/incident';
+	import { Crash } from '$lib/crash';
 	import { Location } from '$lib/location';
-	import { popupHtml } from '$lib/incidentFormat';
+	import { popupHtml } from '$lib/crashFormat';
 
 	let {
 		selectedLocation = null,
-		incidents,
-		setIncidentDetail,
+		crashes,
+		setCrashDetail,
 		defaultGeoCenter,
 		maxDistance = 5280
 	} = $props<{
 		selectedLocation?: Location | null;
-		incidents: Incident[];
-		setIncidentDetail: (item: Incident | null) => void;
+		crashes: Crash[];
+		setCrashDetail: (item: Crash | null) => void;
 		defaultGeoCenter: [number, number];
 		maxDistance?: number;
 	}>();
@@ -86,7 +86,7 @@
 		}
 	}
 
-	export function updateNearbyMarkers(items: Incident[]) {
+	export function updateNearbyMarkers(items: Crash[]) {
 		if (!MapperInstance.map || !MapperInstance.L || !markerLayerGroup) return;
 
 		markerLayerGroup.clearLayers();
@@ -103,20 +103,20 @@
 					iconSize: [24, 24],
 					iconAnchor: [12, 12]
 				});
-				const incidentMarker = MapperInstance.L!.marker([lat, lon], { icon }).bindPopup(popup, {
+				const crashMarker = MapperInstance.L!.marker([lat, lon], { icon }).bindPopup(popup, {
 					maxWidth: 280
 				});
 
-				incidentMarker.on('click', () => setIncidentDetail(item));
+				crashMarker.on('click', () => setCrashDetail(item));
 
-				incidentMarker.addTo(markerLayerGroup);
+				crashMarker.addTo(markerLayerGroup);
 			}
 		});
 
-		fitToIncidents(items);
+		fitToCrashes(items);
 	}
 
-	export function fitToIncidents(items: Incident[]) {
+	export function fitToCrashes(items: Crash[]) {
 		if (!MapperInstance.map || !MapperInstance.L) return;
 
 		// Only include coordinates that are valid and non-zero (lat=0/lng=0 means missing data)
@@ -162,7 +162,7 @@
 			}
 			MapperInstance.map.invalidateSize();
 		} else if (selectedLocation) {
-			// No valid incident coords — just show the shape/location
+			// No valid crash coords — just show the shape/location
 			if (
 				selectedLocation.category !== 'intersection' &&
 				selectedLocation.isShape &&
@@ -190,8 +190,8 @@
 		} else {
 			clearActiveLayer();
 		}
-		if (incidents.length > 0) {
-			updateNearbyMarkers(incidents);
+		if (crashes.length > 0) {
+			updateNearbyMarkers(crashes);
 		} else if (markerLayerGroup) {
 			markerLayerGroup.clearLayers();
 		}
@@ -226,13 +226,13 @@
 		}
 	});
 
-	// React to incident result changes
+	// React to crash result changes
 	$effect(() => {
-		if (incidents.length > 0) {
-			updateNearbyMarkers(incidents);
+		if (crashes.length > 0) {
+			updateNearbyMarkers(crashes);
 		} else if (markerLayerGroup) {
 			markerLayerGroup.clearLayers();
-			fitToIncidents([]);
+			fitToCrashes([]);
 		}
 	});
 
@@ -270,7 +270,7 @@
 		z-index: 0;
 	}
 
-	/* Incident markers — injected by Leaflet outside Svelte scope, must be :global */
+	/* Crash markers — injected by Leaflet outside Svelte scope, must be :global */
 	:global(.marker-icon) {
 		display: flex;
 		align-items: center;

@@ -1,18 +1,18 @@
 <script lang="ts">
-	import type { Incident } from '$lib/incident';
+	import type { Crash } from '$lib/crash';
 	import type { Location } from '$lib/location';
-	import type { IncidentSummary } from '$lib/db/types';
+	import type { CrashSummary } from '$lib/db/types';
 
 	let {
-		incidents,
+		crashes,
 		location,
 		summary = null,
 		compact = false,
 		showTopCauses = true
 	} = $props<{
-		incidents: Incident[];
+		crashes: Crash[];
 		location: Location | null;
-		summary?: IncidentSummary | null;
+		summary?: CrashSummary | null;
 		compact?: boolean;
 		showTopCauses?: boolean;
 	}>();
@@ -47,15 +47,15 @@
 			};
 		}
 
-		// Otherwise compute from the passed incidents array.
-		if (incidents.length === 0) return null;
+		// Otherwise compute from the passed crashes array.
+		if (crashes.length === 0) return null;
 
-		const total = incidents.length;
-		const fatalCount = incidents.filter((i: Incident) => i.isFatal).length;
+		const total = crashes.length;
+		const fatalCount = crashes.filter((i: Crash) => i.isFatal).length;
 		const incapCount = total - fatalCount;
 
 		const causeCounts = new Map<string, number>();
-		for (const inc of incidents) {
+		for (const inc of crashes) {
 			const cause = inc.primary_cause || 'UNKNOWN';
 			causeCounts.set(cause, (causeCounts.get(cause) ?? 0) + 1);
 		}
@@ -65,14 +65,14 @@
 			.slice(0, 5);
 		const maxCauseCount = topCauses[0]?.[1] ?? 1;
 
-		const dates = incidents
-			.map((i: Incident) => i.date)
+		const dates = crashes
+			.map((i: Crash) => i.date)
 			.sort((a: Date, b: Date) => b.getTime() - a.getTime());
 		const mostRecent = dates[0];
 		const oldest = dates[dates.length - 1];
 
 		const yearCounts = new Map<string, number>();
-		for (const inc of incidents) {
+		for (const inc of crashes) {
 			const yr = String(inc.date.getFullYear());
 			yearCounts.set(yr, (yearCounts.get(yr) ?? 0) + 1);
 		}
@@ -119,7 +119,7 @@
 		<div class="summary-grid">
 			<div class="summary-card">
 				<div class="summary-value summary-value-total">{stats.total}</div>
-				<div class="summary-label">Total Incidents</div>
+				<div class="summary-label">Total Crashes</div>
 			</div>
 
 			<div class="summary-card">

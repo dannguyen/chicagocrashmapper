@@ -204,7 +204,7 @@ export class Vehicle {
 	}
 }
 
-export interface IncidentRecord {
+export interface CrashRecord {
 	crash_record_id: string;
 	longitude: number;
 	latitude: number;
@@ -232,7 +232,7 @@ export interface IncidentRecord {
 	distance?: number;
 }
 
-export class Incident {
+export class Crash {
 	crash_record_id: string;
 	longitude: number;
 	latitude: number;
@@ -259,7 +259,7 @@ export class Incident {
 	trafficway_type: string | null;
 
 	// Constructor now takes raw database row
-	constructor(record: IncidentRecord) {
+	constructor(record: CrashRecord) {
 		this.crash_record_id = record.crash_record_id;
 		this.longitude = record.longitude;
 		this.latitude = record.latitude;
@@ -344,11 +344,11 @@ export class Incident {
 	}
 }
 
-export function reifyIncidents(items: IncidentRecord[]): Incident[] {
-	return items.map((item) => new Incident(item));
+export function reifyCrashes(items: CrashRecord[]): Crash[] {
+	return items.map((item) => new Crash(item));
 }
 
-function parseVehicles(raw: IncidentRecord['vehicles']): Vehicle[] {
+function parseVehicles(raw: CrashRecord['vehicles']): Vehicle[] {
 	if (!raw) return [];
 
 	let vehicles: VehicleRecord[] = [];
@@ -366,7 +366,7 @@ function parseVehicles(raw: IncidentRecord['vehicles']): Vehicle[] {
 	return vehicles.filter((v) => v.vehicle_id != null).map((v) => new Vehicle(v));
 }
 
-function parsePeople(raw: IncidentRecord['non_passengers']): Person[] {
+function parsePeople(raw: CrashRecord['non_passengers']): Person[] {
 	if (!raw) return [];
 
 	let people: PersonRecord[] = [];

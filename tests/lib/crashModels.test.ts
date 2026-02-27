@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Person, Vehicle, type PersonRecord, type VehicleRecord, Incident } from '$lib/incident';
+import { Person, Vehicle, type PersonRecord, type VehicleRecord, Crash } from '$lib/crash';
 
 function datelineFor(crashDate: string): string {
 	return new Date(Date.parse(crashDate)).toLocaleDateString('en-US', {
@@ -196,9 +196,9 @@ describe('Vehicle', () => {
 	});
 });
 
-describe('Incident vehicles and non_passengers parsing', () => {
+describe('Crash vehicles and non_passengers parsing', () => {
 	it('parses JSON string vehicles/non_passengers into instances', () => {
-		const incident = new Incident({
+		const crash = new Crash({
 			crash_record_id: 'TEST-1',
 			longitude: -87.7,
 			latitude: 41.9,
@@ -210,16 +210,16 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			non_passengers: '[{"person_id":"NP1"}]'
 		});
 
-		expect(incident.vehicles).toHaveLength(1);
-		expect(incident.vehicles[0]).toBeInstanceOf(Vehicle);
-		expect(incident.vehicles[0].passengers[0]).toBeInstanceOf(Person);
-		expect(incident.non_passengers).toHaveLength(1);
-		expect(incident.non_passengers[0]).toBeInstanceOf(Person);
+		expect(crash.vehicles).toHaveLength(1);
+		expect(crash.vehicles[0]).toBeInstanceOf(Vehicle);
+		expect(crash.vehicles[0].passengers[0]).toBeInstanceOf(Person);
+		expect(crash.non_passengers).toHaveLength(1);
+		expect(crash.non_passengers[0]).toBeInstanceOf(Person);
 	});
 
 	it('handles array inputs and bad JSON safely', () => {
 		// array input
-		const incidentFromArrays = new Incident({
+		const crashFromArrays = new Crash({
 			crash_record_id: 'TEST-2',
 			longitude: 0,
 			latitude: 0,
@@ -230,11 +230,11 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			vehicles: [{ vehicle_id: 'V2', passengers: [{ person_id: 'P2' }] }],
 			non_passengers: [{ person_id: 'NP2' }]
 		});
-		expect(incidentFromArrays.vehicles[0].vehicle_id).toBe('V2');
-		expect(incidentFromArrays.non_passengers[0].person_id).toBe('NP2');
+		expect(crashFromArrays.vehicles[0].vehicle_id).toBe('V2');
+		expect(crashFromArrays.non_passengers[0].person_id).toBe('NP2');
 
 		// bad JSON should not throw
-		const incidentBadJson = new Incident({
+		const crashBadJson = new Crash({
 			crash_record_id: 'TEST-3',
 			longitude: 0,
 			latitude: 0,
@@ -245,13 +245,13 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			non_passengers: 'also-bad',
 			first_crash_type: 'whatever'
 		});
-		expect(incidentBadJson.vehicles).toEqual([]);
-		expect(incidentBadJson.non_passengers).toEqual([]);
+		expect(crashBadJson.vehicles).toEqual([]);
+		expect(crashBadJson.non_passengers).toEqual([]);
 	});
 
 	it('formats title and distance with fallbacks', () => {
 		const crashDate = '2024-02-01';
-		const incident = new Incident({
+		const crash = new Crash({
 			crash_record_id: 'TEST-4',
 			longitude: -87.7,
 			latitude: 41.9,
@@ -266,14 +266,14 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			distance: 1234.56
 		});
 
-		expect(incident.title).toBe(
+		expect(crash.title).toBe(
 			`2 seriously injured near  N Unknown Street on ${datelineFor(crashDate)}`
 		);
-		expect(incident.distance).toBe(1235);
+		expect(crash.distance).toBe(1235);
 	});
 
 	it('builds street_address from street parts', () => {
-		const full = new Incident({
+		const full = new Crash({
 			crash_record_id: 'SFN-1',
 			longitude: -87.7,
 			latitude: 41.9,
@@ -287,7 +287,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 		});
 		expect(full.street_address).toBe('1200 S State');
 
-		const missingNo = new Incident({
+		const missingNo = new Crash({
 			crash_record_id: 'SFN-2',
 			longitude: 0,
 			latitude: 0,
@@ -301,7 +301,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 		expect(full.street_address).toBe('1200 S State');
 		expect(missingNo.street_address).toMatch(/N Michigan/);
 
-		const allNull = new Incident({
+		const allNull = new Crash({
 			crash_record_id: 'SFN-3',
 			longitude: 0,
 			latitude: 0,
@@ -315,7 +315,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 
 	it('builds title from injury counts and location fields', () => {
 		const crashDate = '2024-03-01';
-		const incident = new Incident({
+		const crash = new Crash({
 			crash_record_id: 'TEST-5',
 			longitude: -87.7,
 			latitude: 41.9,
@@ -328,11 +328,11 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			street_name: 'State'
 		});
 
-		expect(incident.title).toBe(`1 killed near 1200 S State on ${datelineFor(crashDate)}`);
+		expect(crash.title).toBe(`1 killed near 1200 S State on ${datelineFor(crashDate)}`);
 	});
 
 	it('derives hasKnownCause and main_cause for known cause values', () => {
-		const incident = new Incident({
+		const crash = new Crash({
 			crash_record_id: 'CAUSE-1',
 			longitude: 0,
 			latitude: 0,
@@ -343,12 +343,12 @@ describe('Incident vehicles and non_passengers parsing', () => {
 			prim_contributory_cause: 'FOLLOWING TOO CLOSELY'
 		});
 
-		expect(incident.hasKnownCause).toBe(true);
-		expect(incident.main_cause).toBe('FOLLOWING TOO CLOSELY');
+		expect(crash.hasKnownCause).toBe(true);
+		expect(crash.main_cause).toBe('FOLLOWING TOO CLOSELY');
 	});
 
 	it('uses unknown cause fallback for unresolved primary causes', () => {
-		const unableToDetermine = new Incident({
+		const unableToDetermine = new Crash({
 			crash_record_id: 'CAUSE-2',
 			longitude: 0,
 			latitude: 0,
@@ -361,7 +361,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 		expect(unableToDetermine.hasKnownCause).toBe(false);
 		expect(unableToDetermine.main_cause).toBe('UNKNOWN CAUSE');
 
-		const notApplicable = new Incident({
+		const notApplicable = new Crash({
 			crash_record_id: 'CAUSE-3',
 			longitude: 0,
 			latitude: 0,
@@ -374,7 +374,7 @@ describe('Incident vehicles and non_passengers parsing', () => {
 		expect(notApplicable.hasKnownCause).toBe(false);
 		expect(notApplicable.main_cause).toBe('UNKNOWN CAUSE');
 
-		const missingPrimaryCause = new Incident({
+		const missingPrimaryCause = new Crash({
 			crash_record_id: 'CAUSE-4',
 			longitude: 0,
 			latitude: 0,

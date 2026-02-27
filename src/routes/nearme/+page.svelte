@@ -4,8 +4,8 @@
 	import { appState } from '$lib/components/AppState.svelte';
 	import { SEARCH_DEBOUNCE_MS, SITE_NAME } from '$lib/constants';
 	import type { Location } from '$lib/location';
-	import type { Incident } from '$lib/incident';
-	import IncidentList from '$lib/components/IncidentList.svelte';
+	import type { Crash } from '$lib/crash';
+	import CrashList from '$lib/components/CrashList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import CauseFilter from '$lib/components/CauseFilter.svelte';
@@ -15,11 +15,11 @@
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let lastSearchedLocation: Location | null = null;
 
-	function setIncidentDetail(item: Incident | null) {
-		appState.selectIncident(item);
+	function setCrashDetail(item: Crash | null) {
+		appState.selectCrash(item);
 	}
 
-	function scheduleIncidentSearch() {
+	function scheduleCrashSearch() {
 		if (!appState.selectedLocation) return;
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
@@ -33,7 +33,7 @@
 		const value = parseFloat((event.target as HTMLInputElement).value);
 		if (!isNaN(value) && value >= 1) {
 			appState.setMaxDistance(value);
-			scheduleIncidentSearch();
+			scheduleCrashSearch();
 		}
 	}
 
@@ -41,7 +41,7 @@
 		const value = parseInt((event.target as HTMLInputElement).value, 10);
 		if (!isNaN(value) && value >= 1) {
 			appState.setMaxDaysAgo(value);
-			scheduleIncidentSearch();
+			scheduleCrashSearch();
 		}
 	}
 
@@ -49,7 +49,7 @@
 		const value = (event.target as HTMLInputElement).value;
 		if (value) {
 			appState.setSelectedDate(new Date(value));
-			scheduleIncidentSearch();
+			scheduleCrashSearch();
 		}
 	}
 
@@ -57,9 +57,9 @@
 		return date.toISOString().split('T')[0];
 	}
 
-	function showIncidentOnMap(index: number) {
-		const filtered = appState.filteredIncidents;
-		setIncidentDetail(filtered[index]);
+	function showCrashOnMap(index: number) {
+		const filtered = appState.filteredCrashes;
+		setCrashDetail(filtered[index]);
 	}
 
 	function isToday(date: Date): boolean {
@@ -75,7 +75,7 @@
 		const loc = appState.selectedLocation;
 		if (loc && loc !== lastSearchedLocation) {
 			lastSearchedLocation = loc;
-			appState.searchIncidentsByLocation(loc);
+			appState.searchCrashesByLocation(loc);
 		} else if (!loc) {
 			lastSearchedLocation = null;
 		}
@@ -225,38 +225,38 @@
 				<span class="results-divider">&middot;</span>
 				<span class="results-count">
 					<span class="results-count-strong"
-						>{appState.filteredIncidents.length.toLocaleString()}</span
+						>{appState.filteredCrashes.length.toLocaleString()}</span
 					> crashes
 				</span>
 			{/if}
 		</div>
 
 		<!-- LocationSummary -->
-		{#if appState.selectedLocation && !appState.loading && appState.incidents.length > 0}
+		{#if appState.selectedLocation && !appState.loading && appState.crashes.length > 0}
 			<div class="panel-block">
-				<LocationSummary incidents={appState.incidents} location={appState.selectedLocation} />
+				<LocationSummary crashes={appState.crashes} location={appState.selectedLocation} />
 			</div>
 		{/if}
 
 		<!-- CauseFilter -->
-		{#if appState.selectedLocation && appState.incidents.length > 1}
+		{#if appState.selectedLocation && appState.crashes.length > 1}
 			<div class="panel-block">
 				<CauseFilter
-					incidents={appState.incidents}
+					crashes={appState.crashes}
 					activeCause={appState.causeFilter}
 					onSelectCause={(cause) => appState.setCauseFilter(cause)}
 				/>
 			</div>
 		{/if}
 
-		<!-- Incident list -->
-		{#if appState.selectedLocation && appState.filteredIncidents.length > 0}
+		<!-- Crash list -->
+		{#if appState.selectedLocation && appState.filteredCrashes.length > 0}
 			<div class="panel-list">
-				<IncidentList
-					incidents={appState.filteredIncidents}
+				<CrashList
+					crashes={appState.filteredCrashes}
 					selectedLocation={appState.selectedLocation}
 					distanceUnits={appState.distanceUnits}
-					{showIncidentOnMap}
+					{showCrashOnMap}
 				/>
 			</div>
 		{/if}
@@ -267,8 +267,8 @@
 		<div class="map-shell">
 			<MapContainer
 				selectedLocation={appState.selectedLocation}
-				incidents={appState.incidents}
-				{setIncidentDetail}
+				crashes={appState.crashes}
+				{setCrashDetail}
 				{defaultGeoCenter}
 				maxDistance={appState.maxDistance}
 			/>

@@ -8,7 +8,7 @@ export type {
 	NeighborhoodStat,
 	WardStat,
 	IntersectionStat,
-	IncidentSummary,
+	CrashSummary,
 	DateCountPeriod
 } from './types';
 export { maxLimit } from './types';

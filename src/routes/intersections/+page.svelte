@@ -242,7 +242,7 @@
 			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
 				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
 					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-						All-Time Most Incidents (inside polygon)
+						All-Time Most Crashes (inside polygon)
 					</h2>
 				</div>
 				<div class="intersection-map" bind:this={countMapHost}></div>
@@ -271,7 +271,7 @@
 			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
 				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
 					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-						Most Incidents Past 90 days (inside polygon)
+						Most Crashes Past 90 days (inside polygon)
 					</h2>
 				</div>
 				<div class="intersection-map" bind:this={recentMapHost}></div>

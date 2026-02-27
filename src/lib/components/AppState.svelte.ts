@@ -1,7 +1,7 @@
 import { Location } from '$lib/location';
-import type { Incident } from '$lib/incident';
-import { reifyIncidents } from '$lib/incident';
-import { getIncidentsNearPoint, getIncidentsWithin, getRecentIncidents } from '$lib/api/client';
+import type { Crash } from '$lib/crash';
+import { reifyCrashes } from '$lib/crash';
+import { getCrashesNearPoint, getCrashesWithin, getRecentCrashes } from '$lib/api/client';
 import type { LocationRecord } from '$lib/db/types';
 import { DEFAULT_MAX_DISTANCE_FT, DEFAULT_MAX_DAYS } from '$lib/constants';
 
@@ -18,8 +18,8 @@ function addDays(d: Date, days: number): Date {
 class AppStateManager {
 	#state = $state({
 		selectedLocation: null as Location | null,
-		incidents: [] as Incident[],
-		selectedIncident: null as Incident | null,
+		crashes: [] as Crash[],
+		selectedCrash: null as Crash | null,
 		maxDaysAgo: DEFAULT_MAX_DAYS,
 		selectedDate: new Date(),
 		maxDistance: DEFAULT_MAX_DISTANCE_FT,
@@ -35,12 +35,12 @@ class AppStateManager {
 		return this.#state.selectedLocation;
 	}
 
-	get incidents() {
-		return this.#state.incidents;
+	get crashes() {
+		return this.#state.crashes;
 	}
 
-	get selectedIncident() {
-		return this.#state.selectedIncident;
+	get selectedCrash() {
+		return this.#state.selectedCrash;
 	}
 
 	get maxDaysAgo() {
@@ -76,13 +76,13 @@ class AppStateManager {
 	}
 
 	// Computed
-	hasResults = $derived(this.#state.incidents.length > 0);
+	hasResults = $derived(this.#state.crashes.length > 0);
 	hasSelectedLocation = $derived(this.#state.selectedLocation != null);
-	incidentCount = $derived(this.#state.incidents.length);
-	filteredIncidents = $derived(
+	crashCount = $derived(this.#state.crashes.length);
+	filteredCrashes = $derived(
 		this.#state.causeFilter
-			? this.#state.incidents.filter((i) => i.primary_cause === this.#state.causeFilter)
-			: this.#state.incidents
+			? this.#state.crashes.filter((i) => i.primary_cause === this.#state.causeFilter)
+			: this.#state.crashes
 	);
 
 	// Location management
@@ -92,8 +92,8 @@ class AppStateManager {
 
 	clearLocation() {
 		this.#state.selectedLocation = null;
-		this.#state.incidents = [];
-		this.#state.selectedIncident = null;
+		this.#state.crashes = [];
+		this.#state.selectedCrash = null;
 		this.#state.causeFilter = null;
 	}
 
@@ -101,17 +101,17 @@ class AppStateManager {
 		this.#state.causeFilter = cause;
 	}
 
-	// Incident management
-	selectIncident(incident: Incident | null) {
-		this.#state.selectedIncident = incident;
+	// Crash management
+	selectCrash(crash: Crash | null) {
+		this.#state.selectedCrash = crash;
 	}
 
-	clearSelectedIncident() {
-		this.#state.selectedIncident = null;
+	clearSelectedCrash() {
+		this.#state.selectedCrash = null;
 	}
 
-	setIncidents(incidents: Incident[]) {
-		this.#state.incidents = incidents;
+	setCrashes(crashes: Crash[]) {
+		this.#state.crashes = crashes;
 	}
 
 	// Filter management
@@ -168,9 +168,9 @@ class AppStateManager {
 	}
 
 	// Business logic
-	async searchIncidentsByLocation(location: Location) {
+	async searchCrashesByLocation(location: Location) {
 		this.#state.loading = true;
-		this.#state.selectedIncident = null;
+		this.#state.selectedCrash = null;
 		this.#state.causeFilter = null;
 		try {
 			const since = toDateStr(addDays(this.#state.selectedDate, -this.#state.maxDaysAgo));
@@ -178,9 +178,9 @@ class AppStateManager {
 
 			let records;
 			if (location.isShape) {
-				records = await getIncidentsWithin(location.id, since, until);
+				records = await getCrashesWithin(location.id, since, until);
 			} else {
-				records = await getIncidentsNearPoint(
+				records = await getCrashesNearPoint(
 					location.latitude,
 					location.longitude,
 					since,
@@ -188,23 +188,23 @@ class AppStateManager {
 					this.#state.maxDistance
 				);
 			}
-			this.#state.incidents = reifyIncidents(records);
+			this.#state.crashes = reifyCrashes(records);
 		} catch (e) {
-			this.#state.incidents = [];
+			this.#state.crashes = [];
 		} finally {
 			this.#state.loading = false;
 		}
 	}
 
-	async loadRecentSeriousIncidents(limit: number = 10) {
+	async loadRecentSeriousCrashes(limit: number = 10) {
 		this.#state.loading = true;
 		this.#state.selectedLocation = null;
-		this.#state.selectedIncident = null;
+		this.#state.selectedCrash = null;
 		try {
-			const records = await getRecentIncidents(limit);
-			this.#state.incidents = reifyIncidents(records);
+			const records = await getRecentCrashes(limit);
+			this.#state.crashes = reifyCrashes(records);
 		} catch (e) {
-			this.#state.incidents = [];
+			this.#state.crashes = [];
 		} finally {
 			this.#state.loading = false;
 		}
@@ -212,19 +212,19 @@ class AppStateManager {
 
 	selectLocationAndSearch(location: Location) {
 		this.#state.selectedLocation = location;
-		this.searchIncidentsByLocation(location);
+		this.searchCrashesByLocation(location);
 	}
 
 	refreshSearch() {
 		if (this.#state.selectedLocation) {
-			this.searchIncidentsByLocation(this.#state.selectedLocation);
+			this.searchCrashesByLocation(this.#state.selectedLocation);
 		}
 	}
 
 	reset() {
 		this.#state.selectedLocation = null;
-		this.#state.incidents = [];
-		this.#state.selectedIncident = null;
+		this.#state.crashes = [];
+		this.#state.selectedCrash = null;
 		this.#state.maxDaysAgo = DEFAULT_MAX_DAYS;
 		this.#state.selectedDate = new Date();
 		this.#state.maxDistance = DEFAULT_MAX_DISTANCE_FT;

@@ -22,7 +22,7 @@
 		| 'name'
 		| 'mostRecent'
 		| 'avgPerYear'
-		| 'totalIncidents'
+		| 'totalCrashes'
 		| 'totalFatal'
 		| 'totalSeriousInjuries';
 	let sortField: SortField = $state('avgPerYear');
@@ -113,18 +113,18 @@
 						<th
 							scope="col"
 							class="table-th table-th-nowrap"
-							class:sort-active={sortField === 'totalIncidents'}
+							class:sort-active={sortField === 'totalCrashes'}
 							tabindex="0"
-							onclick={() => toggleSort('totalIncidents')}
+							onclick={() => toggleSort('totalCrashes')}
 							onkeydown={(e) => {
 								if (e.key === 'Enter' || e.key === ' ') {
 									e.preventDefault();
-									toggleSort('totalIncidents');
+									toggleSort('totalCrashes');
 								}
 							}}
 						>
-							Total Crashes{#if sortIcon('totalIncidents')}&nbsp;<span class="sort-icon"
-									>{sortIcon('totalIncidents')}</span
+							Total Crashes{#if sortIcon('totalCrashes')}&nbsp;<span class="sort-icon"
+									>{sortIcon('totalCrashes')}</span
 								>{/if}
 						</th>
 						<th
@@ -206,7 +206,7 @@
 								</a>
 							</td>
 							<td class="table-cell table-num">
-								{item.totalIncidents.toLocaleString()}
+								{item.totalCrashes.toLocaleString()}
 							</td>
 							<td class="table-cell table-num table-fatal">
 								{item.totalFatal}

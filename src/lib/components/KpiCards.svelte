@@ -4,7 +4,7 @@
 	import type { DateCountPeriod } from '$lib/db/types';
 
 	interface WindowTotals {
-		incidents: number;
+		crashes: number;
 		fatal: number;
 		incap: number;
 	}
@@ -12,9 +12,9 @@
 	let loading = $state(true);
 	let error = $state(false);
 
-	let cur = $state<WindowTotals>({ incidents: 0, fatal: 0, incap: 0 });
-	let prev = $state<WindowTotals>({ incidents: 0, fatal: 0, incap: 0 });
-	let yoy = $state<WindowTotals>({ incidents: 0, fatal: 0, incap: 0 });
+	let cur = $state<WindowTotals>({ crashes: 0, fatal: 0, incap: 0 });
+	let prev = $state<WindowTotals>({ crashes: 0, fatal: 0, incap: 0 });
+	let yoy = $state<WindowTotals>({ crashes: 0, fatal: 0, incap: 0 });
 	let curStart = $state(new Date());
 	let curEnd = $state(new Date());
 
@@ -33,20 +33,20 @@
 		start: Date,
 		end: Date
 	): WindowTotals {
-		let incidents = 0;
+		let crashes = 0;
 		let fatal = 0;
 		let incap = 0;
 		const d = new Date(start);
 		while (d <= end) {
 			const p = periods[dayKey(d)];
 			if (p) {
-				incidents += p.incident_count ?? 0;
+				crashes += p.crash_count ?? 0;
 				fatal += p.injuries_fatal ?? 0;
 				incap += p.injuries_incapacitating ?? 0;
 			}
 			d.setDate(d.getDate() + 1);
 		}
-		return { incidents, fatal, incap };
+		return { crashes, fatal, incap };
 	}
 
 	function pctChange(current: number, previous: number): number | null {
@@ -91,11 +91,11 @@
 		}
 	});
 
-	let incidentsPop = $derived(pctChange(cur.incidents, prev.incidents));
+	let crashesPop = $derived(pctChange(cur.crashes, prev.crashes));
 	let killedPop = $derived(pctChange(cur.fatal, prev.fatal));
 	let injuredPop = $derived(pctChange(cur.incap, prev.incap));
 
-	let incidentsYoy = $derived(pctChange(cur.incidents, yoy.incidents));
+	let crashesYoy = $derived(pctChange(cur.crashes, yoy.crashes));
 	let killedYoy = $derived(pctChange(cur.fatal, yoy.fatal));
 	let injuredYoy = $derived(pctChange(cur.incap, yoy.incap));
 </script>
@@ -115,7 +115,7 @@
 		<!-- Row 1: primary values -->
 		<div class="kpi-grid">
 			<div class="kpi-col">
-				<div class="kpi-primary">{cur.incidents.toLocaleString()}</div>
+				<div class="kpi-primary">{cur.crashes.toLocaleString()}</div>
 				<div class="kpi-label">Serious Crashes</div>
 			</div>
 			<div class="kpi-col">
@@ -133,12 +133,12 @@
 			<div class="kpi-compare-label">Previous 30-day period</div>
 			<div class="kpi-grid">
 				<div class="kpi-col">
-					<span class="kpi-abs">{prev.incidents.toLocaleString()}</span>
+					<span class="kpi-abs">{prev.crashes.toLocaleString()}</span>
 					<span
 						class="kpi-delta"
-						class:up={incidentsPop !== null && incidentsPop > 0}
-						class:down={incidentsPop !== null && incidentsPop < 0}
-						class:flat={incidentsPop === null || incidentsPop === 0}>{formatPct(incidentsPop)}</span
+						class:up={crashesPop !== null && crashesPop > 0}
+						class:down={crashesPop !== null && crashesPop < 0}
+						class:flat={crashesPop === null || crashesPop === 0}>{formatPct(crashesPop)}</span
 					>
 				</div>
 				<div class="kpi-col">
@@ -167,12 +167,12 @@
 			<div class="kpi-compare-label">Same period last year</div>
 			<div class="kpi-grid">
 				<div class="kpi-col">
-					<span class="kpi-abs">{yoy.incidents.toLocaleString()}</span>
+					<span class="kpi-abs">{yoy.crashes.toLocaleString()}</span>
 					<span
 						class="kpi-delta"
-						class:up={incidentsYoy !== null && incidentsYoy > 0}
-						class:down={incidentsYoy !== null && incidentsYoy < 0}
-						class:flat={incidentsYoy === null || incidentsYoy === 0}>{formatPct(incidentsYoy)}</span
+						class:up={crashesYoy !== null && crashesYoy > 0}
+						class:down={crashesYoy !== null && crashesYoy < 0}
+						class:flat={crashesYoy === null || crashesYoy === 0}>{formatPct(crashesYoy)}</span
 					>
 				</div>
 				<div class="kpi-col">

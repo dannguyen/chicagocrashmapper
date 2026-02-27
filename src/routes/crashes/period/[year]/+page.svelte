@@ -18,13 +18,13 @@
 
 <div class="period-header">
 	<nav class="breadcrumb">
-		<a href={`${base}/incidents`} class="crumb-link">Incidents</a>
+		<a href={`${base}/crashes`} class="crumb-link">Crashes</a>
 		<span class="crumb-sep">/</span>
 		<h1 class="crumb-heading">{headline}</h1>
 	</nav>
 	<div class="period-nav">
 		<a
-			href={`${base}/incidents/period/${data.year - 1}`}
+			href={`${base}/crashes/period/${data.year - 1}`}
 			class="period-arrow"
 			aria-label="Previous year"
 		>
@@ -32,7 +32,7 @@
 		>
 		{#if hasNext}
 			<a
-				href={`${base}/incidents/period/${data.year + 1}`}
+				href={`${base}/crashes/period/${data.year + 1}`}
 				class="period-arrow"
 				aria-label="Next year"
 			>

@@ -3,12 +3,12 @@
 	import { Mapper } from '$lib/mapping';
 	import { SITE_NAME } from '$lib/constants';
 	import { currentAgeSimplified } from '$lib/transformHelpers';
-	import IncidentDetail from '$lib/components/IncidentDetail.svelte';
-	import type { Incident } from '$lib/incident';
+	import CrashDetail from '$lib/components/CrashDetail.svelte';
+	import type { Crash } from '$lib/crash';
 	import type { PageData } from './$types';
 
 	let { data } = $props<{ data: PageData }>();
-	const incident: Incident = $derived(data.incident);
+	const crash: Crash = $derived(data.crash);
 	const neighborhood = $derived(data.neighborhood);
 	const ward = $derived(data.ward);
 
@@ -19,13 +19,13 @@
 		let destroyed = false;
 		(async () => {
 			if (!mapEl) return;
-			const mapId = 'incident-map';
+			const mapId = 'crash-map';
 			mapEl.id = mapId;
-			await MapperInstance.init(mapId, [incident.latitude, incident.longitude], 16);
+			await MapperInstance.init(mapId, [crash.latitude, crash.longitude], 16);
 			if (destroyed || !MapperInstance.map || !MapperInstance.L) return;
 
-			const markerColor = incident.isFatal ? '#dc2626' : '#7c3aed';
-			MapperInstance.L.circleMarker([incident.latitude, incident.longitude], {
+			const markerColor = crash.isFatal ? '#dc2626' : '#7c3aed';
+			MapperInstance.L.circleMarker([crash.latitude, crash.longitude], {
 				radius: 10,
 				color: markerColor,
 				fillColor: markerColor,
@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-	<title>{incident.title}</title>
+	<title>{crash.title}</title>
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -58,16 +58,16 @@
 	</nav>
 
 	<!-- Page title -->
-	<h1 class="text-2xl font-bold text-gray-900">{incident.title}</h1>
+	<h1 class="text-2xl font-bold text-gray-900">{crash.title}</h1>
 
 	<!-- Map -->
 	<div class="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
 		<div bind:this={mapEl} class="w-full" style="height:350px"></div>
 	</div>
 
-	<!-- Main content delegated to IncidentDetail -->
-	<IncidentDetail {incident} {neighborhood} {ward} />
+	<!-- Main content delegated to CrashDetail -->
+	<CrashDetail {crash} {neighborhood} {ward} />
 
 	<!-- Footer -->
-	<p class="text-xs text-gray-400 text-center pt-2">Crash record: {incident.crash_record_id}</p>
+	<p class="text-xs text-gray-400 text-center pt-2">Crash record: {crash.crash_record_id}</p>
 </div>

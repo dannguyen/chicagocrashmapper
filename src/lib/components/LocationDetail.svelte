@@ -1,30 +1,30 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Incident, reifyIncidents } from '$lib/incident';
-	import type { IncidentRecord } from '$lib/incident';
+	import { Crash, reifyCrashes } from '$lib/crash';
+	import type { CrashRecord } from '$lib/crash';
 	import { Location } from '$lib/location';
-	import { getIncidentSummary, getIncidentsList } from '$lib/api/client';
-	import type { IncidentListResult } from '$lib/api/client';
-	import type { IncidentSummary } from '$lib/db/types';
+	import { getCrashSummary, getCrashesList } from '$lib/api/client';
+	import type { CrashListResult } from '$lib/api/client';
+	import type { CrashSummary } from '$lib/db/types';
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
-	import IncidentList from '$lib/components/IncidentList.svelte';
+	import CrashList from '$lib/components/CrashList.svelte';
 
 	let { location } = $props<{ location: Location }>();
 
-	let incidents: Incident[] = $state([]);
-	let totalIncidents: number = $state(0);
+	let crashes: Crash[] = $state([]);
+	let totalCrashes: number = $state(0);
 	let currentPage: number = $state(0);
 	let perPage: number = $state(25);
 	let loading: boolean = $state(true);
-	let allTimeSummary: IncidentSummary | null = $state(null);
+	let allTimeSummary: CrashSummary | null = $state(null);
 	let mapRef: MapContainer | undefined = $state(undefined);
 	const isIntersection = $derived(location.category === 'intersection');
 	const mapRadiusFeet = $derived(isIntersection ? 500 : 5280);
 
-	const rangeStart = $derived(totalIncidents === 0 ? 0 : currentPage * perPage + 1);
-	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalIncidents));
-	const totalPages = $derived(Math.ceil(totalIncidents / perPage));
+	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
+	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));
+	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
 	const hasPrev = $derived(currentPage > 0);
 	const hasNext = $derived(currentPage < totalPages - 1);
 	const pageNumbers = $derived<(number | null)[]>(
@@ -36,17 +36,17 @@
 	async function fetchPage(page: number) {
 		loading = true;
 		try {
-			const result: IncidentListResult = await getIncidentsList({
+			const result: CrashListResult = await getCrashesList({
 				locationId: location.id,
 				page,
 				sort: 'desc'
 			});
-			const hydrated = reifyIncidents(result.incidents);
+			const hydrated = reifyCrashes(result.crashes);
 			if (location.category === 'intersection') {
 				hydrated.sort((a, b) => b.date.getTime() - a.date.getTime());
 			}
-			incidents = hydrated;
-			totalIncidents = result.total;
+			crashes = hydrated;
+			totalCrashes = result.total;
 			perPage = result.per_page;
 			currentPage = result.page;
 		} finally {
@@ -62,14 +62,14 @@
 		if (hasNext) fetchPage(currentPage + 1);
 	}
 
-	function showIncidentOnMap(index: number) {
-		const item = incidents[index];
+	function showCrashOnMap(index: number) {
+		const item = crashes[index];
 		if (item && mapRef) {
-			mapRef.fitToIncidents([item]);
+			mapRef.fitToCrashes([item]);
 		}
 	}
 
-	function setIncidentDetail(_item: Incident | null) {
+	function setCrashDetail(_item: Crash | null) {
 		// no-op for now
 	}
 
@@ -77,17 +77,17 @@
 		// Fetch all-time summary and first page in parallel
 		const [, summary] = await Promise.all([
 			fetchPage(0),
-			getIncidentSummary({ locationId: location.id })
+			getCrashSummary({ locationId: location.id })
 		]);
 		allTimeSummary = summary;
 
 		// By the time the network requests finish, Leaflet is long initialized.
-		// One RAF to let Svelte flush the new incidents into MapContainer's props,
-		// then explicitly sync both the shape marker and incident markers.
+		// One RAF to let Svelte flush the new crashes into MapContainer's props,
+		// then explicitly sync both the shape marker and crash markers.
 		requestAnimationFrame(() => {
 			if (mapRef) {
 				mapRef.updateMapWithLocation(location);
-				mapRef.updateNearbyMarkers(incidents);
+				mapRef.updateNearbyMarkers(crashes);
 			}
 		});
 	});
@@ -100,8 +100,8 @@
 			<MapContainer
 				bind:this={mapRef}
 				selectedLocation={location}
-				{incidents}
-				{setIncidentDetail}
+				{crashes}
+				{setCrashDetail}
 				defaultGeoCenter={[location.latitude, location.longitude]}
 				maxDistance={mapRadiusFeet}
 			/>
@@ -110,7 +110,7 @@
 
 	<!-- Summary stats -->
 	<LocationSummary
-		{incidents}
+		{crashes}
 		{location}
 		summary={allTimeSummary}
 		compact={isIntersection}
@@ -122,19 +122,19 @@
 			<MapContainer
 				bind:this={mapRef}
 				selectedLocation={location}
-				{incidents}
-				{setIncidentDetail}
+				{crashes}
+				{setCrashDetail}
 				defaultGeoCenter={[location.latitude, location.longitude]}
 				maxDistance={mapRadiusFeet}
 			/>
 		</div>
 	{/if}
 
-	<!-- Pagination + incident list -->
-	{#if totalIncidents > 0}
+	<!-- Pagination + crash list -->
+	{#if totalCrashes > 0}
 		<div class="pagination-bar">
 			<span class="pagination-text">
-				Showing {rangeStart}–{rangeEnd} of {totalIncidents} incidents
+				Showing {rangeStart}–{rangeEnd} of {totalCrashes} crashes
 			</span>
 			{#if totalPages > 1}
 				<div class="pager-controls">
@@ -174,25 +174,20 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="incident-heading">
+		<p class="crash-heading">
 			{#if totalPages > 1}
-				Incidents &mdash; Page {currentPage + 1} of {totalPages}
+				Crashes &mdash; Page {currentPage + 1} of {totalPages}
 			{:else}
-				Incidents
+				Crashes
 			{/if}
 		</p>
 
-		{#if incidents.length === 0}
+		{#if crashes.length === 0}
 			<div class="empty-state">
-				<p class="empty-text">No incidents found for this location.</p>
+				<p class="empty-text">No crashes found for this location.</p>
 			</div>
 		{:else}
-			<IncidentList
-				{incidents}
-				selectedLocation={location}
-				distanceUnits="feet"
-				{showIncidentOnMap}
-			/>
+			<CrashList {crashes} selectedLocation={location} distanceUnits="feet" {showCrashOnMap} />
 		{/if}
 	{/if}
 
@@ -330,7 +325,7 @@
 		width: 50%;
 	}
 
-	.incident-heading {
+	.crash-heading {
 		font-size: 0.875rem;
 		font-weight: 600;
 		color: #374151;

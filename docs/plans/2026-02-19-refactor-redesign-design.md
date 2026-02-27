@@ -37,7 +37,7 @@ Remove dead code, fix type safety, eliminate magic numbers, and make the codebas
    - `DEFAULT_MAX_DAYS = 540`
 
 4. **Fix dead code**
-   - `incidents/[crash_record_id]/+page.svelte` line 98: `showCrashType` derived is always `false` (compares `incident.category !== incident.category`). Remove or fix.
+   - `crashes/[crash_record_id]/+page.svelte` line 98: `showCrashType` derived is always `false` (compares `crash.category !== crash.category`). Remove or fix.
 
 5. **Remove commented-out code**
    - `transformHelpers.ts` line 2: Luxon import comment
@@ -49,12 +49,12 @@ Remove dead code, fix type safety, eliminate magic numbers, and make the codebas
    - `MapContainer.svelte`: type `activeMarker` with Leaflet's `CircleMarker` type
 
 7. **Fix a11y violations**
-   - Replace `<div>` click handlers with `<button>` elements in `LocationSearch.svelte` and `IncidentList.svelte`
+   - Replace `<div>` click handlers with `<button>` elements in `LocationSearch.svelte` and `CrashList.svelte`
    - Remove `svelte-ignore a11y_click_events_have_key_events` suppressions
 
 8. **Remove console.log/warn/error** from production code paths in:
    - `AppState.svelte.ts`
-   - `incident.ts`
+   - `crash.ts`
    - Route pages (neighborhoods, wards, intersections)
 
 ### Success Criteria
@@ -108,9 +108,9 @@ Install via CLI. Import primitives: `Badge`, `Card`, `Button`, `Separator`, `Tab
 ### Pages to Redesign
 
 1. **Shell (Header/Nav/Footer)**: sticky header, wordmark, icon, clean nav
-2. **Dashboard**: split-pane with better filter UI, incident card improvements
-3. **Location detail**: stat chips at top, incidents below, better map integration
-4. **Incident detail**: readable card, clear injury callouts, better people/vehicle display
+2. **Dashboard**: split-pane with better filter UI, crash card improvements
+3. **Location detail**: stat chips at top, crashes below, better map integration
+4. **Crash detail**: readable card, clear injury callouts, better people/vehicle display
 5. **List pages** (Neighborhoods, Wards, Intersections): sortable table with sticky header, stat chips
 
 ### Success Criteria
@@ -162,7 +162,7 @@ Cycle 2: Design
   └─ Set up Inter font
   └─ Redesign shell
   └─ Redesign Dashboard
-  └─ Redesign Location/Incident pages
+  └─ Redesign Location/Crash pages
   └─ Redesign list pages
 
 Cycle 3: Polish

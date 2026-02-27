@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type { Incident, Person, Vehicle } from '$lib/incident';
+	import type { Crash, Person, Vehicle } from '$lib/crash';
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
 	import {
-		incidentSeverity,
+		crashSeverity,
 		severityBorderClass,
 		severityBadgeClass,
 		severityLabel,
@@ -13,8 +13,8 @@
 		injuryLabel
 	} from '$lib/severity';
 
-	let { incident, neighborhood, ward } = $props<{
-		incident: Incident | null;
+	let { crash, neighborhood, ward } = $props<{
+		crash: Crash | null;
 		neighborhood: { id: string; name: string } | null;
 		ward: { id: string; name: string } | null;
 	}>();
@@ -44,46 +44,46 @@
 
 	// ── derived values ──────────────────────────────────────────────────────────
 
-	const severity = $derived(incident ? incidentSeverity(incident) : 'none');
+	const severity = $derived(crash ? crashSeverity(crash) : 'none');
 
 	const address = $derived(
-		incident
-			? [incident.street_no, incident.street_direction, incident.street_name]
+		crash
+			? [crash.street_no, crash.street_direction, crash.street_name]
 					.filter((x) => x != null && x !== '')
 					.join(' ') || 'Unknown location'
 			: 'Unknown location'
 	);
 
 	const showSecondaryCause = $derived(
-		incident
-			? incident.secondary_cause !== 'UNKNOWN' &&
-					incident.secondary_cause !== 'NOT APPLICABLE' &&
-					incident.secondary_cause !== 'UNABLE TO DETERMINE' &&
-					incident.secondary_cause !== incident.primary_cause
+		crash
+			? crash.secondary_cause !== 'UNKNOWN' &&
+					crash.secondary_cause !== 'NOT APPLICABLE' &&
+					crash.secondary_cause !== 'UNABLE TO DETERMINE' &&
+					crash.secondary_cause !== crash.primary_cause
 			: false
 	);
 
 	const injuryCategories = $derived(
-		incident
+		crash
 			? [
-					{ label: 'Fatal', count: incident.injuries_fatal, color: 'bg-red-600' },
+					{ label: 'Fatal', count: crash.injuries_fatal, color: 'bg-red-600' },
 					{
 						label: 'Serious',
-						count: incident.injuries_incapacitating,
+						count: crash.injuries_incapacitating,
 						color: 'bg-purple-600'
 					},
 					{
 						label: 'Minor',
-						count: incident.injuries_non_incapacitating,
+						count: crash.injuries_non_incapacitating,
 						color: 'bg-amber-500'
 					},
 					{
 						label: 'Reported, not evident',
-						count: incident.injuries_reported_not_evident,
+						count: crash.injuries_reported_not_evident,
 						color: 'bg-yellow-500'
 					},
-					{ label: 'Uninjured', count: incident.injuries_no_indication, color: 'bg-green-600' },
-					{ label: 'Unknown', count: incident.injuries_unknown, color: 'bg-gray-400' }
+					{ label: 'Uninjured', count: crash.injuries_no_indication, color: 'bg-green-600' },
+					{ label: 'Unknown', count: crash.injuries_unknown, color: 'bg-gray-400' }
 				].filter((c) => c.count != null && c.count > 0)
 			: []
 	);
@@ -91,9 +91,9 @@
 	// ── people count ────────────────────────────────────────────────────────────
 
 	const peopleCount = $derived(
-		incident
-			? incident.vehicles.reduce((sum: number, vh: Vehicle) => sum + vh.passengers.length, 0) +
-					incident.non_passengers.length
+		crash
+			? crash.vehicles.reduce((sum: number, vh: Vehicle) => sum + vh.passengers.length, 0) +
+					crash.non_passengers.length
 			: 0
 	);
 
@@ -105,7 +105,7 @@
 	}
 </script>
 
-{#if incident}
+{#if crash}
 	<!-- ── Hero card ─────────────────────────────────────────────────────────── -->
 	<div class="hero-card {severityBorderClass(severity)}">
 		<div class="hero-header">
@@ -115,13 +115,13 @@
 					<span class="severity-badge {severityBadgeClass(severity)}">
 						{severityLabel(severity)}
 					</span>
-					{#if incident.hit_and_run}
+					{#if crash.hit_and_run}
 						<span class="hitrun-badge">Hit & Run</span>
 					{/if}
 				</div>
 
 				<!-- Primary cause -->
-				<p class="hero-cause">{incident.main_cause}</p>
+				<p class="hero-cause">{crash.main_cause}</p>
 
 				<!-- Location line -->
 				<p class="hero-location">
@@ -137,8 +137,8 @@
 
 			<!-- Date / age aligned right -->
 			<div class="hero-meta">
-				<time datetime={incident.date.toISOString()} class="hero-date">{incident.prettyDate}</time>
-				<span class="hero-age">{currentAgeSimplified(incident.date)}</span>
+				<time datetime={crash.date.toISOString()} class="hero-date">{crash.prettyDate}</time>
+				<span class="hero-age">{currentAgeSimplified(crash.date)}</span>
 			</div>
 		</div>
 	</div>
@@ -151,31 +151,30 @@
 
 			<div class="info-row">
 				<span class="info-label">Weather</span>
-				<span class="info-value info-value-right">{conditionValue(incident.weather_condition)}</span
-				>
+				<span class="info-value info-value-right">{conditionValue(crash.weather_condition)}</span>
 			</div>
 
 			<div class="info-row">
 				<span class="info-label">Trafficway</span>
-				<span class="info-value info-value-right">{conditionValue(incident.trafficway_type)}</span>
+				<span class="info-value info-value-right">{conditionValue(crash.trafficway_type)}</span>
 			</div>
 
-			{#if incident.posted_speed_limit}
+			{#if crash.posted_speed_limit}
 				<div class="info-row">
 					<span class="info-label">Speed limit</span>
-					<span class="info-value">{incident.posted_speed_limit} mph</span>
+					<span class="info-value">{crash.posted_speed_limit} mph</span>
 				</div>
 			{/if}
 
 			<div class="info-row {showSecondaryCause ? '' : 'info-row-last'}">
 				<span class="info-label">Crash type</span>
-				<span class="info-value info-value-right">{conditionValue(incident.category)}</span>
+				<span class="info-value info-value-right">{conditionValue(crash.category)}</span>
 			</div>
 
 			{#if showSecondaryCause}
 				<div class="info-row info-row-last">
 					<span class="info-label">Secondary cause</span>
-					<span class="info-value info-value-right">{incident.secondary_cause}</span>
+					<span class="info-value info-value-right">{crash.secondary_cause}</span>
 				</div>
 			{/if}
 		</div>
@@ -234,7 +233,7 @@
 				<p class="people-empty">No people records available</p>
 			{/if}
 
-			{#each incident.vehicles as vh}
+			{#each crash.vehicles as vh}
 				{#each vh.passengers as p}
 					{@const pLevel = personInjuryLevel(p)}
 					{@const pLabel = injuryLabel(pLevel)}
@@ -290,7 +289,7 @@
 				{/each}
 			{/each}
 
-			{#each incident.non_passengers as p}
+			{#each crash.non_passengers as p}
 				{@const pLevel = personInjuryLevel(p)}
 				{@const pLabel = injuryLabel(pLevel)}
 				<div class="person-row">

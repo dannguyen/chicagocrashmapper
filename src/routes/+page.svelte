@@ -4,8 +4,8 @@
 
 	import { appState } from '$lib/components/AppState.svelte';
 	import { SITE_NAME } from '$lib/constants';
-	import type { Incident } from '$lib/incident';
-	import IncidentList from '$lib/components/IncidentList.svelte';
+	import type { Crash } from '$lib/crash';
+	import CrashList from '$lib/components/CrashList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import TrendChart from '$lib/components/TrendChart.svelte';
 	import KpiCards from '$lib/components/KpiCards.svelte';
@@ -13,17 +13,17 @@
 
 	const defaultGeoCenter: [number, number] = [41.8781, -87.6298];
 
-	function setIncidentDetail(item: Incident | null) {
-		appState.selectIncident(item);
+	function setCrashDetail(item: Crash | null) {
+		appState.selectCrash(item);
 	}
 
-	function showIncidentOnMap(index: number) {
-		const filtered = appState.filteredIncidents;
-		setIncidentDetail(filtered[index]);
+	function showCrashOnMap(index: number) {
+		const filtered = appState.filteredCrashes;
+		setCrashDetail(filtered[index]);
 	}
 
 	onMount(() => {
-		appState.loadRecentSeriousIncidents(20);
+		appState.loadRecentSeriousCrashes(20);
 	});
 </script>
 
@@ -70,12 +70,12 @@
 				<span class="loading-label">Loading...</span>
 			{:else}
 				<span class="results-summary">
-					{appState.incidents.length} recent serious crashes citywide
+					{appState.crashes.length} recent serious crashes citywide
 				</span>
 			{/if}
 		</div>
-		<!-- Incident list -->
-		{#if appState.incidents.length === 0 && !appState.loading}
+		<!-- Crash list -->
+		{#if appState.crashes.length === 0 && !appState.loading}
 			<!-- Welcome empty state -->
 			<div class="empty-state">
 				<svg
@@ -103,11 +103,11 @@
 			</div>
 		{:else}
 			<div class="panel-list">
-				<IncidentList
-					incidents={appState.filteredIncidents}
+				<CrashList
+					crashes={appState.filteredCrashes}
 					selectedLocation={appState.selectedLocation}
 					distanceUnits={appState.distanceUnits}
-					{showIncidentOnMap}
+					{showCrashOnMap}
 				/>
 			</div>
 		{/if}
@@ -116,7 +116,7 @@
 	<!-- RIGHT PANEL: map -->
 	<div class="map-panel">
 		<div class="map-shell">
-			<MapContainer incidents={appState.incidents} {setIncidentDetail} {defaultGeoCenter} />
+			<MapContainer crashes={appState.crashes} {setCrashDetail} {defaultGeoCenter} />
 		</div>
 	</div>
 </div>

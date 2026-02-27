@@ -88,7 +88,7 @@
 
 	function periodUrl(period: string): string {
 		const [year, month] = period.split('-');
-		return `${base}/incidents/period/${year}/${parseInt(month)}`;
+		return `${base}/crashes/period/${year}/${parseInt(month)}`;
 	}
 
 	function formatTooltipLabel(p: PeriodData): string {

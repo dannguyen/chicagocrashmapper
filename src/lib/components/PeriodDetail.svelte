@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { Incident, reifyIncidents } from '$lib/incident';
-	import { getIncidentSummary, getIncidentsList, getDateCount } from '$lib/api/client';
-	import type { IncidentListResult } from '$lib/api/client';
-	import type { IncidentSummary } from '$lib/db/types';
+	import { Crash, reifyCrashes } from '$lib/crash';
+	import { getCrashSummary, getCrashesList, getDateCount } from '$lib/api/client';
+	import type { CrashListResult } from '$lib/api/client';
+	import type { CrashSummary } from '$lib/db/types';
 	import MapContainer from '$lib/components/MapContainer.svelte';
-	import IncidentList from '$lib/components/IncidentList.svelte';
+	import CrashList from '$lib/components/CrashList.svelte';
 
 	let { year, month = null } = $props<{ year: number; month?: number | null }>();
 
@@ -62,9 +62,9 @@
 	}
 
 	function summaryDelta(
-		cur: IncidentSummary | null,
-		prev: IncidentSummary | null,
-		getter: (s: IncidentSummary) => number
+		cur: CrashSummary | null,
+		prev: CrashSummary | null,
+		getter: (s: CrashSummary) => number
 	): number | null {
 		if (!cur || !prev) return null;
 		return pctChange(getter(cur), getter(prev));
@@ -135,9 +135,9 @@
 
 	// ── Data state ───────────────────────────────────────────────────────────────
 
-	let summary: IncidentSummary | null = $state(null);
-	let prevSummary: IncidentSummary | null = $state(null);
-	let yearAgoSummary: IncidentSummary | null = $state(null);
+	let summary: CrashSummary | null = $state(null);
+	let prevSummary: CrashSummary | null = $state(null);
+	let yearAgoSummary: CrashSummary | null = $state(null);
 
 	interface BarData {
 		period: string;
@@ -147,24 +147,24 @@
 	}
 	let chartBars: BarData[] = $state([]);
 
-	let incidents: Incident[] = $state([]);
-	let totalIncidents = $state(0);
+	let crashes: Crash[] = $state([]);
+	let totalCrashes = $state(0);
 	let currentPage = $state(0);
 	let perPage = $state(25);
 
 	let statsLoading = $state(true);
 	let chartLoading = $state(true);
-	let incidentsLoading = $state(true);
+	let crashesLoading = $state(true);
 	let statsError = $state(false);
-	let incidentsError = $state(false);
+	let crashesError = $state(false);
 
 	let mapRef: MapContainer | undefined = $state(undefined);
 
 	// ── Pagination ───────────────────────────────────────────────────────────────
 
-	const totalPages = $derived(Math.ceil(totalIncidents / perPage));
-	const rangeStart = $derived(totalIncidents === 0 ? 0 : currentPage * perPage + 1);
-	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalIncidents));
+	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
+	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
+	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));
 	const hasPrev = $derived(currentPage > 0);
 	const hasNext = $derived(currentPage < totalPages - 1);
 	const pageNumbers = $derived<(number | null)[]>(
@@ -219,12 +219,12 @@
 		statsLoading = true;
 		statsError = false;
 		try {
-			const queries: Promise<IncidentSummary>[] = [
-				getIncidentSummary({ since: range.since, until: range.until }),
-				getIncidentSummary({ since: prevRange.since, until: prevRange.until })
+			const queries: Promise<CrashSummary>[] = [
+				getCrashSummary({ since: range.since, until: range.until }),
+				getCrashSummary({ since: prevRange.since, until: prevRange.until })
 			];
 			if (yearAgoRange) {
-				queries.push(getIncidentSummary({ since: yearAgoRange.since, until: yearAgoRange.until }));
+				queries.push(getCrashSummary({ since: yearAgoRange.since, until: yearAgoRange.until }));
 			}
 			const results = await Promise.all(queries);
 			summary = results[0];
@@ -238,23 +238,23 @@
 	}
 
 	async function fetchPage(page: number) {
-		incidentsLoading = true;
-		incidentsError = false;
+		crashesLoading = true;
+		crashesError = false;
 		try {
-			const result: IncidentListResult = await getIncidentsList({
+			const result: CrashListResult = await getCrashesList({
 				since: range.since,
 				until: range.until,
 				page,
 				sort: 'desc'
 			});
-			incidents = reifyIncidents(result.incidents);
-			totalIncidents = result.total;
+			crashes = reifyCrashes(result.crashes);
+			totalCrashes = result.total;
 			perPage = result.per_page;
 			currentPage = result.page;
 		} catch {
-			incidentsError = true;
+			crashesError = true;
 		} finally {
-			incidentsLoading = false;
+			crashesLoading = false;
 		}
 	}
 
@@ -305,12 +305,12 @@
 		if (hasNext) fetchPage(currentPage + 1);
 	}
 
-	function showIncidentOnMap(index: number) {
-		const item = incidents[index];
-		if (item && mapRef) mapRef.fitToIncidents([item]);
+	function showCrashOnMap(index: number) {
+		const item = crashes[index];
+		if (item && mapRef) mapRef.fitToCrashes([item]);
 	}
 
-	function setIncidentDetail(_item: Incident | null) {}
+	function setCrashDetail(_item: Crash | null) {}
 
 	async function loadAll() {
 		// Reset state for fresh load
@@ -318,15 +318,15 @@
 		prevSummary = null;
 		yearAgoSummary = null;
 		chartBars = [];
-		incidents = [];
-		totalIncidents = 0;
+		crashes = [];
+		totalCrashes = 0;
 		currentPage = 0;
 
 		await Promise.all([fetchStats(), fetchPage(0), fetchChart()]);
 		requestAnimationFrame(() => {
 			if (mapRef) {
-				mapRef.updateNearbyMarkers(incidents);
-				if (incidents.length > 0) mapRef.fitToIncidents(incidents);
+				mapRef.updateNearbyMarkers(crashes);
+				if (crashes.length > 0) mapRef.fitToCrashes(crashes);
 			}
 		});
 	}
@@ -515,19 +515,19 @@
 
 	<!-- Map -->
 	<div class="map-card">
-		<MapContainer bind:this={mapRef} {incidents} {setIncidentDetail} {defaultGeoCenter} />
+		<MapContainer bind:this={mapRef} {crashes} {setCrashDetail} {defaultGeoCenter} />
 	</div>
 
 	<!-- Top pagination -->
-	{#if totalIncidents > 0}
+	{#if totalCrashes > 0}
 		<div class="pagination-bar">
 			<span class="pagination-text">
-				Showing {rangeStart}–{rangeEnd} of {totalIncidents} incidents
+				Showing {rangeStart}–{rangeEnd} of {totalCrashes} crashes
 			</span>
 			<div class="pager-controls">
 				<button
 					class="pager-button pager-nav"
-					disabled={!hasPrev || incidentsLoading}
+					disabled={!hasPrev || crashesLoading}
 					onclick={goToPrev}>Prev</button
 				>
 				{#each pageNumbers as pg}
@@ -538,26 +538,26 @@
 							class="pager-button pager-page"
 							class:active-page={pg === currentPage}
 							class:inactive-page={pg !== currentPage}
-							disabled={incidentsLoading}
+							disabled={crashesLoading}
 							onclick={() => fetchPage(pg)}>{pg + 1}</button
 						>
 					{/if}
 				{/each}
 				<button
 					class="pager-button pager-nav"
-					disabled={!hasNext || incidentsLoading}
+					disabled={!hasNext || crashesLoading}
 					onclick={goToNext}>Next</button
 				>
 			</div>
 		</div>
 	{/if}
 
-	<!-- Incident list -->
-	{#if incidentsError}
+	<!-- Crash list -->
+	{#if crashesError}
 		<div class="empty-state">
-			<p class="empty-text">Failed to load incidents.</p>
+			<p class="empty-text">Failed to load crashes.</p>
 		</div>
-	{:else if incidentsLoading}
+	{:else if crashesLoading}
 		<div class="loading-stack">
 			{#each Array(5) as _}
 				<div class="loading-card">
@@ -567,28 +567,28 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="incident-heading">
+		<p class="crash-heading">
 			{#if totalPages > 1}
-				Incidents — Page {currentPage + 1} of {totalPages}
+				Crashes — Page {currentPage + 1} of {totalPages}
 			{:else}
-				Incidents
+				Crashes
 			{/if}
 		</p>
-		{#if incidents.length === 0}
+		{#if crashes.length === 0}
 			<div class="empty-state">
-				<p class="empty-text">No serious incidents found for this period.</p>
+				<p class="empty-text">No serious crashes found for this period.</p>
 			</div>
 		{:else}
-			<IncidentList {incidents} selectedLocation={null} distanceUnits="feet" {showIncidentOnMap} />
+			<CrashList {crashes} selectedLocation={null} distanceUnits="feet" {showCrashOnMap} />
 		{/if}
 	{/if}
 
 	<!-- Bottom pagination -->
-	{#if totalPages > 1 && !incidentsLoading}
+	{#if totalPages > 1 && !crashesLoading}
 		<div class="pager-footer">
 			<button
 				class="pager-button pager-nav"
-				disabled={!hasPrev || incidentsLoading}
+				disabled={!hasPrev || crashesLoading}
 				onclick={goToPrev}>Prev</button
 			>
 			{#each pageNumbers as pg}
@@ -599,14 +599,14 @@
 						class="pager-button pager-page"
 						class:active-page={pg === currentPage}
 						class:inactive-page={pg !== currentPage}
-						disabled={incidentsLoading}
+						disabled={crashesLoading}
 						onclick={() => fetchPage(pg)}>{pg + 1}</button
 					>
 				{/if}
 			{/each}
 			<button
 				class="pager-button pager-nav"
-				disabled={!hasNext || incidentsLoading}
+				disabled={!hasNext || crashesLoading}
 				onclick={goToNext}>Next</button
 			>
 		</div>
@@ -896,8 +896,8 @@
 		width: 50%;
 	}
 
-	/* ── Incident list header ── */
-	.incident-heading {
+	/* ── Crash list header ── */
+	.crash-heading {
 		font-size: 0.875rem;
 		font-weight: 600;
 		color: #374151;

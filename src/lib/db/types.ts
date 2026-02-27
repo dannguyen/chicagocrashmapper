@@ -16,7 +16,7 @@ export interface LocationRecord {
 export interface NeighborhoodStat {
 	id: string;
 	name: string;
-	totalIncidents: number;
+	totalCrashes: number;
 	totalFatal: number;
 	totalSeriousInjuries: number;
 	mostRecent: string | null;
@@ -28,7 +28,7 @@ export interface NeighborhoodStat {
 export interface WardStat {
 	id: string;
 	name: string;
-	totalIncidents: number;
+	totalCrashes: number;
 	totalFatal: number;
 	totalSeriousInjuries: number;
 	mostRecent: string | null;
@@ -49,7 +49,7 @@ export interface IntersectionStat {
 	mostRecentDate: string | null;
 }
 
-export interface IncidentSummary {
+export interface CrashSummary {
 	total: number;
 	fatal_injuries: number;
 	incapacitating_injuries: number;
@@ -58,7 +58,7 @@ export interface IncidentSummary {
 }
 
 export interface DateCountPeriod {
-	incident_count: number;
+	crash_count: number;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
 }

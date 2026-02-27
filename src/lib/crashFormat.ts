@@ -1,13 +1,13 @@
 import { base } from '$app/paths';
-import type { Incident, Person } from '$lib/incident';
-import { incidentSeverity, severityLabel } from '$lib/severity';
+import type { Crash, Person } from '$lib/crash';
+import { crashSeverity, severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
 
 export function fmtCause(cause: string): string {
 	return cause.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function peopleSummary(item: Incident): string {
+export function peopleSummary(item: Crash): string {
 	const all: Person[] = [...item.vehicles.flatMap((v) => v.passengers), ...item.non_passengers];
 	if (all.length === 0) return '';
 
@@ -40,7 +40,7 @@ export function peopleSummary(item: Incident): string {
 	return parts.join(', ');
 }
 
-export function contextInfo(item: Incident): string {
+export function contextInfo(item: Crash): string {
 	const parts: string[] = [];
 	if (item.weather_condition) {
 		parts.push(item.weather_condition.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()));
@@ -58,8 +58,8 @@ const severityColors: Record<SeverityLevel, string> = {
 	none: '#9ca3af'
 };
 
-export function popupHtml(item: Incident, index: number): string {
-	const severity = incidentSeverity(item);
+export function popupHtml(item: Crash, index: number): string {
+	const severity = crashSeverity(item);
 	const label = severityLabel(severity).toUpperCase();
 	const color = severityColors[severity];
 	const people = peopleSummary(item);
@@ -73,6 +73,6 @@ export function popupHtml(item: Incident, index: number): string {
 <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:2px">${fmtCause(item.main_cause)}</div>
 ${people ? `<div style="font-size:12px;color:#374151;margin-bottom:2px">${people}</div>` : ''}
 ${context ? `<div style="font-size:12px;color:#9ca3af;margin-bottom:4px">${context}</div>` : ''}
-<a href="${base}/incidents/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
+<a href="${base}/crashes/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
 </div>`;
 }

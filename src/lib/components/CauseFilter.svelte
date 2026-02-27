@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { Incident } from '$lib/incident';
+	import type { Crash } from '$lib/crash';
 
-	let { incidents, activeCause, onSelectCause } = $props<{
-		incidents: Incident[];
+	let { crashes, activeCause, onSelectCause } = $props<{
+		crashes: Crash[];
 		activeCause: string | null;
 		onSelectCause: (cause: string | null) => void;
 	}>();
 
 	let causeCounts = $derived.by(() => {
 		const counts = new Map<string, number>();
-		for (const inc of incidents) {
+		for (const inc of crashes) {
 			const cause = inc.primary_cause || 'UNKNOWN';
 			counts.set(cause, (counts.get(cause) ?? 0) + 1);
 		}
@@ -36,7 +36,7 @@
 				class:chip-inactive={activeCause !== null}
 				onclick={() => onSelectCause(null)}
 			>
-				All ({incidents.length})
+				All ({crashes.length})
 			</button>
 
 			{#each causeCounts as [cause, count]}

@@ -8,10 +8,10 @@ import type {
 	NeighborhoodStat,
 	WardStat,
 	IntersectionStat,
-	IncidentSummary,
+	CrashSummary,
 	DateCountPeriod
 } from '$lib/db/types';
-import type { IncidentRecord } from '$lib/incident';
+import type { CrashRecord } from '$lib/crash';
 
 const API_BASE = PUBLIC_API_BASE_URL ?? '';
 
@@ -48,43 +48,43 @@ export async function getLocationById(id: string): Promise<LocationByIdRecord | 
 	}
 }
 
-export async function getIncidentsNearPoint(
+export async function getCrashesNearPoint(
 	lat: number,
 	lng: number,
 	since: string,
 	until: string,
 	distanceFeet: number,
 	limit: number = 1000
-): Promise<IncidentRecord[]> {
+): Promise<CrashRecord[]> {
 	const distanceMiles = distanceFeet / 5280;
-	const data = await apiGet<{ incidents: (IncidentRecord & { distance_miles?: number })[] }>(
-		'/api/incidents/nearpoint',
+	const data = await apiGet<{ crashes: (CrashRecord & { distance_miles?: number })[] }>(
+		'/api/crashes/nearpoint',
 		{ latitude: lat, longitude: lng, since, until, distance: distanceMiles, limit }
 	);
-	// Convert distance_miles -> distance in feet for the Incident model
-	return data.incidents.map((inc) => ({
+	// Convert distance_miles -> distance in feet for the Crash model
+	return data.crashes.map((inc) => ({
 		...inc,
 		distance: inc.distance_miles != null ? inc.distance_miles * 5280 : undefined
 	}));
 }
 
-export async function getIncidentsWithin(
+export async function getCrashesWithin(
 	locationId: string,
 	since: string,
 	until: string,
 	limit: number = 1000
-): Promise<IncidentRecord[]> {
-	const data = await apiGet<{ incidents: IncidentRecord[] }>('/api/incidents/within', {
+): Promise<CrashRecord[]> {
+	const data = await apiGet<{ crashes: CrashRecord[] }>('/api/crashes/within', {
 		location_id: locationId,
 		since,
 		until,
 		limit
 	});
-	return data.incidents;
+	return data.crashes;
 }
 
-export interface IncidentByIdResult {
-	incident: IncidentRecord;
+export interface CrashByIdResult {
+	crash: CrashRecord;
 	neighborhood: {
 		id: string;
 		name: string;
@@ -95,19 +95,19 @@ export interface IncidentByIdResult {
 	ward: { id: string; name: string; category: string; latitude: number; longitude: number } | null;
 }
 
-export async function getIncidentById(id: string): Promise<IncidentByIdResult | null> {
+export async function getCrashById(id: string): Promise<CrashByIdResult | null> {
 	try {
-		return await apiGet<IncidentByIdResult>(`/api/incidents/${encodeURIComponent(id)}`);
+		return await apiGet<CrashByIdResult>(`/api/crashes/${encodeURIComponent(id)}`);
 	} catch {
 		return null;
 	}
 }
 
-export async function getRecentIncidents(limit: number = 10): Promise<IncidentRecord[]> {
-	const data = await apiGet<{ incidents: IncidentRecord[] }>('/api/incidents/recent', {
+export async function getRecentCrashes(limit: number = 10): Promise<CrashRecord[]> {
+	const data = await apiGet<{ crashes: CrashRecord[] }>('/api/crashes/recent', {
 		limit
 	});
-	return data.incidents;
+	return data.crashes;
 }
 
 export async function getNeighborhoodStats(): Promise<NeighborhoodStat[]> {
@@ -128,15 +128,15 @@ export async function getTopIntersections(): Promise<{
 	return apiGet('/api/intersections/top', { limit: 20, recent_days: 90 });
 }
 
-export async function getIncidentSummary(params: {
+export async function getCrashSummary(params: {
 	locationId?: string;
 	latitude?: number;
 	longitude?: number;
 	distance?: number;
 	since?: string;
 	until?: string;
-}): Promise<IncidentSummary> {
-	return apiGet<IncidentSummary>('/api/incidents/summary', {
+}): Promise<CrashSummary> {
+	return apiGet<CrashSummary>('/api/crashes/summary', {
 		location_id: params.locationId,
 		latitude: params.latitude,
 		longitude: params.longitude,
@@ -146,14 +146,14 @@ export async function getIncidentSummary(params: {
 	});
 }
 
-export interface IncidentListResult {
+export interface CrashListResult {
 	total: number;
 	page: number;
 	per_page: number;
-	incidents: IncidentRecord[];
+	crashes: CrashRecord[];
 }
 
-export async function getIncidentsList(params: {
+export async function getCrashesList(params: {
 	locationId?: string;
 	latitude?: number;
 	longitude?: number;
@@ -162,8 +162,8 @@ export async function getIncidentsList(params: {
 	until?: string;
 	page?: number;
 	sort?: 'asc' | 'desc';
-}): Promise<IncidentListResult> {
-	return apiGet<IncidentListResult>('/api/incidents/list', {
+}): Promise<CrashListResult> {
+	return apiGet<CrashListResult>('/api/crashes/list', {
 		location_id: params.locationId,
 		latitude: params.latitude,
 		longitude: params.longitude,
@@ -183,6 +183,6 @@ export async function getDateCount(
 		unit: string;
 		last: number;
 		periods: Record<string, DateCountPeriod>;
-	}>('/api/incidents/date-count', { unit, last });
+	}>('/api/crashes/date-count', { unit, last });
 	return data.periods;
 }

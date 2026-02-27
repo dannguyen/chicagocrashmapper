@@ -1,11 +1,11 @@
-import type { Incident } from '$lib/incident';
-import type { Person } from '$lib/incident';
+import type { Crash } from '$lib/crash';
+import type { Person } from '$lib/crash';
 
 export type SeverityLevel = 'fatal' | 'serious' | 'minor' | 'none';
 export type InjuryLevel = 'fatal' | 'serious' | 'minor' | 'unclear' | 'none' | 'unknown';
 
-/** Derives severity level from an incident */
-export function incidentSeverity(inc: Incident): SeverityLevel {
+/** Derives severity level from an crash */
+export function crashSeverity(inc: Crash): SeverityLevel {
 	if (inc.isFatal) return 'fatal';
 	if (inc.injuries_incapacitating > 0) return 'serious';
 	if ((inc.injuries_non_incapacitating ?? 0) > 0 || (inc.injuries_reported_not_evident ?? 0) > 0) {
