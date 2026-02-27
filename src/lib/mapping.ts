@@ -73,11 +73,18 @@ export class Mapper {
 				features
 			} as import('geojson').FeatureCollection,
 			{
-				style: () => ({
-					weight: 1,
-					color: '#4455bb',
-					fillOpacity: 0.4
-				}),
+				style: (feature?: import('geojson').Feature) => {
+					const category = String(
+						(feature?.properties as Record<string, unknown> | undefined)?.category ?? ''
+					);
+					const isStreet = category === 'street';
+					return {
+						weight: isStreet ? 5 : 1,
+						color: '#4455bb',
+						fillOpacity: isStreet ? 0 : 0.4,
+						opacity: isStreet ? 1 : 0.8
+					};
+				},
 				onEachFeature: (feature: import('geojson').Feature, layer: Layer) => {
 					const p = feature.properties as Record<string, unknown>;
 					if (p?.name) {

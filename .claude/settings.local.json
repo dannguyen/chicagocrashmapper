@@ -7,9 +7,7 @@
 			"Bash(npm run build:*)",
 			"Bash(grep:*)",
 			"Bash(npm install:*)",
-			"Bash(python3:*)",
-			"Bash(git add:*)",
-			"Bash(git commit:*)"
+			"Bash(python3:*)"
 		]
 	}
 }

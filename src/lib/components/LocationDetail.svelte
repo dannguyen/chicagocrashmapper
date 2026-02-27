@@ -20,7 +20,7 @@
 	let allTimeSummary: CrashSummary | null = $state(null);
 	let mapRef: MapContainer | undefined = $state(undefined);
 	const isIntersection = $derived(location.category === 'intersection');
-	const mapRadiusFeet = $derived(isIntersection ? 500 : 5280);
+	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
 
 	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
 	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));

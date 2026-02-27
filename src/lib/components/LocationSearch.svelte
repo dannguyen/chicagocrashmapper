@@ -106,6 +106,8 @@
 				return { label: 'Ward', classes: 'badge badge-ward' };
 			case 'intersection':
 				return { label: 'Intersection', classes: 'badge badge-neutral' };
+			case 'street':
+				return { label: 'Street', classes: 'badge badge-neutral' };
 			default:
 				return { label: category, classes: 'badge badge-neutral' };
 		}

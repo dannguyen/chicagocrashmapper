@@ -74,8 +74,12 @@
 		clearActiveLayer();
 		MapperInstance.map.setView([location.latitude, location.longitude], 16);
 
-		const renderAsShape = location.category !== 'intersection' && location.isShape;
+		const renderAsShape = location.isShape;
 		if (renderAsShape) {
+			if (mapCircleLayer && MapperInstance.map) {
+				MapperInstance.map.removeLayer(mapCircleLayer);
+				mapCircleLayer = null;
+			}
 			activeMarker = MapperInstance.makeShapeMarker(location);
 		} else {
 			activeMarker = MapperInstance.makePointMarker(location);
@@ -133,12 +137,7 @@
 			// For shape locations (neighborhoods/wards), extend bounds using the shape layer's
 			// actual geographic extent rather than the centroid point — the centroid lat/lng
 			// may be 0,0 for polygon records that don't store a separate centroid.
-			if (
-				selectedLocation?.category !== 'intersection' &&
-				selectedLocation?.isShape &&
-				activeMarker &&
-				'getBounds' in activeMarker
-			) {
+			if (selectedLocation?.isShape && activeMarker && 'getBounds' in activeMarker) {
 				try {
 					const shapeBounds = (activeMarker as import('leaflet').GeoJSON).getBounds();
 					const bounds = MapperInstance.L.latLngBounds(validLatLngs).extend(shapeBounds);
@@ -163,12 +162,7 @@
 			MapperInstance.map.invalidateSize();
 		} else if (selectedLocation) {
 			// No valid crash coords — just show the shape/location
-			if (
-				selectedLocation.category !== 'intersection' &&
-				selectedLocation.isShape &&
-				activeMarker &&
-				'getBounds' in activeMarker
-			) {
+			if (selectedLocation.isShape && activeMarker && 'getBounds' in activeMarker) {
 				try {
 					MapperInstance.map.fitBounds((activeMarker as import('leaflet').GeoJSON).getBounds(), {
 						padding: [40, 40]
@@ -214,11 +208,7 @@
 
 	// React to distance filter changes without recentering
 	$effect(() => {
-		if (
-			selectedLocation &&
-			(selectedLocation.category === 'intersection' || selectedLocation.isPoint) &&
-			maxDistance
-		) {
+		if (selectedLocation && selectedLocation.isPoint && maxDistance) {
 			updateSearchRadius();
 		} else if (mapCircleLayer && MapperInstance.map) {
 			MapperInstance.map.removeLayer(mapCircleLayer);

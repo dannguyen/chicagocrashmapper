@@ -17,6 +17,8 @@
 				return { label: 'Ward', classes: 'bg-orange-100 text-orange-700' };
 			case 'intersection':
 				return { label: 'Intersection', classes: 'bg-gray-100 text-gray-600' };
+			case 'street':
+				return { label: 'Street', classes: 'bg-gray-100 text-gray-600' };
 			default:
 				return { label: category, classes: 'bg-gray-100 text-gray-600' };
 		}
@@ -29,7 +31,7 @@
 
 <div class="mb-6">
 	<nav class="text-sm text-gray-500 mb-2">
-		{#if location.category === 'intersection'}
+		{#if location.category === 'intersection' || location.category === 'street'}
 			<span class="capitalize text-gray-600">{location.pluralCategory}</span>
 		{:else}
 			<a
