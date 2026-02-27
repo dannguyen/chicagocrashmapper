@@ -117,4 +117,42 @@ describe('Mapper', () => {
 		);
 		expect(marker).toBeDefined();
 	});
+
+	it('should render street shapes with a thicker stroke', () => {
+		const location = new Location({
+			id: 'street-1',
+			name: 'Test Street',
+			latitude: 41,
+			longitude: -87,
+			category: 'street' as import('$lib/db/types').LocationCategory,
+			the_geom: 'LINESTRING(...)'
+		});
+
+		mapper.makeShapeMarker(location);
+
+		const call = mockLeaflet.geoJSON.mock.calls.at(-1);
+		expect(call).toBeDefined();
+		const options = call?.[1] as {
+			style?: (feature: import('geojson').Feature) => {
+				weight: number;
+				fillOpacity: number;
+			};
+		};
+		expect(typeof options.style).toBe('function');
+
+		const style = options.style?.({
+			type: 'Feature',
+			properties: { category: 'street' },
+			geometry: {
+				type: 'LineString',
+				coordinates: [
+					[-87, 41],
+					[-86.99, 41.01]
+				]
+			}
+		} as unknown as import('geojson').Feature);
+
+		expect(style?.weight).toBe(5);
+		expect(style?.fillOpacity).toBe(0);
+	});
 });

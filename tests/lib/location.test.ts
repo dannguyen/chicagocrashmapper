@@ -39,6 +39,15 @@ describe('Location class', () => {
 			latitude: 40.3,
 			longitude: -80.4,
 			the_geom: 'SHAPE([])'
+		},
+
+		street: {
+			id: 'delta',
+			name: 'Delta St',
+			category: 'street',
+			latitude: 40.4,
+			longitude: -80.5,
+			the_geom: 'LINESTRING (-80.5 40.4, -80.4 40.4)'
 		}
 	};
 
@@ -72,6 +81,9 @@ describe('Location class', () => {
 
 		const neighborhood = new Location(mockData.neighborhood);
 		expect(neighborhood.pluralCategory).toBe('neighborhoods');
+
+		const street = new Location(mockData.street);
+		expect(street.pluralCategory).toBe('streets');
 	});
 });
 

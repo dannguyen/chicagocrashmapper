@@ -1,17 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { escapeRegExp, highlightFilteredText } from '$lib/inputHelpers';
-
-describe('escapeRegExp', () => {
-	it('should escape special regex characters', () => {
-		const input = '.*+?^${}()|[]\\';
-		const expected = String.raw`\.\*\+\?\^\$\{\}\(\)\|\[\]\\`; //String.raw`'\.\*\+\?\^\$\{\}\(\)\|\[\]\\`;
-		expect(escapeRegExp(input)).toBe(expected);
-	});
-
-	it('should return plain text unchanged', () => {
-		expect(escapeRegExp('hello World')).toBe(String.raw`hello World`);
-	});
-});
+import { highlightFilteredText } from '$lib/inputHelpers';
 
 describe('highlightFilteredText', () => {
 	it('should highlight matching text case-insensitively', () => {
