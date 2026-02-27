@@ -2,6 +2,7 @@
 	import type { Crash } from '$lib/crash';
 	import type { Location } from '$lib/location';
 	import type { CrashSummary } from '$lib/db/types';
+	import { fmtCause } from '$lib/crashFormat';
 
 	let {
 		crashes,
@@ -100,14 +101,6 @@
 		};
 	});
 
-	function fmt(cause: string): string {
-		return cause
-			.toLowerCase()
-			.replace(/\b\w/g, (c) => c.toUpperCase())
-			.replace(/Unable To Determine/i, 'Unknown cause')
-			.replace(/Not Applicable/i, 'N/A');
-	}
-
 	function shortDate(d: Date): string {
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 	}
@@ -155,7 +148,7 @@
 				{#each stats.topCauses as [cause, count]}
 					<div class="chart-row">
 						<div class="chart-label" title={cause}>
-							{fmt(cause)}
+							{fmtCause(cause)}
 						</div>
 						<div class="chart-track">
 							<div class="chart-bar" style="width: {(count / stats.maxCauseCount) * 100}%"></div>

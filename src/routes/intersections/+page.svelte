@@ -2,11 +2,12 @@
 	import { onMount, tick } from 'svelte';
 	import { base } from '$app/paths';
 	import { getTopIntersections } from '$lib/api/client';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { IntersectionStat } from '$lib/db';
 	import { parse as parseWkt, type GeoJSONGeometry } from 'wellknown';
+	import { escapeHtml } from '$lib/inputHelpers';
 
-	const defaultCenter: [number, number] = [41.8781, -87.6298];
+	const defaultCenter = CHICAGO_CENTER;
 
 	let topByCount: IntersectionStat[] = $state([]);
 	let topByRecent: IntersectionStat[] = $state([]);
@@ -21,16 +22,6 @@
 
 	function formatStats(item: IntersectionStat): string {
 		return `${item.count.toLocaleString()} crashes · ${item.fatal_injuries.toLocaleString()} fatalities · ${item.serious_injuries.toLocaleString()} serious injuries`;
-	}
-
-	function escapeHtml(value: string): string {
-		return value.replace(/[&<>"']/g, (ch) => {
-			if (ch === '&') return '&amp;';
-			if (ch === '<') return '&lt;';
-			if (ch === '>') return '&gt;';
-			if (ch === '"') return '&quot;';
-			return '&#39;';
-		});
 	}
 
 	function destroyMap(map: import('leaflet').Map | null): null {
@@ -177,10 +168,7 @@
 				const data = await getTopIntersections();
 				if (!active) return;
 				topByCount = data.by_count;
-				topByRecent =
-					data.by_recent_90_days && data.by_recent_90_days.length > 0
-						? data.by_recent_90_days
-						: data.by_recency;
+				topByRecent = data.by_recent;
 			} catch {
 				if (!active) return;
 				error = 'Failed to load intersection statistics.';

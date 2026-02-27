@@ -8,7 +8,6 @@ export const prerender = false;
 
 export const load: PageLoad = async ({ params }) => {
 	const result = await getCrashById(params.crash_record_id);
-	console.log('Hey: ' + params.crash_record_id);
 	if (!result) {
 		throw error(404, `Crash '${params.crash_record_id}' not found.`);
 	}

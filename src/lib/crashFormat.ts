@@ -2,9 +2,14 @@ import { base } from '$app/paths';
 import type { Crash, Person } from '$lib/crash';
 import { crashSeverity, severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
+import { SEVERITY_COLORS } from '$lib/constants';
 
 export function fmtCause(cause: string): string {
-	return cause.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+	return cause
+		.toLowerCase()
+		.replace(/\b\w/g, (c) => c.toUpperCase())
+		.replace(/Unable To Determine/i, 'Unknown cause')
+		.replace(/Not Applicable/i, 'N/A');
 }
 
 export function peopleSummary(item: Crash): string {
@@ -51,12 +56,7 @@ export function contextInfo(item: Crash): string {
 	return parts.join(' · ');
 }
 
-const severityColors: Record<SeverityLevel, string> = {
-	fatal: '#dc2626',
-	serious: '#7c3aed',
-	minor: '#d97706',
-	none: '#9ca3af'
-};
+const severityColors: Record<SeverityLevel, string> = SEVERITY_COLORS;
 
 export function popupHtml(item: Crash, index: number): string {
 	const severity = crashSeverity(item);

@@ -1,40 +1,10 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_NAME, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
 	import PeriodDetail from '$lib/components/PeriodDetail.svelte';
 	import type { PageData } from './$types';
 
 	let { data } = $props<{ data: PageData }>();
-
-	const MONTH_NAMES = [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December'
-	];
-
-	const MONTH_SHORT = [
-		'Jan',
-		'Feb',
-		'Mar',
-		'Apr',
-		'May',
-		'Jun',
-		'Jul',
-		'Aug',
-		'Sep',
-		'Oct',
-		'Nov',
-		'Dec'
-	];
 
 	const monthName = $derived(MONTH_NAMES[data.month - 1]);
 

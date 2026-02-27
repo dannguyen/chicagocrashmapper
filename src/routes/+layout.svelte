@@ -1,6 +1,5 @@
 <script lang="ts">
 	import '$lib/styles/app.css';
-	import '$lib/vendor/fontawesome.js';
 	import { page } from '$app/state';
 	import SiteHeader from '$lib/components/layout/SiteHeader.svelte';
 	import SiteFooter from '$lib/components/layout/SiteFooter.svelte';

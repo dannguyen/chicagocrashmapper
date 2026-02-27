@@ -11,4 +11,3 @@ export type {
 	CrashSummary,
 	DateCountPeriod
 } from './types';
-export { maxLimit } from './types';

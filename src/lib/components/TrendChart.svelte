@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { getDateCount } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/db/types';
+	import { MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
 
 	interface PeriodData {
 		period: string;
@@ -50,40 +51,10 @@
 		return Math.max(2, (val / maxVal) * chartHeight);
 	}
 
-	const monthNames = [
-		'Jan',
-		'Feb',
-		'Mar',
-		'Apr',
-		'May',
-		'Jun',
-		'Jul',
-		'Aug',
-		'Sep',
-		'Oct',
-		'Nov',
-		'Dec'
-	];
-
-	const monthNamesFull = [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December'
-	];
-
 	function formatPeriod(period: string): string {
 		const parts = period.split('-');
 		const month = parseInt(parts[1]) - 1;
-		return monthNames[month] ?? period;
+		return MONTH_SHORT[month] ?? period;
 	}
 
 	function periodUrl(period: string): string {
@@ -94,7 +65,7 @@
 	function formatTooltipLabel(p: PeriodData): string {
 		const parts = p.period.split('-');
 		const monthIdx = parseInt(parts[1]) - 1;
-		return `${monthNamesFull[monthIdx]} ${parts[0]}`;
+		return `${MONTH_NAMES[monthIdx]} ${parts[0]}`;
 	}
 
 	function handleBarClick(p: PeriodData) {

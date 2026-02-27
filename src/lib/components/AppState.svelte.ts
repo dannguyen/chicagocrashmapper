@@ -1,19 +1,10 @@
 import { Location } from '$lib/location';
 import type { Crash } from '$lib/crash';
-import { reifyCrashes } from '$lib/crash';
+import { parseCrashes } from '$lib/crash';
 import { getCrashesNearPoint, getCrashesWithin, getRecentCrashes } from '$lib/api/client';
 import type { LocationRecord } from '$lib/db/types';
 import { DEFAULT_MAX_DISTANCE_FT, DEFAULT_MAX_DAYS } from '$lib/constants';
-
-function toDateStr(d: Date): string {
-	return d.toISOString().split('T')[0];
-}
-
-function addDays(d: Date, days: number): Date {
-	const result = new Date(d);
-	result.setDate(result.getDate() + days);
-	return result;
-}
+import { toDateStr, addDays } from '$lib/transformHelpers';
 
 class AppStateManager {
 	#state = $state({
@@ -23,7 +14,6 @@ class AppStateManager {
 		maxDaysAgo: DEFAULT_MAX_DAYS,
 		selectedDate: new Date(),
 		maxDistance: DEFAULT_MAX_DISTANCE_FT,
-		distanceUnits: 'feet' as 'feet' | 'meters',
 		loading: false,
 		causeFilter: null as string | null,
 		geoLoading: false,
@@ -53,10 +43,6 @@ class AppStateManager {
 
 	get maxDistance() {
 		return this.#state.maxDistance;
-	}
-
-	get distanceUnits() {
-		return this.#state.distanceUnits;
 	}
 
 	get loading() {
@@ -188,7 +174,7 @@ class AppStateManager {
 					this.#state.maxDistance
 				);
 			}
-			this.#state.crashes = reifyCrashes(records);
+			this.#state.crashes = parseCrashes(records);
 		} catch (e) {
 			this.#state.crashes = [];
 		} finally {
@@ -196,13 +182,13 @@ class AppStateManager {
 		}
 	}
 
-	async loadRecentSeriousCrashes(limit: number = 10) {
+	async loadRecentCrashes(limit: number = 10) {
 		this.#state.loading = true;
 		this.#state.selectedLocation = null;
 		this.#state.selectedCrash = null;
 		try {
 			const records = await getRecentCrashes(limit);
-			this.#state.crashes = reifyCrashes(records);
+			this.#state.crashes = parseCrashes(records);
 		} catch (e) {
 			this.#state.crashes = [];
 		} finally {

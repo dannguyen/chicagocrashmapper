@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getDateCount } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/db/types';
+	import { toDateStr, addDays, pctChange, formatPct } from '$lib/transformHelpers';
 
 	interface WindowTotals {
 		crashes: number;
@@ -18,16 +19,6 @@
 	let curStart = $state(new Date());
 	let curEnd = $state(new Date());
 
-	function dayKey(d: Date): string {
-		return d.toISOString().split('T')[0];
-	}
-
-	function addDays(d: Date, n: number): Date {
-		const r = new Date(d);
-		r.setDate(r.getDate() + n);
-		return r;
-	}
-
 	function sumWindow(
 		periods: Record<string, DateCountPeriod>,
 		start: Date,
@@ -38,7 +29,7 @@
 		let incap = 0;
 		const d = new Date(start);
 		while (d <= end) {
-			const p = periods[dayKey(d)];
+			const p = periods[toDateStr(d)];
 			if (p) {
 				crashes += p.crash_count ?? 0;
 				fatal += p.injuries_fatal ?? 0;
@@ -47,19 +38,6 @@
 			d.setDate(d.getDate() + 1);
 		}
 		return { crashes, fatal, incap };
-	}
-
-	function pctChange(current: number, previous: number): number | null {
-		if (previous === 0) return current > 0 ? Infinity : null;
-		return ((current - previous) / previous) * 100;
-	}
-
-	function formatPct(val: number | null): string {
-		if (val === null) return '--';
-		if (val === Infinity) return '--';
-		if (val === -Infinity) return '--';
-		const sign = val > 0 ? '+' : '';
-		return `${sign}${Math.round(val)}%`;
 	}
 
 	function formatShortDate(d: Date): string {

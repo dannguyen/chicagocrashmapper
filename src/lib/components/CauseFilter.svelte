@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Crash } from '$lib/crash';
+	import { fmtCause } from '$lib/crashFormat';
 
 	let { crashes, activeCause, onSelectCause } = $props<{
 		crashes: Crash[];
@@ -15,14 +16,6 @@
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 	});
-
-	function fmt(cause: string): string {
-		return cause
-			.toLowerCase()
-			.replace(/\b\w/g, (c) => c.toUpperCase())
-			.replace(/Unable To Determine/i, 'Unknown')
-			.replace(/Not Applicable/i, 'N/A');
-	}
 </script>
 
 {#if causeCounts.length > 1}
@@ -46,7 +39,7 @@
 					class:chip-inactive={activeCause !== cause}
 					onclick={() => onSelectCause(activeCause === cause ? null : cause)}
 				>
-					{fmt(cause)} ({count})
+					{fmtCause(cause)} ({count})
 				</button>
 			{/each}
 

@@ -141,12 +141,134 @@
 				<span class="hero-age">{currentAgeSimplified(crash.date)}</span>
 			</div>
 		</div>
+
+		{#if injuryCategories.length > 0}
+			<div class="hero-injuries">
+				{#each injuryCategories as cat}
+					<div class="injury-item">
+						<span class="injury-dot {cat.color}"></span>
+						<span class="injury-text">{cat.count} {cat.label}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 
 	<!-- ── Info grid ─────────────────────────────────────────────────────────── -->
 	<div class="info-grid">
-		<!-- Conditions card -->
-		<div class="info-card">
+		<!-- Left column: People Involved -->
+		<div class="info-card people-card">
+			<p class="info-title">People Involved</p>
+
+			{#if peopleCount > 0}
+				<p class="people-count">{peopleCount} {peopleCount === 1 ? 'person' : 'people'} involved</p>
+			{/if}
+
+			{#if peopleCount === 0}
+				<p class="people-empty">No people records available</p>
+			{/if}
+
+			{#each crash.vehicles as vh}
+				{#each vh.passengers as p}
+					{@const pLevel = personInjuryLevel(p)}
+					{@const pLabel = injuryLabel(pLevel)}
+					{@const vehicleDesc = [vh.vehicle_year, vh.make, vh.model]
+						.filter((x) => x != null && x !== '')
+						.join(' ')}
+					<div class="person-row">
+						<div class="person-main">
+							<div class="person-header">
+								{#if p.person_type}
+									<span class="person-tag">{p.person_type}</span>
+								{/if}
+								<span class="person-name">{p.description}</span>
+							</div>
+							{#if vehicleDesc}
+								<span class="person-vehicle">{vehicleDesc}</span>
+							{/if}
+							<div class="person-details">
+								{#if isRelevantDetail(p.safety_equipment)}
+									<span class="person-detail">Safety: {p.safety_equipment}</span>
+								{/if}
+								{#if isRelevantDetail(p.airbag_deployed)}
+									<span class="person-detail">Airbag: {p.airbag_deployed}</span>
+								{/if}
+								{#if isRelevantDetail(p.ejection)}
+									<span class="person-detail">Ejection: {p.ejection}</span>
+								{/if}
+								{#if isRelevantDetail(p.physical_condition)}
+									<span class="person-detail">Condition: {p.physical_condition}</span>
+								{/if}
+								{#if isRelevantDetail(p.driver_action)}
+									<span class="person-detail">Action: {p.driver_action}</span>
+								{/if}
+								{#if isRelevantDetail(p.driver_vision)}
+									<span class="person-detail">Visibility: {p.driver_vision}</span>
+								{/if}
+								{#if isRelevantDetail(p.hospital)}
+									<span class="person-detail">Hospital: {p.hospital}</span>
+								{/if}
+							</div>
+						</div>
+
+						{#if pLabel}
+							<div class="person-injury">
+								<span class="person-dot {injuryDotClass(pLevel)}"></span>
+								<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
+							</div>
+						{/if}
+					</div>
+				{/each}
+			{/each}
+
+			{#each crash.non_passengers as p}
+				{@const pLevel = personInjuryLevel(p)}
+				{@const pLabel = injuryLabel(pLevel)}
+				<div class="person-row">
+					<div class="person-main">
+						<div class="person-header">
+							{#if p.person_type}
+								<span class="person-tag">{p.person_type}</span>
+							{/if}
+							<span class="person-name">{p.description}</span>
+						</div>
+						<div class="person-details">
+							{#if isRelevantDetail(p.safety_equipment)}
+								<span class="person-detail">Safety: {p.safety_equipment}</span>
+							{/if}
+							{#if isRelevantDetail(p.airbag_deployed)}
+								<span class="person-detail">Airbag: {p.airbag_deployed}</span>
+							{/if}
+							{#if isRelevantDetail(p.ejection)}
+								<span class="person-detail">Ejection: {p.ejection}</span>
+							{/if}
+							{#if isRelevantDetail(p.physical_condition)}
+								<span class="person-detail">Condition: {p.physical_condition}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_action)}
+								<span class="person-detail">Action: {p.driver_action}</span>
+							{/if}
+							{#if isRelevantDetail(p.driver_vision)}
+								<span class="person-detail">Visibility: {p.driver_vision}</span>
+							{/if}
+							{#if isRelevantDetail(p.hospital)}
+								<span class="person-detail">Hospital: {p.hospital}</span>
+							{/if}
+						</div>
+					</div>
+
+					{#if pLabel}
+						<div class="person-injury">
+							<span class="person-dot {injuryDotClass(pLevel)}"></span>
+							<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
+						</div>
+					{/if}
+				</div>
+			{/each}
+		</div>
+
+		<!-- Right column: Conditions -->
+		<div class="info-card info-card-conditions">
 			<p class="info-title">Conditions</p>
 
 			<div class="info-row">
@@ -178,166 +300,7 @@
 				</div>
 			{/if}
 		</div>
-
-		<!-- Location card -->
-		<div class="info-card">
-			<p class="info-title">Location</p>
-
-			<div class="info-row {!ward && !neighborhood ? 'info-row-last' : ''}">
-				<span class="info-label-regular">Address</span>
-				<span class="location-address">{address}</span>
-			</div>
-
-			{#if ward}
-				<div class="info-row {neighborhood ? '' : 'info-row-last'}">
-					<span class="info-label-regular">Ward</span>
-					<a href={`${base}/wards/${ward.id}`} class="info-link">{ward.name}</a>
-				</div>
-			{/if}
-
-			{#if neighborhood}
-				<div class="info-row info-row-last">
-					<span class="info-label-regular">Neighborhood</span>
-					<a href={`${base}/neighborhoods/${neighborhood.id}`} class="info-link"
-						>{neighborhood.name}</a
-					>
-				</div>
-			{/if}
-
-			{#if injuryCategories.length > 0}
-				<div class="injury-block">
-					<p class="info-title info-title-tight">Injuries</p>
-					<div class="injury-list">
-						{#each injuryCategories as cat}
-							<div class="injury-item">
-								<span class="injury-dot {cat.color}"></span>
-								<span class="injury-text">{cat.count} {cat.label}</span>
-							</div>
-						{/each}
-					</div>
-				</div>
-			{/if}
-		</div>
 	</div>
-
-	<!-- ── People Involved ───────────────────────────────────────────────────── -->
-	<section class="people-section">
-		<h2 class="people-title">People Involved</h2>
-
-		{#if peopleCount > 0}
-			<p class="people-count">{peopleCount} {peopleCount === 1 ? 'person' : 'people'} involved</p>
-		{/if}
-
-		<div class="people-card">
-			{#if peopleCount === 0}
-				<p class="people-empty">No people records available</p>
-			{/if}
-
-			{#each crash.vehicles as vh}
-				{#each vh.passengers as p}
-					{@const pLevel = personInjuryLevel(p)}
-					{@const pLabel = injuryLabel(pLevel)}
-					{@const vehicleDesc = [vh.vehicle_year, vh.make, vh.model]
-						.filter((x) => x != null && x !== '')
-						.join(' ')}
-					<div class="person-row">
-						<!-- Left: role + vehicle info -->
-						<div class="person-main">
-							<div class="person-header">
-								{#if p.person_type}
-									<span class="person-tag">{p.person_type}</span>
-								{/if}
-								<span class="person-name">{p.description}</span>
-							</div>
-							{#if vehicleDesc}
-								<span class="person-vehicle">{vehicleDesc}</span>
-							{/if}
-							<!-- Relevant extra details -->
-							<div class="person-details">
-								{#if isRelevantDetail(p.safety_equipment)}
-									<span class="person-detail">Safety: {p.safety_equipment}</span>
-								{/if}
-								{#if isRelevantDetail(p.airbag_deployed)}
-									<span class="person-detail">Airbag: {p.airbag_deployed}</span>
-								{/if}
-								{#if isRelevantDetail(p.ejection)}
-									<span class="person-detail">Ejection: {p.ejection}</span>
-								{/if}
-								{#if isRelevantDetail(p.physical_condition)}
-									<span class="person-detail">Condition: {p.physical_condition}</span>
-								{/if}
-								{#if isRelevantDetail(p.driver_action)}
-									<span class="person-detail">Action: {p.driver_action}</span>
-								{/if}
-								{#if isRelevantDetail(p.driver_vision)}
-									<span class="person-detail">Visibility: {p.driver_vision}</span>
-								{/if}
-								{#if isRelevantDetail(p.hospital)}
-									<span class="person-detail">Hospital: {p.hospital}</span>
-								{/if}
-							</div>
-						</div>
-
-						<!-- Right: injury indicator -->
-						{#if pLabel}
-							<div class="person-injury">
-								<span class="person-dot {injuryDotClass(pLevel)}"></span>
-								<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
-							</div>
-						{/if}
-					</div>
-				{/each}
-			{/each}
-
-			{#each crash.non_passengers as p}
-				{@const pLevel = personInjuryLevel(p)}
-				{@const pLabel = injuryLabel(pLevel)}
-				<div class="person-row">
-					<!-- Left: role + description -->
-					<div class="person-main">
-						<div class="person-header">
-							{#if p.person_type}
-								<span class="person-tag">{p.person_type}</span>
-							{/if}
-							<span class="person-name">{p.description}</span>
-						</div>
-						<!-- Relevant extra details -->
-						<div class="person-details">
-							{#if isRelevantDetail(p.safety_equipment)}
-								<span class="person-detail">Safety: {p.safety_equipment}</span>
-							{/if}
-							{#if isRelevantDetail(p.airbag_deployed)}
-								<span class="person-detail">Airbag: {p.airbag_deployed}</span>
-							{/if}
-							{#if isRelevantDetail(p.ejection)}
-								<span class="person-detail">Ejection: {p.ejection}</span>
-							{/if}
-							{#if isRelevantDetail(p.physical_condition)}
-								<span class="person-detail">Condition: {p.physical_condition}</span>
-							{/if}
-							{#if isRelevantDetail(p.driver_action)}
-								<span class="person-detail">Action: {p.driver_action}</span>
-							{/if}
-							{#if isRelevantDetail(p.driver_vision)}
-								<span class="person-detail">Visibility: {p.driver_vision}</span>
-							{/if}
-							{#if isRelevantDetail(p.hospital)}
-								<span class="person-detail">Hospital: {p.hospital}</span>
-							{/if}
-						</div>
-					</div>
-
-					<!-- Right: injury indicator -->
-					{#if pLabel}
-						<div class="person-injury">
-							<span class="person-dot {injuryDotClass(pLevel)}"></span>
-							<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
-						</div>
-					{/if}
-				</div>
-			{/each}
-		</div>
-	</section>
 {/if}
 
 <style>
@@ -439,6 +402,15 @@
 		font-style: italic;
 	}
 
+	.hero-injuries {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid #f3f4f6;
+	}
+
 	.info-grid {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -448,7 +420,8 @@
 
 	@media (min-width: 640px) {
 		.info-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: 1fr 1fr;
+			align-items: start;
 		}
 	}
 
@@ -467,10 +440,6 @@
 		letter-spacing: 0.08em;
 		color: #6b7280;
 		margin-bottom: 0.75rem;
-	}
-
-	.info-title-tight {
-		margin-bottom: 0.5rem;
 	}
 
 	.info-row {
@@ -493,10 +462,6 @@
 		align-self: center;
 	}
 
-	.info-label-regular {
-		color: #6b7280;
-	}
-
 	.info-value {
 		font-weight: 500;
 		color: #1f2937;
@@ -505,35 +470,6 @@
 	.info-value-right {
 		text-align: right;
 		word-break: break-word;
-	}
-
-	.location-address {
-		color: #111827;
-		text-align: right;
-		word-break: break-word;
-		margin-left: 0.5rem;
-	}
-
-	.info-link {
-		color: #2563eb;
-		text-decoration: none;
-	}
-
-	.info-link:hover {
-		color: #1e40af;
-		text-decoration: underline;
-	}
-
-	.injury-block {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid #f3f4f6;
-	}
-
-	.injury-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
 	}
 
 	.injury-item {
@@ -554,19 +490,6 @@
 		color: #4b5563;
 	}
 
-	.people-section {
-		margin-bottom: 1.5rem;
-	}
-
-	.people-title {
-		font-size: 0.875rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: #6b7280;
-		margin-bottom: 0.75rem;
-	}
-
 	.people-count {
 		font-size: 0.875rem;
 		font-weight: 600;
@@ -575,10 +498,6 @@
 	}
 
 	.people-card {
-		background: #fff;
-		border-radius: 0.75rem;
-		border: 1px solid #e5e7eb;
-		box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
 		overflow: hidden;
 	}
 

@@ -8,13 +8,13 @@
 	let {
 		selectedLocation = null,
 		crashes,
-		setCrashDetail,
+		setCrashDetail = (_item: Crash | null) => {},
 		defaultGeoCenter,
 		maxDistance = 5280
 	} = $props<{
 		selectedLocation?: Location | null;
 		crashes: Crash[];
-		setCrashDetail: (item: Crash | null) => void;
+		setCrashDetail?: (item: Crash | null) => void;
 		defaultGeoCenter: [number, number];
 		maxDistance?: number;
 	}>();

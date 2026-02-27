@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping';
 	import { SITE_NAME } from '$lib/constants';
-	import { currentAgeSimplified } from '$lib/transformHelpers';
 	import CrashDetail from '$lib/components/CrashDetail.svelte';
 	import type { Crash } from '$lib/crash';
 	import type { PageData } from './$types';

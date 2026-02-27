@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import { appState } from '$lib/components/AppState.svelte';
-	import { SEARCH_DEBOUNCE_MS, SITE_NAME } from '$lib/constants';
+	import { SEARCH_DEBOUNCE_MS, SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { Location } from '$lib/location';
 	import type { Crash } from '$lib/crash';
 	import CrashList from '$lib/components/CrashList.svelte';
@@ -10,7 +10,7 @@
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import CauseFilter from '$lib/components/CauseFilter.svelte';
 
-	const defaultGeoCenter: [number, number] = [41.8781, -87.6298];
+	const defaultGeoCenter = CHICAGO_CENTER;
 	const searchDelayMs = SEARCH_DEBOUNCE_MS;
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let lastSearchedLocation: Location | null = null;
@@ -124,7 +124,7 @@
 					{#if appState.selectedLocation.isPoint}
 						<span class="filter-chip">
 							Within {appState.maxDistance.toLocaleString()}
-							{appState.distanceUnits}
+							feet
 						</span>
 					{:else}
 						<span class="filter-chip">
@@ -162,9 +162,7 @@
 					<div class="filter-body">
 						{#if appState.selectedLocation.isPoint}
 							<div>
-								<label for="max-distance-input" class="filter-label">
-									Search radius ({appState.distanceUnits})
-								</label>
+								<label for="max-distance-input" class="filter-label"> Search radius (feet) </label>
 								<input
 									id="max-distance-input"
 									type="number"
@@ -255,7 +253,7 @@
 				<CrashList
 					crashes={appState.filteredCrashes}
 					selectedLocation={appState.selectedLocation}
-					distanceUnits={appState.distanceUnits}
+					distanceUnits="feet"
 					{showCrashOnMap}
 				/>
 			</div>

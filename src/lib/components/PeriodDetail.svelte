@@ -1,43 +1,16 @@
 <script lang="ts">
-	import { Crash, reifyCrashes } from '$lib/crash';
+	import { Crash, parseCrashes } from '$lib/crash';
 	import { getCrashSummary, getCrashesList, getDateCount } from '$lib/api/client';
 	import type { CrashListResult } from '$lib/api/client';
 	import type { CrashSummary } from '$lib/db/types';
+	import { CHICAGO_CENTER, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
+	import { pctChange, formatPct } from '$lib/transformHelpers';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import CrashList from '$lib/components/CrashList.svelte';
 
 	let { year, month = null } = $props<{ year: number; month?: number | null }>();
 
-	const MONTH_NAMES = [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December'
-	];
-	const MONTH_SHORT = [
-		'Jan',
-		'Feb',
-		'Mar',
-		'Apr',
-		'May',
-		'Jun',
-		'Jul',
-		'Aug',
-		'Sep',
-		'Oct',
-		'Nov',
-		'Dec'
-	];
-
-	const defaultGeoCenter: [number, number] = [41.8781, -87.6298];
+	const defaultGeoCenter = CHICAGO_CENTER;
 
 	// ── Pure helpers ────────────────────────────────────────────────────────────
 
@@ -48,17 +21,6 @@
 	function lastDayOfMonth(y: number, m: number): string {
 		const d = new Date(y, m, 0); // day 0 of month m+1
 		return `${y}-${pad(m)}-${pad(d.getDate())}`;
-	}
-
-	function pctChange(current: number, previous: number): number | null {
-		if (previous === 0) return current > 0 ? Infinity : null;
-		return ((current - previous) / previous) * 100;
-	}
-
-	function formatPct(val: number | null): string {
-		if (val === null || !isFinite(val)) return '--';
-		const sign = val > 0 ? '+' : '';
-		return `${sign}${Math.round(val)}%`;
 	}
 
 	function summaryDelta(
@@ -247,7 +209,7 @@
 				page,
 				sort: 'desc'
 			});
-			crashes = reifyCrashes(result.crashes);
+			crashes = parseCrashes(result.crashes);
 			totalCrashes = result.total;
 			perPage = result.per_page;
 			currentPage = result.page;
@@ -309,8 +271,6 @@
 		const item = crashes[index];
 		if (item && mapRef) mapRef.fitToCrashes([item]);
 	}
-
-	function setCrashDetail(_item: Crash | null) {}
 
 	async function loadAll() {
 		// Reset state for fresh load
@@ -515,7 +475,7 @@
 
 	<!-- Map -->
 	<div class="map-card">
-		<MapContainer bind:this={mapRef} {crashes} {setCrashDetail} {defaultGeoCenter} />
+		<MapContainer bind:this={mapRef} {crashes} {defaultGeoCenter} />
 	</div>
 
 	<!-- Top pagination -->

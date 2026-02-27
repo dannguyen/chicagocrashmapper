@@ -3,7 +3,7 @@
 	import { base } from '$app/paths';
 
 	import { appState } from '$lib/components/AppState.svelte';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { Crash } from '$lib/crash';
 	import CrashList from '$lib/components/CrashList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
@@ -11,7 +11,7 @@
 	import KpiCards from '$lib/components/KpiCards.svelte';
 	import SiteNav from '$lib/components/layout/SiteNav.svelte';
 
-	const defaultGeoCenter: [number, number] = [41.8781, -87.6298];
+	const defaultGeoCenter = CHICAGO_CENTER;
 
 	function setCrashDetail(item: Crash | null) {
 		appState.selectCrash(item);
@@ -23,7 +23,7 @@
 	}
 
 	onMount(() => {
-		appState.loadRecentSeriousCrashes(20);
+		appState.loadRecentCrashes(20);
 	});
 </script>
 
@@ -106,7 +106,7 @@
 				<CrashList
 					crashes={appState.filteredCrashes}
 					selectedLocation={appState.selectedLocation}
-					distanceUnits={appState.distanceUnits}
+					distanceUnits="feet"
 					{showCrashOnMap}
 				/>
 			</div>

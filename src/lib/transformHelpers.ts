@@ -17,7 +17,7 @@ export function currentAgeInDays(dateVal: string | Date): number {
 }
 
 export function currentAgePrettified(dayVal: number | Date): string {
-	let days: number | any = 0;
+	let days: number = 0;
 
 	if (dayVal instanceof Date === true) {
 		days = currentAgeInDays(dayVal);
@@ -56,7 +56,7 @@ export function currentAgePrettified(dayVal: number | Date): string {
 }
 
 export function currentAgeSimplified(dayVal: number | Date): string {
-	let days: number | any = 0;
+	let days: number = 0;
 
 	if (dayVal instanceof Date === true) {
 		days = currentAgeInDays(dayVal);
@@ -86,4 +86,25 @@ export function prettifyDate(date: Date): string {
 		month: 'long',
 		day: 'numeric'
 	});
+}
+
+export function toDateStr(d: Date): string {
+	return d.toISOString().split('T')[0];
+}
+
+export function addDays(d: Date, days: number): Date {
+	const result = new Date(d);
+	result.setDate(result.getDate() + days);
+	return result;
+}
+
+export function pctChange(current: number, previous: number): number | null {
+	if (previous === 0) return current > 0 ? Infinity : null;
+	return ((current - previous) / previous) * 100;
+}
+
+export function formatPct(val: number | null): string {
+	if (val === null || !isFinite(val)) return '--';
+	const sign = val > 0 ? '+' : '';
+	return `${sign}${Math.round(val)}%`;
 }

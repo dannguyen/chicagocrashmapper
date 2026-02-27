@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Crash, reifyCrashes } from '$lib/crash';
+	import { Crash, parseCrashes } from '$lib/crash';
 	import type { CrashRecord } from '$lib/crash';
 	import { Location } from '$lib/location';
 	import { getCrashSummary, getCrashesList } from '$lib/api/client';
@@ -41,7 +41,7 @@
 				page,
 				sort: 'desc'
 			});
-			const hydrated = reifyCrashes(result.crashes);
+			const hydrated = parseCrashes(result.crashes);
 			if (location.category === 'intersection') {
 				hydrated.sort((a, b) => b.date.getTime() - a.date.getTime());
 			}
@@ -67,10 +67,6 @@
 		if (item && mapRef) {
 			mapRef.fitToCrashes([item]);
 		}
-	}
-
-	function setCrashDetail(_item: Crash | null) {
-		// no-op for now
 	}
 
 	onMount(async () => {
@@ -101,7 +97,6 @@
 				bind:this={mapRef}
 				selectedLocation={location}
 				{crashes}
-				{setCrashDetail}
 				defaultGeoCenter={[location.latitude, location.longitude]}
 				maxDistance={mapRadiusFeet}
 			/>
@@ -123,7 +118,6 @@
 				bind:this={mapRef}
 				selectedLocation={location}
 				{crashes}
-				{setCrashDetail}
 				defaultGeoCenter={[location.latitude, location.longitude]}
 				maxDistance={mapRadiusFeet}
 			/>

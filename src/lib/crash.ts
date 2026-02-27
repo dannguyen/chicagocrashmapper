@@ -6,7 +6,7 @@ function normalizeString(value: any): string | null {
 	if (value === undefined) {
 		return null;
 	} else if (Number.isFinite(value)) {
-		return value;
+		return String(value);
 	} else {
 		return value != null && value.trim() === '' ? null : (value ?? null);
 	}
@@ -344,7 +344,7 @@ export class Crash {
 	}
 }
 
-export function reifyCrashes(items: CrashRecord[]): Crash[] {
+export function parseCrashes(items: CrashRecord[]): Crash[] {
 	return items.map((item) => new Crash(item));
 }
 

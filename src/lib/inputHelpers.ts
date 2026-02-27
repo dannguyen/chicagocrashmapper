@@ -1,8 +1,8 @@
-export function escapeRegExp(str: string): string {
+function escapeRegExp(str: string): string {
 	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-function escapeHtml(str: string): string {
+export function escapeHtml(str: string): string {
 	return str
 		.replace(/&/g, '&amp;')
 		.replace(/</g, '&lt;')
