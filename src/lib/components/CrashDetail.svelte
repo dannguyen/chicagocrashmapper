@@ -84,7 +84,7 @@
 					},
 					{ label: 'Uninjured', count: crash.injuries_no_indication, color: 'bg-green-600' },
 					{ label: 'Unknown', count: crash.injuries_unknown, color: 'bg-gray-400' }
-				].filter((c) => c.count != null && c.count > 0)
+				].filter((c) => c.count > 0)
 			: []
 	);
 

@@ -160,6 +160,7 @@ export async function getCrashesList(params: {
 	since?: string;
 	until?: string;
 	page?: number;
+	perPage?: number;
 	sort?: 'asc' | 'desc';
 }): Promise<CrashListResult> {
 	return apiGet<CrashListResult>('/api/crashes/list', {
@@ -170,6 +171,7 @@ export async function getCrashesList(params: {
 		since: params.since,
 		until: params.until,
 		page: params.page,
+		per_page: params.perPage,
 		sort: params.sort
 	});
 }

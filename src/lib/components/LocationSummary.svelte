@@ -2,29 +2,21 @@
 	import type { Crash } from '$lib/crash';
 	import type { Location } from '$lib/location';
 	import type { CrashSummary } from '$lib/db/types';
-	import { fmtCause } from '$lib/crashFormat';
-
 	let {
 		crashes,
 		location,
 		summary = null,
-		compact = false,
-		showTopCauses = true
+		compact = false
 	} = $props<{
 		crashes: Crash[];
 		location: Location | null;
 		summary?: CrashSummary | null;
 		compact?: boolean;
-		showTopCauses?: boolean;
 	}>();
 
 	let stats = $derived.by(() => {
 		// If a pre-computed all-time summary is provided, use it directly.
 		if (summary) {
-			const topCauses = summary.top_causes
-				.slice(0, 5)
-				.map((t: { cause: string; count: number }) => [t.cause, t.count] as [string, number]);
-			const maxCauseCount = topCauses[0]?.[1] ?? 1;
 			const byYear = Object.entries(summary.by_year).sort((a, b) => a[0].localeCompare(b[0]));
 			const maxYearCount = byYear.reduce((m, [, c]) => Math.max(m, c as number), 1);
 			const yearKeys = byYear.map(([y]) => y);
@@ -38,8 +30,6 @@
 				total: summary.total,
 				fatalCount: summary.fatal_injuries,
 				incapCount: summary.incapacitating_injuries,
-				topCauses,
-				maxCauseCount,
 				mostRecent: null as Date | null,
 				oldest: null as Date | null,
 				byYear,
@@ -54,17 +44,6 @@
 		const total = crashes.length;
 		const fatalCount = crashes.filter((i: Crash) => i.isFatal).length;
 		const incapCount = total - fatalCount;
-
-		const causeCounts = new Map<string, number>();
-		for (const inc of crashes) {
-			const cause = inc.primary_cause || 'UNKNOWN';
-			causeCounts.set(cause, (causeCounts.get(cause) ?? 0) + 1);
-		}
-
-		const topCauses = [...causeCounts.entries()]
-			.sort((a: [string, number], b: [string, number]) => b[1] - a[1])
-			.slice(0, 5);
-		const maxCauseCount = topCauses[0]?.[1] ?? 1;
 
 		const dates = crashes
 			.map((i: Crash) => i.date)
@@ -91,8 +70,6 @@
 			total,
 			fatalCount,
 			incapCount,
-			topCauses,
-			maxCauseCount,
 			mostRecent,
 			oldest,
 			byYear,
@@ -140,24 +117,6 @@
 				{/if}
 			</div>
 		</div>
-
-		<!-- Top Contributing Causes -->
-		{#if showTopCauses && stats.topCauses.length > 0}
-			<div class="summary-card summary-card-block">
-				<h4 class="summary-heading">Top Contributing Causes</h4>
-				{#each stats.topCauses as [cause, count]}
-					<div class="chart-row">
-						<div class="chart-label" title={cause}>
-							{fmtCause(cause)}
-						</div>
-						<div class="chart-track">
-							<div class="chart-bar" style="width: {(count / stats.maxCauseCount) * 100}%"></div>
-						</div>
-						<div class="chart-count">{count}</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
 
 		<!-- Year by Year -->
 		{#if stats.byYear.length > 1}
@@ -285,16 +244,6 @@
 
 	.chart-row:last-child {
 		margin-bottom: 0;
-	}
-
-	.chart-label {
-		width: 10rem;
-		flex-shrink: 0;
-		font-size: 0.75rem;
-		color: #374151;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	.chart-year {

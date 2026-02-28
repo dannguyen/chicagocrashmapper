@@ -2,47 +2,37 @@ import { prettifyDate } from '$lib/transformHelpers';
 
 const UNKNOWN_CAUSE_LABEL: string = 'UNKNOWN CAUSE';
 
-function normalizeString(value: any): string | null {
-	if (value === undefined) {
-		return null;
-	} else if (Number.isFinite(value)) {
-		return String(value);
-	} else {
-		return value != null && value.trim() === '' ? null : (value ?? null);
-	}
-}
-
 function isUnknownCause(cause: string | null | undefined): boolean {
 	if (cause == null || cause.trim() === '') return true;
 	return ['UNABLE TO DETERMINE', 'NOT APPLICABLE', UNKNOWN_CAUSE_LABEL].includes(cause);
 }
 
 export interface PersonRecord {
-	person_id?: string | null;
-	person_type?: string | null;
-	sex?: string | null;
-	age?: string | null;
-	city?: string | null;
-	state?: string | null;
-	injury_classification?: string | null;
-	drivers_license_state?: string | null;
-	airbag_deployed?: string | null;
-	ejection?: string | null;
-	safety_equipment?: string | null;
-	hospital?: string | null;
-	physical_condition?: string | null;
-	driver_vision?: string | null;
-	driver_action?: string | null;
-}
-
-export class Person {
-	person_id: string | null;
-	person_type: string | null;
+	person_id: string;
+	person_type: string;
 	sex: string | null;
 	age: number | null;
 	city: string | null;
 	state: string | null;
-	injury_classification: string | null;
+	injury_classification: string;
+	drivers_license_state: string | null;
+	airbag_deployed: string | null;
+	ejection: string | null;
+	safety_equipment: string | null;
+	hospital: string | null;
+	physical_condition: string | null;
+	driver_vision: string | null;
+	driver_action: string | null;
+}
+
+export class Person {
+	person_id: string;
+	person_type: string;
+	sex: string | null;
+	age: number | null;
+	city: string | null;
+	state: string | null;
+	injury_classification: string;
 	drivers_license_state: string | null;
 	airbag_deployed: string | null;
 	ejection: string | null;
@@ -52,49 +42,47 @@ export class Person {
 	driver_vision: string | null;
 	driver_action: string | null;
 
-	constructor(record: PersonRecord = {}) {
-		this.person_id = normalizeString(record.person_id);
-		this.person_type = normalizeString(record.person_type);
-		this.sex = normalizeString(record.sex);
-		const ageValue = normalizeString(record.age);
-		const parsedAge = ageValue == null ? null : Number(ageValue);
-		this.age = parsedAge == null || Number.isNaN(parsedAge) ? null : parsedAge;
-		this.city = normalizeString(record.city);
-		this.state = normalizeString(record.state);
-		this.injury_classification = normalizeString(record.injury_classification);
-		this.drivers_license_state = normalizeString(record.drivers_license_state);
-		this.airbag_deployed = normalizeString(record.airbag_deployed);
-		this.ejection = normalizeString(record.ejection);
-		this.safety_equipment = normalizeString(record.safety_equipment);
-		this.hospital = normalizeString(record.hospital);
-		this.physical_condition = normalizeString(record.physical_condition);
-		this.driver_vision = normalizeString(record.driver_vision);
-		this.driver_action = normalizeString(record.driver_action);
+	constructor(record: PersonRecord) {
+		this.person_id = record.person_id;
+		this.person_type = record.person_type;
+		this.sex = record.sex ?? null;
+		this.age = record.age ?? null;
+		this.city = record.city ?? null;
+		this.state = record.state ?? null;
+		this.injury_classification = record.injury_classification;
+		this.drivers_license_state = record.drivers_license_state ?? null;
+		this.airbag_deployed = record.airbag_deployed ?? null;
+		this.ejection = record.ejection ?? null;
+		this.safety_equipment = record.safety_equipment ?? null;
+		this.hospital = record.hospital ?? null;
+		this.physical_condition = record.physical_condition ?? null;
+		this.driver_vision = record.driver_vision ?? null;
+		this.driver_action = record.driver_action ?? null;
 	}
 
 	get noun(): string {
-		if (this.ageUnknown === true) {
+		if (this.ageUnknown) {
 			return 'person';
+		} else if (this.age === 0 && this.person_type === 'PASSENGER') {
+			return 'baby or person of unknown age';
 		} else if (this.sex === 'M') {
 			return this.age != null && this.age >= 18 ? 'man' : 'boy';
 		} else if (this.sex === 'F') {
 			return this.age != null && this.age >= 18 ? 'woman' : 'girl';
-		} else if (this.age != null && this.age < 1) {
-			return 'baby (or age unknown)';
 		} else {
 			return 'person';
 		}
 	}
 
 	get ageLabel(): string {
-		if (this.ageUnknown === true) {
+		if (this.ageUnknown) {
 			return 'age unknown';
-		} else if (this.age != null && this.age < 1) {
-			return 'baby (or age unknown)';
+		} else if (this.age === 0 && this.person_type === 'PASSENGER') {
+			return 'baby or person of unknown age';
 		} else if (this.age != null && this.age > 0) {
 			return `${this.age}-year-old`;
 		} else {
-			return '(age unknown)';
+			return 'age unknown';
 		}
 	}
 
@@ -139,7 +127,7 @@ export class Person {
 		return this.injury_level === 'fatal';
 	}
 
-	get category(): string | null {
+	get category(): string {
 		return this.person_type;
 	}
 	get isDriver(): boolean {
@@ -147,31 +135,31 @@ export class Person {
 	}
 
 	get ageUnknown(): boolean {
-		return this.isDriver && (this.age == null || this.age <= 1);
+		return this.age === null || (this.age === 0 && this.person_type !== 'PASSENGER');
 	}
 }
 
 export interface VehicleRecord {
-	vehicle_id?: string | null;
-	unit_type?: string | null;
-	make?: string | null;
-	model?: string | null;
-	vehicle_year?: string | null;
-	vehicle_defect?: string | null;
-	vehicle_type?: string | null;
-	vehicle_use?: string | null;
-	lic_plate_state?: string | null;
-	travel_direction?: string | null;
-	maneuver?: string | null;
+	vehicle_id: number;
+	unit_type: string | null;
+	make: string | null;
+	model: string | null;
+	vehicle_year: number | null;
+	vehicle_defect: string | null;
+	vehicle_type: string | null;
+	vehicle_use: string | null;
+	lic_plate_state: string | null;
+	travel_direction: string | null;
+	maneuver: string | null;
 	passengers?: PersonRecord[];
 }
 
 export class Vehicle {
-	vehicle_id: string | null;
+	vehicle_id: number;
 	unit_type: string | null;
 	make: string | null;
 	model: string | null;
-	vehicle_year: string | null;
+	vehicle_year: number | null;
 	vehicle_defect: string | null;
 	vehicle_type: string | null;
 	vehicle_use: string | null;
@@ -180,18 +168,18 @@ export class Vehicle {
 	maneuver: string | null;
 	passengers: Person[];
 
-	constructor(record: VehicleRecord = {}) {
-		this.vehicle_id = normalizeString(record.vehicle_id);
-		this.unit_type = normalizeString(record.unit_type);
-		this.make = normalizeString(record.make);
-		this.model = normalizeString(record.model);
-		this.vehicle_year = normalizeString(record.vehicle_year);
-		this.vehicle_defect = normalizeString(record.vehicle_defect);
-		this.vehicle_type = normalizeString(record.vehicle_type);
-		this.vehicle_use = normalizeString(record.vehicle_use);
-		this.lic_plate_state = normalizeString(record.lic_plate_state);
-		this.travel_direction = normalizeString(record.travel_direction);
-		this.maneuver = normalizeString(record.maneuver);
+	constructor(record: VehicleRecord) {
+		this.vehicle_id = record.vehicle_id;
+		this.unit_type = record.unit_type ?? null;
+		this.make = record.make ?? null;
+		this.model = record.model ?? null;
+		this.vehicle_year = record.vehicle_year ?? null;
+		this.vehicle_defect = record.vehicle_defect ?? null;
+		this.vehicle_type = record.vehicle_type ?? null;
+		this.vehicle_use = record.vehicle_use ?? null;
+		this.lic_plate_state = record.lic_plate_state ?? null;
+		this.travel_direction = record.travel_direction ?? null;
+		this.maneuver = record.maneuver ?? null;
 		this.passengers = (record.passengers ?? []).map((p) => new Person(p));
 	}
 
@@ -210,11 +198,11 @@ export interface CrashRecord {
 	latitude: number;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
-	injuries_total?: number | null;
-	injuries_non_incapacitating?: number | null;
-	injuries_reported_not_evident?: number | null;
-	injuries_no_indication?: number | null;
-	injuries_unknown?: number | null;
+	injuries_total: number;
+	injuries_non_incapacitating: number;
+	injuries_reported_not_evident: number;
+	injuries_no_indication: number;
+	injuries_unknown: number;
 	hit_and_run_i?: boolean | null;
 	posted_speed_limit?: number | null;
 	vehicles?: VehicleRecord[] | string | null;
@@ -222,8 +210,8 @@ export interface CrashRecord {
 	first_crash_type: string;
 	crash_type?: string;
 	street_no?: string | null;
-	street_direction?: string;
-	street_name?: string;
+	street_direction: string;
+	street_name: string;
 	crash_date: string;
 	prim_contributory_cause?: string;
 	sec_contributory_cause?: string;
@@ -241,16 +229,16 @@ export class Crash {
 	distance?: number;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
-	injuries_total: number | null;
-	injuries_non_incapacitating: number | null;
-	injuries_reported_not_evident: number | null;
-	injuries_no_indication: number | null;
-	injuries_unknown: number | null;
+	injuries_total: number;
+	injuries_non_incapacitating: number;
+	injuries_reported_not_evident: number;
+	injuries_no_indication: number;
+	injuries_unknown: number;
 	hit_and_run: boolean | null;
 	posted_speed_limit: number | null;
 	street_no?: string | null;
-	street_direction?: string | null;
-	street_name?: string | null;
+	street_direction: string;
+	street_name: string;
 	vehicles: Vehicle[];
 	non_passengers: Person[];
 	primary_cause: string;
@@ -258,33 +246,31 @@ export class Crash {
 	weather_condition: string | null;
 	trafficway_type: string | null;
 
-	// Constructor now takes raw database row
 	constructor(record: CrashRecord) {
 		this.crash_record_id = record.crash_record_id;
 		this.longitude = record.longitude;
 		this.latitude = record.latitude;
 		this.injuries_fatal = record.injuries_fatal;
 		this.injuries_incapacitating = record.injuries_incapacitating;
-		this.injuries_total = record.injuries_total ?? null;
-		this.injuries_non_incapacitating = record.injuries_non_incapacitating ?? null;
-		this.injuries_reported_not_evident = record.injuries_reported_not_evident ?? null;
-		this.injuries_no_indication = record.injuries_no_indication ?? null;
-		this.injuries_unknown = record.injuries_unknown ?? null;
+		this.injuries_total = record.injuries_total;
+		this.injuries_non_incapacitating = record.injuries_non_incapacitating;
+		this.injuries_reported_not_evident = record.injuries_reported_not_evident;
+		this.injuries_no_indication = record.injuries_no_indication;
+		this.injuries_unknown = record.injuries_unknown;
 		this.hit_and_run = record.hit_and_run_i ?? null;
 		this.posted_speed_limit = record.posted_speed_limit ?? null;
-		this.street_no = normalizeString(record.street_no);
-		this.street_direction = normalizeString(record.street_direction);
-		this.street_name = normalizeString(record.street_name);
+		this.street_no = record.street_no ?? null;
+		this.street_direction = record.street_direction;
+		this.street_name = record.street_name;
 		this.date = new Date(Date.parse(record.crash_date));
-		this.category = normalizeString(record.first_crash_type) ?? 'Unknown Category';
-		// Ensure distance is a number and handle undefined or null values
+		this.category = record.first_crash_type;
 		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
 		this.vehicles = parseVehicles(record.vehicles);
 		this.non_passengers = parsePeople(record.non_passengers);
-		this.primary_cause = normalizeString(record.prim_contributory_cause) ?? UNKNOWN_CAUSE_LABEL;
-		this.secondary_cause = normalizeString(record.sec_contributory_cause) ?? UNKNOWN_CAUSE_LABEL;
-		this.weather_condition = normalizeString(record.weather_condition);
-		this.trafficway_type = normalizeString(record.trafficway_type);
+		this.primary_cause = record.prim_contributory_cause ?? UNKNOWN_CAUSE_LABEL;
+		this.secondary_cause = record.sec_contributory_cause ?? UNKNOWN_CAUSE_LABEL;
+		this.weather_condition = record.weather_condition ?? null;
+		this.trafficway_type = record.trafficway_type ?? null;
 	}
 
 	get hasKnownCause(): boolean {
@@ -308,7 +294,9 @@ export class Crash {
 	}
 
 	get street_address(): string {
-		return [this.street_no, this.street_direction, this.street_name].join(' ');
+		return [this.street_no, this.street_direction, this.street_name]
+			.filter((x) => x != null)
+			.join(' ');
 	}
 
 	get title(): string {
@@ -328,8 +316,8 @@ export class Crash {
 		return (
 			headline +
 			` near ` +
-			`${this.street_no ?? ''} ${this.street_direction ?? ''} ` +
-			`${this.street_name ?? 'Unknown Street'}` +
+			`${this.street_no ?? ''} ${this.street_direction} ` +
+			`${this.street_name}` +
 			` on ${dateline}`
 		);
 	}

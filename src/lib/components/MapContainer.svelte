@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Mapper } from '$lib/mapping'; // Import the class, not an instance
+	import { Mapper } from '$lib/mapping';
 	import { Crash } from '$lib/crash';
 	import { Location } from '$lib/location';
 	import { popupHtml } from '$lib/crashFormat';
@@ -24,19 +24,40 @@
 
 	let activeMarker: import('leaflet').Layer | null = null;
 	let mapCircleLayer: any = null;
-	let markerLayerGroup: any;
+	let clusterGroup: any = null;
+	let markerMap = new Map<string, import('leaflet').Marker>();
 
-	function markerIconHtml(index: number, isFatal: boolean) {
-		const label = index + 1;
-		const cls = isFatal ? 'marker-icon fatal' : 'marker-icon';
-		return `<div class="${cls}">${label}</div>`;
+	function dotIconHtml(isFatal: boolean) {
+		const color = isFatal ? '#dc2626' : '#6d28d9';
+		return `<div class="marker-dot" style="background:${color}"></div>`;
 	}
 
 	async function initMap() {
 		await MapperInstance.init('map', defaultGeoCenter, 11);
 
 		if (MapperInstance.L && MapperInstance.map) {
-			markerLayerGroup = MapperInstance.L.layerGroup().addTo(MapperInstance.map);
+			// Dynamically import markercluster
+			await import('leaflet.markercluster');
+			// @ts-ignore - markerClusterGroup is added to L by the plugin
+			clusterGroup = MapperInstance.L.markerClusterGroup({
+				maxClusterRadius: 40,
+				spiderfyOnMaxZoom: true,
+				showCoverageOnHover: false,
+				iconCreateFunction: (cluster: any) => {
+					const children: import('leaflet').Marker[] = cluster.getAllChildMarkers();
+					const hasFatal = children.some((m: any) => m.options._isFatal);
+					const count = cluster.getChildCount();
+					const bg = hasFatal ? '#dc2626' : '#6d28d9';
+					const size = count < 10 ? 28 : count < 100 ? 32 : 36;
+					return MapperInstance.L!.divIcon({
+						html: `<div class="marker-cluster-icon" style="background:${bg};width:${size}px;height:${size}px">${count}</div>`,
+						className: '',
+						iconSize: [size, size],
+						iconAnchor: [size / 2, size / 2]
+					});
+				}
+			});
+			clusterGroup.addTo(MapperInstance.map);
 		}
 	}
 
@@ -54,7 +75,6 @@
 		}
 
 		if (selectedLocation && MapperInstance.map && MapperInstance.L) {
-			// Convert feet to meters (1 ft = 0.3048 m)
 			const radiusInMeters = maxDistance * 0.3048;
 			mapCircleLayer = MapperInstance.makeMapCircle(
 				selectedLocation.longitude,
@@ -91,39 +111,55 @@
 	}
 
 	export function updateNearbyMarkers(items: Crash[]) {
-		if (!MapperInstance.map || !MapperInstance.L || !markerLayerGroup) return;
+		if (!MapperInstance.map || !MapperInstance.L || !clusterGroup) return;
 
-		markerLayerGroup.clearLayers();
+		clusterGroup.clearLayers();
+		markerMap.clear();
 
-		items.forEach((item, index) => {
+		items.forEach((item) => {
 			const lat = item.latitude;
 			const lon = item.longitude;
 
 			if (!isNaN(lat) && !isNaN(lon)) {
-				const popup = popupHtml(item, index);
+				const popup = popupHtml(item);
 				const icon = MapperInstance.L!.divIcon({
-					html: markerIconHtml(index, item.isFatal),
+					html: dotIconHtml(item.isFatal),
 					className: '',
-					iconSize: [24, 24],
-					iconAnchor: [12, 12]
+					iconSize: [12, 12],
+					iconAnchor: [6, 6]
 				});
-				const crashMarker = MapperInstance.L!.marker([lat, lon], { icon }).bindPopup(popup, {
+				const crashMarker = MapperInstance.L!.marker([lat, lon], {
+					icon,
+					// @ts-ignore - custom option for cluster icon coloring
+					_isFatal: item.isFatal
+				}).bindPopup(popup, {
 					maxWidth: 280
 				});
 
 				crashMarker.on('click', () => setCrashDetail(item));
 
-				crashMarker.addTo(markerLayerGroup);
+				clusterGroup.addLayer(crashMarker);
+				markerMap.set(item.crash_record_id, crashMarker);
 			}
 		});
 
 		fitToCrashes(items);
 	}
 
+	export function openCrashPopup(crashId: string) {
+		if (!MapperInstance.map || !clusterGroup) return;
+		const marker = markerMap.get(crashId);
+		if (!marker) return;
+
+		// Zoom to the marker and spiderfy its cluster if needed
+		clusterGroup.zoomToShowLayer(marker, () => {
+			marker.openPopup();
+		});
+	}
+
 	export function fitToCrashes(items: Crash[]) {
 		if (!MapperInstance.map || !MapperInstance.L) return;
 
-		// Only include coordinates that are valid and non-zero (lat=0/lng=0 means missing data)
 		const validLatLngs: import('leaflet').LatLngExpression[] = items
 			.filter(
 				(item) =>
@@ -134,9 +170,6 @@
 			.map((item) => [item.latitude, item.longitude]);
 
 		if (validLatLngs.length > 0) {
-			// For shape locations (neighborhoods/wards), extend bounds using the shape layer's
-			// actual geographic extent rather than the centroid point — the centroid lat/lng
-			// may be 0,0 for polygon records that don't store a separate centroid.
 			if (selectedLocation?.isShape && activeMarker && 'getBounds' in activeMarker) {
 				try {
 					const shapeBounds = (activeMarker as import('leaflet').GeoJSON).getBounds();
@@ -161,7 +194,6 @@
 			}
 			MapperInstance.map.invalidateSize();
 		} else if (selectedLocation) {
-			// No valid crash coords — just show the shape/location
 			if (selectedLocation.isShape && activeMarker && 'getBounds' in activeMarker) {
 				try {
 					MapperInstance.map.fitBounds((activeMarker as import('leaflet').GeoJSON).getBounds(), {
@@ -186,8 +218,8 @@
 		}
 		if (crashes.length > 0) {
 			updateNearbyMarkers(crashes);
-		} else if (markerLayerGroup) {
-			markerLayerGroup.clearLayers();
+		} else if (clusterGroup) {
+			clusterGroup.clearLayers();
 		}
 	}
 
@@ -220,8 +252,8 @@
 	$effect(() => {
 		if (crashes.length > 0) {
 			updateNearbyMarkers(crashes);
-		} else if (markerLayerGroup) {
-			markerLayerGroup.clearLayers();
+		} else if (clusterGroup) {
+			clusterGroup.clearLayers();
 			fitToCrashes([]);
 		}
 	});
@@ -237,7 +269,6 @@
 			});
 		})();
 
-		// Return cleanup function for Svelte to run when unmounting
 		return () => {
 			destroyed = true;
 			MapperInstance.destroy();
@@ -248,36 +279,39 @@
 <div id="map"></div>
 
 <style>
-	/* Leaflet requires a height to be set explicitly — cannot use Tailwind utilities on Leaflet-injected elements */
+	/* Leaflet requires a height to be set explicitly */
 	:global(#map) {
-		height: 24rem; /* h-96 */
-		width: 100%; /* w-full */
-		border-radius: 0.375rem; /* rounded-md */
+		height: 24rem;
+		width: 100%;
+		border-radius: 0.375rem;
 		border-width: 1px;
-		border-color: rgb(229 231 235); /* border-gray-200 */
-		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
-		margin-bottom: 1rem; /* mb-4 */
+		border-color: rgb(229 231 235);
+		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+		margin-bottom: 1rem;
 		z-index: 0;
 	}
 
-	/* Crash markers — injected by Leaflet outside Svelte scope, must be :global */
-	:global(.marker-icon) {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 24px;
-		height: 24px;
+	/* Dot markers */
+	:global(.marker-dot) {
+		width: 12px;
+		height: 12px;
 		border-radius: 50%;
-		background: #6d28d9; /* purple-700 */
-		color: #fff;
-		font-size: 11px;
-		font-weight: 700;
-		line-height: 1;
+		border: 2px solid #fff;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 	}
 
-	:global(.marker-icon.fatal) {
-		background: #dc2626; /* red-600 */
+	/* Cluster icons */
+	:global(.marker-cluster-icon) {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		color: #fff;
+		font-size: 12px;
+		font-weight: 700;
+		line-height: 1;
+		border: 2px solid rgba(255, 255, 255, 0.8);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 	}
 
 	/* Rich popup content — Leaflet injects popups outside Svelte scope */

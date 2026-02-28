@@ -6,21 +6,35 @@ export function makePersonRecord(overrides: Partial<PersonRecord> = {}): PersonR
 		person_id: 'person-1',
 		person_type: 'DRIVER',
 		sex: 'M',
-		age: '31',
+		age: 31,
 		city: 'Chicago',
 		state: 'IL',
 		injury_classification: 'NONINCAPACITATING INJURY',
+		drivers_license_state: 'IL',
+		airbag_deployed: null,
+		ejection: null,
+		safety_equipment: null,
+		hospital: null,
+		physical_condition: null,
+		driver_vision: null,
+		driver_action: null,
 		...overrides
 	};
 }
 
 export function makeVehicleRecord(overrides: Partial<VehicleRecord> = {}): VehicleRecord {
 	return {
-		vehicle_id: 'vehicle-1',
+		vehicle_id: 1,
 		unit_type: 'DRIVER',
 		make: 'Honda',
 		model: 'Civic',
-		vehicle_year: '2018',
+		vehicle_year: 2018,
+		vehicle_defect: null,
+		vehicle_type: null,
+		vehicle_use: null,
+		lic_plate_state: null,
+		travel_direction: null,
+		maneuver: null,
 		passengers: [],
 		...overrides
 	};

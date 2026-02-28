@@ -9,17 +9,55 @@ function datelineFor(crashDate: string): string {
 	});
 }
 
+function makeMinimalPerson(overrides: Partial<PersonRecord> = {}): PersonRecord {
+	return {
+		person_id: 'P1',
+		person_type: 'DRIVER',
+		sex: null,
+		age: null,
+		city: null,
+		state: null,
+		injury_classification: 'NONINCAPACITATING INJURY',
+		drivers_license_state: null,
+		airbag_deployed: null,
+		ejection: null,
+		safety_equipment: null,
+		hospital: null,
+		physical_condition: null,
+		driver_vision: null,
+		driver_action: null,
+		...overrides
+	};
+}
+
+function makeMinimalVehicle(overrides: Partial<VehicleRecord> = {}): VehicleRecord {
+	return {
+		vehicle_id: 1,
+		unit_type: null,
+		make: null,
+		model: null,
+		vehicle_year: null,
+		vehicle_defect: null,
+		vehicle_type: null,
+		vehicle_use: null,
+		lic_plate_state: null,
+		travel_direction: null,
+		maneuver: null,
+		...overrides
+	};
+}
+
 describe('Person', () => {
 	it('builds with provided fields', () => {
-		const record: PersonRecord = {
+		const record: PersonRecord = makeMinimalPerson({
 			person_id: 'P1',
 			person_type: 'DRIVER',
 			sex: 'F',
-			age: '30',
+			age: 30,
 			city: 'Chicago',
 			state: 'IL',
 			injury_classification: 'FATAL'
-		};
+		});
 
 		const person = new Person(record);
 
@@ -37,117 +75,102 @@ describe('Person', () => {
 		expect(person.isInjured).toBe(true);
 	});
 
-	it('handles missing fields gracefully', () => {
-		const person = new Person();
-		expect(person.person_id).toBeNull();
+	it('handles null fields gracefully', () => {
+		const person = new Person(makeMinimalPerson());
+		expect(person.person_id).toBe('P1');
 		expect(person.city).toBeNull();
 	});
 
-	it('treats blank or non-numeric ages as null', () => {
-		const blank = new Person({ age: '' });
-		expect(blank.age).toBeNull();
-		expect(blank.ageLabel).toBe('(age unknown)');
-
-		const whitespace = new Person({ age: '  ' });
-		expect(whitespace.age).toBeNull();
-
-		const bad = new Person({ age: 'not-a-number' });
-		expect(bad.age).toBeNull();
+	it('treats null age as null', () => {
+		const nullAge = new Person(makeMinimalPerson({ age: null }));
+		expect(nullAge.age).toBeNull();
+		expect(nullAge.ageLabel).toBe('age unknown');
 	});
 
 	it('derives ageLabel', () => {
-		const baby = new Person({ age: '0' });
-		expect(baby.ageLabel).toBe('baby (or age unknown)');
+		const baby = new Person(makeMinimalPerson({ age: 0, person_type: 'PASSENGER' }));
+		expect(baby.ageLabel).toBe('baby or person of unknown age');
 
-		const kid = new Person({ age: '1' });
+		const kid = new Person(makeMinimalPerson({ age: 1, person_type: 'PASSENGER' }));
 		expect(kid.ageLabel).toBe('1-year-old');
 
-		const woman = new Person({ age: '123', sex: 'F' });
+		const woman = new Person(makeMinimalPerson({ age: 123, sex: 'F' }));
 		expect(woman.ageLabel).toBe('123-year-old');
 
-		const ageless = new Person({ sex: 'F' });
-		expect(ageless.ageLabel).toBe('(age unknown)');
+		const ageless = new Person(makeMinimalPerson({ sex: 'F', age: null }));
+		expect(ageless.ageLabel).toBe('age unknown');
 	});
 
 	it('derives noun by sex/age and builds description', () => {
-		const baby = new Person({ sex: 'M', age: '0' });
-		expect(baby.age).toBe(0);
-		expect(baby.noun).toBe('boy');
-		expect(baby.description).toBe('baby (or age unknown) boy');
+		const infant = new Person(makeMinimalPerson({ sex: 'M', age: 0, person_type: 'PASSENGER' }));
+		expect(infant.age).toBe(0);
+		expect(infant.noun).toBe('baby or person of unknown age');
+		expect(infant.description).toBe('baby or person of unknown age');
 
-		const man = new Person({ sex: 'M', age: '30' });
+		const man = new Person(makeMinimalPerson({ sex: 'M', age: 30 }));
 		expect(man.noun).toBe('man');
 		expect(man.description).toBe('30-year-old man');
 
-		const girl = new Person({ sex: 'F', age: '15' });
+		const girl = new Person(makeMinimalPerson({ sex: 'F', age: 15 }));
 		expect(girl.noun).toBe('girl');
 		expect(girl.description).toBe('15-year-old girl');
 
-		const neutral = new Person({ sex: 'X', age: '20' });
+		const neutral = new Person(makeMinimalPerson({ sex: 'X', age: 20 }));
 		expect(neutral.noun).toBe('person');
 		expect(neutral.description).toBe('20-year-old person');
-
-		const infant = new Person({ age: '0.5', sex: 'X' });
-		expect(infant.age).toBe(0.5);
-		expect(infant.noun).toBe('baby (or age unknown)');
-		expect(infant.description).toBe('baby (or age unknown)');
-
-		const babyboy = new Person({ age: '0.9', sex: 'M' });
-		expect(babyboy.age).toBe(0.9);
-		expect(babyboy.noun).toBe('boy');
-		expect(babyboy.description).toBe('baby (or age unknown) boy');
 	});
 
 	it('derives isDriver from person_type', () => {
-		const driver = new Person({ person_type: 'DRIVER' });
+		const driver = new Person(makeMinimalPerson({ person_type: 'DRIVER' }));
 		expect(driver.isDriver).toBe(true);
 
-		const passenger = new Person({ person_type: 'PASSENGER' });
+		const passenger = new Person(makeMinimalPerson({ person_type: 'PASSENGER' }));
 		expect(passenger.isDriver).toBe(false);
 	});
 
-	it('treats driver age 0/1 or missing as ageUnknown', () => {
-		const infantDriver = new Person({ person_type: 'DRIVER', age: '0' });
+	it('treats driver age 0 or missing as ageUnknown', () => {
+		const infantDriver = new Person(makeMinimalPerson({ person_type: 'DRIVER', age: 0 }));
 		expect(infantDriver.ageUnknown).toBe(true);
 
-		const youngDriver = new Person({ person_type: 'DRIVER', age: '1' });
-		expect(youngDriver.ageUnknown).toBe(true);
-
-		const agelessDriver = new Person({ person_type: 'DRIVER' });
+		const agelessDriver = new Person(makeMinimalPerson({ person_type: 'DRIVER', age: null }));
 		expect(agelessDriver.ageUnknown).toBe(true);
 
-		const olderDriver = new Person({ person_type: 'DRIVER', age: '2' });
+		const olderDriver = new Person(makeMinimalPerson({ person_type: 'DRIVER', age: 2 }));
 		expect(olderDriver.ageUnknown).toBe(false);
 
-		const infantPassenger = new Person({ person_type: 'PASSENGER', age: '0' });
+		const infantPassenger = new Person(makeMinimalPerson({ person_type: 'PASSENGER', age: 0 }));
 		expect(infantPassenger.ageUnknown).toBe(false);
 	});
 });
 
 describe('Vehicle', () => {
 	it('maps passengers into Person instances', () => {
-		const record: VehicleRecord = {
-			vehicle_id: 'V1',
+		const record: VehicleRecord = makeMinimalVehicle({
+			vehicle_id: 1,
 			unit_type: 'DRIVER',
 			make: 'Ford',
 			model: 'F-150',
-			vehicle_year: '2020',
+			vehicle_year: 2020,
 			vehicle_defect: 'NONE',
 			vehicle_type: 'TRUCK',
 			vehicle_use: 'PERSONAL',
 			passengers: [
-				{ person_id: 'P1', person_type: 'DRIVER', injury_classification: 'NONE' },
-				{
+				makeMinimalPerson({
+					person_id: 'P1',
+					person_type: 'DRIVER',
+					injury_classification: 'NONINCAPACITATING INJURY'
+				}),
+				makeMinimalPerson({
 					person_id: 'P2',
 					person_type: 'PASSENGER',
 					injury_classification: 'INCAPACITATING INJURY'
-				}
+				})
 			]
-		};
+		});
 
 		const vehicle = new Vehicle(record);
 
-		expect(vehicle.vehicle_id).toBe('V1');
+		expect(vehicle.vehicle_id).toBe(1);
 		expect(vehicle.make).toBe('Ford');
 		expect(vehicle.passengers).toHaveLength(2);
 		expect(vehicle.passengers[0]).toBeInstanceOf(Person);
@@ -157,42 +180,50 @@ describe('Vehicle', () => {
 	});
 
 	it('defaults passengers to empty array when not provided', () => {
-		const vehicle = new Vehicle({ vehicle_id: 'V2' });
+		const vehicle = new Vehicle(makeMinimalVehicle({ vehicle_id: 2 }));
 		expect(vehicle.passengers).toEqual([]);
 	});
 
-	it('normalizes blank strings to null', () => {
-		const vehicle = new Vehicle({
-			vehicle_id: '',
-			make: ' ',
-			model: '',
-			passengers: [{ person_id: '', city: '  ' }]
-		});
+	it('treats null fields as null', () => {
+		const vehicle = new Vehicle(
+			makeMinimalVehicle({
+				vehicle_id: 3,
+				make: null,
+				model: null,
+				passengers: [makeMinimalPerson({ person_id: 'P3', city: null })]
+			})
+		);
 
-		expect(vehicle.vehicle_id).toBeNull();
 		expect(vehicle.make).toBeNull();
 		expect(vehicle.model).toBeNull();
-		expect(vehicle.passengers[0].person_id).toBeNull();
+		expect(vehicle.passengers[0].person_id).toBe('P3');
 		expect(vehicle.passengers[0].city).toBeNull();
 	});
 
 	it('builds description from year/make/model', () => {
-		const vehicle = new Vehicle({ vehicle_year: '2020', make: 'Toyota', model: 'Camry' });
+		const vehicle = new Vehicle(
+			makeMinimalVehicle({ vehicle_year: 2020, make: 'Toyota', model: 'Camry' })
+		);
 		expect(vehicle.description).toBe('2020 Toyota Camry');
 
-		const partial = new Vehicle({ make: 'Ford' });
+		const partial = new Vehicle(makeMinimalVehicle({ make: 'Ford' }));
 		expect(partial.description).toBe('Ford');
 	});
 
 	it('reportableType is null for DRIVER or null unit_type, else returns unit_type', () => {
-		expect(new Vehicle({ unit_type: 'DRIVER' }).reportableType).toBeNull();
-		expect(new Vehicle({ unit_type: null }).reportableType).toBeNull();
-		expect(new Vehicle({}).reportableType).toBeNull();
+		expect(new Vehicle(makeMinimalVehicle({ unit_type: 'DRIVER' })).reportableType).toBeNull();
+		expect(new Vehicle(makeMinimalVehicle({ unit_type: null })).reportableType).toBeNull();
 
-		expect(new Vehicle({ unit_type: 'PARKED' }).reportableType).toBe('PARKED');
-		expect(new Vehicle({ unit_type: 'BICYCLE' }).reportableType).toBe('BICYCLE');
-		expect(new Vehicle({ unit_type: 'PEDESTRIAN' }).reportableType).toBe('PEDESTRIAN');
-		expect(new Vehicle({ unit_type: 'DRIVERLESS' }).reportableType).toBe('DRIVERLESS');
+		expect(new Vehicle(makeMinimalVehicle({ unit_type: 'PARKED' })).reportableType).toBe('PARKED');
+		expect(new Vehicle(makeMinimalVehicle({ unit_type: 'BICYCLE' })).reportableType).toBe(
+			'BICYCLE'
+		);
+		expect(new Vehicle(makeMinimalVehicle({ unit_type: 'PEDESTRIAN' })).reportableType).toBe(
+			'PEDESTRIAN'
+		);
+		expect(new Vehicle(makeMinimalVehicle({ unit_type: 'DRIVERLESS' })).reportableType).toBe(
+			'DRIVERLESS'
+		);
 	});
 });
 
@@ -204,10 +235,19 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 41.9,
 			injuries_fatal: 0,
 			injuries_incapacitating: 1,
+			injuries_total: 1,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-01-01',
 			first_crash_type: 'UNKNOWN',
-			vehicles: '[{"vehicle_id":"V1","passengers":[{"person_id":"P1"}]}]',
-			non_passengers: '[{"person_id":"NP1"}]'
+			street_direction: 'N',
+			street_name: 'UNKNOWN',
+			vehicles:
+				'[{"vehicle_id":1,"passengers":[{"person_id":"P1","person_type":"DRIVER","injury_classification":"NONE","sex":null,"age":null,"city":null,"state":null,"drivers_license_state":null,"airbag_deployed":null,"ejection":null,"safety_equipment":null,"hospital":null,"physical_condition":null,"driver_vision":null,"driver_action":null}]}]',
+			non_passengers:
+				'[{"person_id":"NP1","person_type":"PEDESTRIAN","injury_classification":"NONINCAPACITATING INJURY","sex":null,"age":null,"city":null,"state":null,"drivers_license_state":null,"airbag_deployed":null,"ejection":null,"safety_equipment":null,"hospital":null,"physical_condition":null,"driver_vision":null,"driver_action":null}]'
 		});
 
 		expect(crash.vehicles).toHaveLength(1);
@@ -218,29 +258,43 @@ describe('Crash vehicles and non_passengers parsing', () => {
 	});
 
 	it('handles array inputs and bad JSON safely', () => {
-		// array input
 		const crashFromArrays = new Crash({
 			crash_record_id: 'TEST-2',
 			longitude: 0,
 			latitude: 0,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-01-02',
 			first_crash_type: 'UNKNOWN',
-			vehicles: [{ vehicle_id: 'V2', passengers: [{ person_id: 'P2' }] }],
-			non_passengers: [{ person_id: 'NP2' }]
+			street_direction: 'N',
+			street_name: 'UNKNOWN',
+			vehicles: [
+				makeMinimalVehicle({ vehicle_id: 2, passengers: [makeMinimalPerson({ person_id: 'P2' })] })
+			],
+			non_passengers: [makeMinimalPerson({ person_id: 'NP2' })]
 		});
-		expect(crashFromArrays.vehicles[0].vehicle_id).toBe('V2');
+		expect(crashFromArrays.vehicles[0].vehicle_id).toBe(2);
 		expect(crashFromArrays.non_passengers[0].person_id).toBe('NP2');
 
-		// bad JSON should not throw
 		const crashBadJson = new Crash({
 			crash_record_id: 'TEST-3',
 			longitude: 0,
 			latitude: 0,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-01-03',
+			street_direction: 'N',
+			street_name: 'UNKNOWN',
 			vehicles: 'not-json',
 			non_passengers: 'also-bad',
 			first_crash_type: 'whatever'
@@ -249,7 +303,7 @@ describe('Crash vehicles and non_passengers parsing', () => {
 		expect(crashBadJson.non_passengers).toEqual([]);
 	});
 
-	it('formats title and distance with fallbacks', () => {
+	it('formats title and distance', () => {
 		const crashDate = '2024-02-01';
 		const crash = new Crash({
 			crash_record_id: 'TEST-4',
@@ -257,18 +311,21 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 41.9,
 			injuries_fatal: 0,
 			injuries_incapacitating: 2,
+			injuries_total: 2,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: crashDate,
 			first_crash_type: 'UNKNOWN',
 			crash_type: '',
 			street_no: null,
 			street_direction: 'N',
-			street_name: '',
+			street_name: 'MAIN ST',
 			distance: 1234.56
 		});
 
-		expect(crash.title).toBe(
-			`2 seriously injured near  N Unknown Street on ${datelineFor(crashDate)}`
-		);
+		expect(crash.title).toBe(`2 seriously injured near  N MAIN ST on ${datelineFor(crashDate)}`);
 		expect(crash.distance).toBe(1235);
 	});
 
@@ -279,6 +336,11 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 41.9,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-01-01',
 			first_crash_type: 'UNKNOWN',
 			street_no: '1200',
@@ -293,6 +355,11 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 0,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-01-01',
 			first_crash_type: 'UNKNOWN',
 			street_direction: 'N',
@@ -300,17 +367,6 @@ describe('Crash vehicles and non_passengers parsing', () => {
 		});
 		expect(full.street_address).toBe('1200 S State');
 		expect(missingNo.street_address).toMatch(/N Michigan/);
-
-		const allNull = new Crash({
-			crash_record_id: 'SFN-3',
-			longitude: 0,
-			latitude: 0,
-			injuries_fatal: 0,
-			injuries_incapacitating: 0,
-			crash_date: '2024-01-01',
-			first_crash_type: 'UNKNOWN'
-		});
-		expect(allNull.street_address.trim()).toBe('');
 	});
 
 	it('builds title from injury counts and location fields', () => {
@@ -321,6 +377,11 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 41.9,
 			injuries_fatal: 1,
 			injuries_incapacitating: 0,
+			injuries_total: 1,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: crashDate,
 			first_crash_type: 'UNKNOWN',
 			street_no: '1200',
@@ -338,8 +399,15 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 0,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-04-01',
 			first_crash_type: 'UNKNOWN',
+			street_direction: 'N',
+			street_name: 'UNKNOWN',
 			prim_contributory_cause: 'FOLLOWING TOO CLOSELY'
 		});
 
@@ -354,8 +422,15 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 0,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-04-01',
 			first_crash_type: 'UNKNOWN',
+			street_direction: 'N',
+			street_name: 'UNKNOWN',
 			prim_contributory_cause: 'UNABLE TO DETERMINE'
 		});
 		expect(unableToDetermine.hasKnownCause).toBe(false);
@@ -367,8 +442,15 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 0,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-04-01',
 			first_crash_type: 'UNKNOWN',
+			street_direction: 'N',
+			street_name: 'UNKNOWN',
 			prim_contributory_cause: 'NOT APPLICABLE'
 		});
 		expect(notApplicable.hasKnownCause).toBe(false);
@@ -380,8 +462,15 @@ describe('Crash vehicles and non_passengers parsing', () => {
 			latitude: 0,
 			injuries_fatal: 0,
 			injuries_incapacitating: 0,
+			injuries_total: 0,
+			injuries_non_incapacitating: 0,
+			injuries_reported_not_evident: 0,
+			injuries_no_indication: 0,
+			injuries_unknown: 0,
 			crash_date: '2024-04-01',
-			first_crash_type: 'UNKNOWN'
+			first_crash_type: 'UNKNOWN',
+			street_direction: 'N',
+			street_name: 'UNKNOWN'
 		});
 		expect(missingPrimaryCause.hasKnownCause).toBe(false);
 		expect(missingPrimaryCause.main_cause).toBe('UNKNOWN CAUSE');

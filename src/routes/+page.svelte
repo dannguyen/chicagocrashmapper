@@ -17,9 +17,10 @@
 		appState.selectCrash(item);
 	}
 
-	function showCrashOnMap(index: number) {
+	function showCrashOnMap(crashId: string) {
 		const filtered = appState.filteredCrashes;
-		setCrashDetail(filtered[index]);
+		const item = filtered.find((c) => c.crash_record_id === crashId);
+		if (item) setCrashDetail(item);
 	}
 
 	onMount(() => {

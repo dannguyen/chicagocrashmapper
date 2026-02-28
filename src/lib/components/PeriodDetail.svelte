@@ -267,8 +267,8 @@
 		if (hasNext) fetchPage(currentPage + 1);
 	}
 
-	function showCrashOnMap(index: number) {
-		const item = crashes[index];
+	function showCrashOnMap(crashId: string) {
+		const item = crashes.find((c) => c.crash_record_id === crashId);
 		if (item && mapRef) mapRef.fitToCrashes([item]);
 	}
 

@@ -30,7 +30,7 @@ describe('peopleSummary', () => {
 							makePersonRecord({
 								person_id: 'k1',
 								injury_classification: 'FATAL',
-								age: '40',
+								age: 40,
 								sex: 'M'
 							})
 						]
@@ -65,11 +65,11 @@ describe('peopleSummary', () => {
 				vehicles: [
 					makeVehicleRecord({
 						passengers: [
-							makePersonRecord({ person_id: 'k', injury_classification: 'FATAL', age: '40' }),
+							makePersonRecord({ person_id: 'k', injury_classification: 'FATAL', age: 40 }),
 							makePersonRecord({
 								person_id: 's',
 								injury_classification: 'INCAPACITATING INJURY',
-								age: '12',
+								age: 12,
 								sex: 'F'
 							}),
 							makePersonRecord({
@@ -143,7 +143,7 @@ describe('popupHtml', () => {
 			})
 		);
 
-		const html = popupHtml(crash, 0);
+		const html = popupHtml(crash);
 		expect(html).toContain('FATAL');
 		expect(html).toContain('Unknown Cause');
 		expect(html).toContain('See details');

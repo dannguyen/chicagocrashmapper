@@ -12,16 +12,20 @@
 
 	let { location } = $props<{ location: Location }>();
 
-	let crashes: Crash[] = $state([]);
+	let allCrashes: Crash[] = $state([]);
 	let totalCrashes: number = $state(0);
 	let currentPage: number = $state(0);
-	let perPage: number = $state(25);
+	const perPage = 25;
 	let loading: boolean = $state(true);
 	let allTimeSummary: CrashSummary | null = $state(null);
 	let mapRef: MapContainer | undefined = $state(undefined);
 	const isIntersection = $derived(location.category === 'intersection');
 	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
 
+	// Client-side pagination derived from allCrashes
+	const pagedCrashes = $derived(
+		allCrashes.slice(currentPage * perPage, (currentPage + 1) * perPage)
+	);
 	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
 	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));
 	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
@@ -33,57 +37,56 @@
 			: [0, 1, 2, null, totalPages - 3, totalPages - 2, totalPages - 1]
 	);
 
-	async function fetchPage(page: number) {
+	async function fetchAllCrashes() {
 		loading = true;
 		try {
 			const result: CrashListResult = await getCrashesList({
 				locationId: location.id,
-				page,
+				perPage: 1000,
 				sort: 'desc'
 			});
 			const hydrated = parseCrashes(result.crashes);
 			if (location.category === 'intersection') {
 				hydrated.sort((a, b) => b.date.getTime() - a.date.getTime());
 			}
-			crashes = hydrated;
+			allCrashes = hydrated;
 			totalCrashes = result.total;
-			perPage = result.per_page;
-			currentPage = result.page;
+			currentPage = 0;
 		} finally {
 			loading = false;
 		}
 	}
 
 	function goToPrev() {
-		if (hasPrev) fetchPage(currentPage - 1);
+		if (hasPrev) currentPage--;
 	}
 
 	function goToNext() {
-		if (hasNext) fetchPage(currentPage + 1);
+		if (hasNext) currentPage++;
 	}
 
-	function showCrashOnMap(index: number) {
-		const item = crashes[index];
-		if (item && mapRef) {
-			mapRef.fitToCrashes([item]);
+	function showCrashOnMap(crashId: string) {
+		if (mapRef) {
+			mapRef.openCrashPopup(crashId);
+			// Scroll the map into view
+			const mapEl = document.getElementById('map');
+			if (mapEl) {
+				mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
 		}
 	}
 
 	onMount(async () => {
-		// Fetch all-time summary and first page in parallel
 		const [, summary] = await Promise.all([
-			fetchPage(0),
+			fetchAllCrashes(),
 			getCrashSummary({ locationId: location.id })
 		]);
 		allTimeSummary = summary;
 
-		// By the time the network requests finish, Leaflet is long initialized.
-		// One RAF to let Svelte flush the new crashes into MapContainer's props,
-		// then explicitly sync both the shape marker and crash markers.
 		requestAnimationFrame(() => {
 			if (mapRef) {
 				mapRef.updateMapWithLocation(location);
-				mapRef.updateNearbyMarkers(crashes);
+				mapRef.updateNearbyMarkers(allCrashes);
 			}
 		});
 	});
@@ -91,25 +94,22 @@
 
 <div class="location-detail" class:compact-layout={isIntersection}>
 	{#if isIntersection}
-		<!-- Keep map visible immediately on intersection pages -->
 		<div class="map-card map-card-compact">
 			<MapContainer
 				bind:this={mapRef}
 				selectedLocation={location}
-				{crashes}
+				crashes={allCrashes}
 				defaultGeoCenter={[location.latitude, location.longitude]}
 				maxDistance={mapRadiusFeet}
 			/>
 		</div>
 	{/if}
 
-	<!-- Summary stats -->
 	<LocationSummary
-		{crashes}
+		crashes={allCrashes}
 		{location}
 		summary={allTimeSummary}
 		compact={isIntersection}
-		showTopCauses={!isIntersection}
 	/>
 
 	{#if !isIntersection}
@@ -117,7 +117,7 @@
 			<MapContainer
 				bind:this={mapRef}
 				selectedLocation={location}
-				{crashes}
+				crashes={allCrashes}
 				defaultGeoCenter={[location.latitude, location.longitude]}
 				maxDistance={mapRadiusFeet}
 			/>
@@ -132,7 +132,7 @@
 			</span>
 			{#if totalPages > 1}
 				<div class="pager-controls">
-					<button class="pager-button pager-nav" disabled={!hasPrev || loading} onclick={goToPrev}>
+					<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}>
 						Prev
 					</button>
 					{#each pageNumbers as pg}
@@ -143,14 +143,15 @@
 								class="pager-button pager-page"
 								class:active-page={pg === currentPage}
 								class:inactive-page={pg !== currentPage}
-								disabled={loading}
-								onclick={() => fetchPage(pg)}
+								onclick={() => {
+									currentPage = pg;
+								}}
 							>
 								{pg + 1}
 							</button>
 						{/if}
 					{/each}
-					<button class="pager-button pager-nav" disabled={!hasNext || loading} onclick={goToNext}>
+					<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}>
 						Next
 					</button>
 				</div>
@@ -176,21 +177,24 @@
 			{/if}
 		</p>
 
-		{#if crashes.length === 0}
+		{#if pagedCrashes.length === 0}
 			<div class="empty-state">
 				<p class="empty-text">No crashes found for this location.</p>
 			</div>
 		{:else}
-			<CrashList {crashes} selectedLocation={location} distanceUnits="feet" {showCrashOnMap} />
+			<CrashList
+				crashes={pagedCrashes}
+				selectedLocation={location}
+				distanceUnits="feet"
+				{showCrashOnMap}
+			/>
 		{/if}
 	{/if}
 
-	<!-- Bottom pagination (only when there are multiple pages) -->
+	<!-- Bottom pagination -->
 	{#if totalPages > 1 && !loading}
 		<div class="pager-footer">
-			<button class="pager-button pager-nav" disabled={!hasPrev || loading} onclick={goToPrev}>
-				Prev
-			</button>
+			<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}> Prev </button>
 			{#each pageNumbers as pg}
 				{#if pg === null}
 					<span class="pager-ellipsis">…</span>
@@ -199,16 +203,15 @@
 						class="pager-button pager-page"
 						class:active-page={pg === currentPage}
 						class:inactive-page={pg !== currentPage}
-						disabled={loading}
-						onclick={() => fetchPage(pg)}
+						onclick={() => {
+							currentPage = pg;
+						}}
 					>
 						{pg + 1}
 					</button>
 				{/if}
 			{/each}
-			<button class="pager-button pager-nav" disabled={!hasNext || loading} onclick={goToNext}>
-				Next
-			</button>
+			<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}> Next </button>
 		</div>
 	{/if}
 </div>

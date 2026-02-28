@@ -25,31 +25,16 @@ describe('Vehicle', () => {
 	});
 
 	it('defaults passengers to empty array when not provided', () => {
-		const vehicle = new Vehicle({ vehicle_id: 'V2' });
+		const record = makeVehicleRecord();
+		delete record.passengers;
+		const vehicle = new Vehicle(record);
 		expect(vehicle.passengers).toEqual([]);
-	});
-
-	it('normalizes blank and whitespace strings to null', () => {
-		const vehicle = new Vehicle(
-			makeVehicleRecord({
-				vehicle_id: '',
-				make: ' ',
-				model: '',
-				passengers: [makePersonRecord({ person_id: '', city: '  ' })]
-			})
-		);
-
-		expect(vehicle.vehicle_id).toBeNull();
-		expect(vehicle.make).toBeNull();
-		expect(vehicle.model).toBeNull();
-		expect(vehicle.passengers[0].person_id).toBeNull();
-		expect(vehicle.passengers[0].city).toBeNull();
 	});
 
 	describe('description', () => {
 		it('joins year/make/model', () => {
 			const vehicle = new Vehicle(
-				makeVehicleRecord({ vehicle_year: '2020', make: 'Toyota', model: 'Camry' })
+				makeVehicleRecord({ vehicle_year: 2020, make: 'Toyota', model: 'Camry' })
 			);
 			expect(vehicle.description).toBe('2020 Toyota Camry');
 		});
@@ -68,7 +53,6 @@ describe('Vehicle', () => {
 		it('returns null for DRIVER or null unit_type', () => {
 			expect(new Vehicle(makeVehicleRecord({ unit_type: 'DRIVER' })).reportableType).toBeNull();
 			expect(new Vehicle(makeVehicleRecord({ unit_type: null })).reportableType).toBeNull();
-			expect(new Vehicle({}).reportableType).toBeNull();
 		});
 
 		it('returns the unit_type for non-driver types', () => {

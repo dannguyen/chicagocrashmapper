@@ -58,7 +58,7 @@ export function contextInfo(item: Crash): string {
 
 const severityColors: Record<SeverityLevel, string> = SEVERITY_COLORS;
 
-export function popupHtml(item: Crash, index: number): string {
+export function popupHtml(item: Crash): string {
 	const severity = crashSeverity(item);
 	const label = severityLabel(severity).toUpperCase();
 	const color = severityColors[severity];

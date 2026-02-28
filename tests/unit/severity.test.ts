@@ -133,9 +133,11 @@ describe('personInjuryLevel', () => {
 				new Person(makePersonRecord({ injury_classification: 'NO INDICATION OF INJURY' }))
 			)
 		).toBe('none');
-		expect(personInjuryLevel(new Person(makePersonRecord({ injury_classification: null })))).toBe(
-			'unknown'
-		);
+		expect(
+			personInjuryLevel(
+				new Person(makePersonRecord({ injury_classification: 'SOMETHING UNEXPECTED' }))
+			)
+		).toBe('unknown');
 	});
 });
 

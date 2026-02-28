@@ -33,12 +33,12 @@ describe('Crash', () => {
 		it('accepts array inputs directly', () => {
 			const crash = new Crash(
 				makeCrashRecord({
-					vehicles: [makeVehicleRecord({ vehicle_id: 'V2' })],
+					vehicles: [makeVehicleRecord({ vehicle_id: 2 })],
 					non_passengers: [makePersonRecord({ person_id: 'NP2' })]
 				})
 			);
 
-			expect(crash.vehicles[0].vehicle_id).toBe('V2');
+			expect(crash.vehicles[0].vehicle_id).toBe(2);
 			expect(crash.non_passengers[0].person_id).toBe('NP2');
 		});
 
@@ -53,11 +53,11 @@ describe('Crash', () => {
 		it('filters out vehicles with null vehicle_id', () => {
 			const crash = new Crash(
 				makeCrashRecord({
-					vehicles: JSON.stringify([makeVehicleRecord({ vehicle_id: 'V1' }), { vehicle_id: null }])
+					vehicles: JSON.stringify([makeVehicleRecord({ vehicle_id: 1 }), { vehicle_id: null }])
 				})
 			);
 			expect(crash.vehicles).toHaveLength(1);
-			expect(crash.vehicles[0].vehicle_id).toBe('V1');
+			expect(crash.vehicles[0].vehicle_id).toBe(1);
 		});
 
 		it('returns empty arrays for null/undefined vehicles', () => {
@@ -140,16 +140,11 @@ describe('Crash', () => {
 			expect(crash.street_address).toBe('1200 S State');
 		});
 
-		it('handles missing parts gracefully', () => {
+		it('handles missing street_no gracefully', () => {
 			const noNumber = new Crash(
 				makeCrashRecord({ street_no: null, street_direction: 'N', street_name: 'Michigan' })
 			);
-			expect(noNumber.street_address).toMatch(/N Michigan/);
-
-			const allNull = new Crash(
-				makeCrashRecord({ street_no: null, street_direction: null, street_name: null })
-			);
-			expect(allNull.street_address.trim()).toBe('');
+			expect(noNumber.street_address).toBe('N Michigan');
 		});
 	});
 
@@ -182,13 +177,6 @@ describe('Crash', () => {
 				})
 			);
 			expect(crash.title).toContain('2 seriously injured near 500 W Madison');
-		});
-
-		it('falls back to Unknown Street when street_name is missing', () => {
-			const crash = new Crash(
-				makeCrashRecord({ street_name: undefined, street_no: null, street_direction: null })
-			);
-			expect(crash.title).toContain('Unknown Street');
 		});
 	});
 
