@@ -132,9 +132,9 @@ describe('Mapper', () => {
 				}
 			} as unknown as import('geojson').Feature);
 
-			expect(style.weight).toBe(5);
+			expect(style.weight).toBe(2);
 			expect(style.fillOpacity).toBe(0);
-			expect(style.opacity).toBe(1);
+			expect(style.opacity).toBe(0.7);
 		});
 
 		it('styles area polygons with lighter stroke and fill', () => {

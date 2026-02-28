@@ -107,15 +107,15 @@
 	}
 
 	.sev-serious {
-		background: #6d28d9;
+		background: #eab308;
 	}
 
 	.sev-minor {
-		background: #6d28d9;
+		background: #eab308;
 	}
 
 	.sev-none {
-		background: #6d28d9;
+		background: #eab308;
 	}
 
 	.row-body {

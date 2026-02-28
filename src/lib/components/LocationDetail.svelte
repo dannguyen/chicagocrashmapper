@@ -68,7 +68,6 @@
 	function showCrashOnMap(crashId: string) {
 		if (mapRef) {
 			mapRef.openCrashPopup(crashId);
-			// Scroll the map into view
 			const mapEl = document.getElementById('map');
 			if (mapEl) {
 				mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -92,37 +91,24 @@
 	});
 </script>
 
-<div class="location-detail" class:compact-layout={isIntersection}>
-	{#if isIntersection}
-		<div class="map-card map-card-compact">
-			<MapContainer
-				bind:this={mapRef}
-				selectedLocation={location}
-				crashes={allCrashes}
-				defaultGeoCenter={[location.latitude, location.longitude]}
-				maxDistance={mapRadiusFeet}
-			/>
+<div class="location-detail">
+	<!-- Top section: stats left, map right -->
+	<div class="top-grid">
+		<div class="stats-col">
+			<LocationSummary crashes={allCrashes} {location} summary={allTimeSummary} compact={true} />
 		</div>
-	{/if}
-
-	<LocationSummary
-		crashes={allCrashes}
-		{location}
-		summary={allTimeSummary}
-		compact={isIntersection}
-	/>
-
-	{#if !isIntersection}
-		<div class="map-card">
-			<MapContainer
-				bind:this={mapRef}
-				selectedLocation={location}
-				crashes={allCrashes}
-				defaultGeoCenter={[location.latitude, location.longitude]}
-				maxDistance={mapRadiusFeet}
-			/>
+		<div class="map-col">
+			<div class="map-card">
+				<MapContainer
+					bind:this={mapRef}
+					selectedLocation={location}
+					crashes={allCrashes}
+					defaultGeoCenter={[location.latitude, location.longitude]}
+					maxDistance={mapRadiusFeet}
+				/>
+			</div>
 		</div>
-	{/if}
+	</div>
 
 	<!-- Pagination + crash list -->
 	{#if totalCrashes > 0}
@@ -220,11 +206,30 @@
 	.location-detail {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 1rem;
 	}
 
-	.location-detail.compact-layout {
+	.top-grid {
+		display: flex;
+		flex-direction: column;
 		gap: 1rem;
+	}
+
+	@media (min-width: 768px) {
+		.top-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 1rem;
+			align-items: start;
+		}
+	}
+
+	.stats-col {
+		min-width: 0;
+	}
+
+	.map-col {
+		min-width: 0;
 	}
 
 	.map-card {
@@ -234,8 +239,15 @@
 		background: #fff;
 	}
 
-	.map-card-compact {
-		margin-bottom: 0;
+	/* Make map tall/vertical on desktop to match Chicago's shape */
+	.map-card :global(#map) {
+		height: 20rem;
+	}
+
+	@media (min-width: 768px) {
+		.map-card :global(#map) {
+			height: 28rem;
+		}
 	}
 
 	.pagination-bar {

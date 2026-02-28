@@ -72,7 +72,6 @@
 			};
 		}
 		if (isCurrentYear(y)) {
-			// Compare YTD to the same date window last year
 			const today = new Date();
 			const prevUntil = `${y - 1}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 			return { since: `${y - 1}-01-01`, until: prevUntil, label: `${y - 1} YTD` };
@@ -109,10 +108,10 @@
 	}
 	let chartBars: BarData[] = $state([]);
 
-	let crashes: Crash[] = $state([]);
+	let allCrashes: Crash[] = $state([]);
 	let totalCrashes = $state(0);
 	let currentPage = $state(0);
-	let perPage = $state(25);
+	const perPage = 25;
 
 	let statsLoading = $state(true);
 	let chartLoading = $state(true);
@@ -122,8 +121,11 @@
 
 	let mapRef: MapContainer | undefined = $state(undefined);
 
-	// ── Pagination ───────────────────────────────────────────────────────────────
+	// ── Client-side pagination ──────────────────────────────────────────────────
 
+	const pagedCrashes = $derived(
+		allCrashes.slice(currentPage * perPage, (currentPage + 1) * perPage)
+	);
 	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
 	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
 	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));
@@ -168,7 +170,7 @@
 			const day = parseInt(bar.period.split('-')[2]);
 			return day === 1 || day % 7 === 1;
 		}
-		return true; // all 12 months
+		return true;
 	}
 
 	function formatTooltip(bar: BarData): string {
@@ -199,20 +201,19 @@
 		}
 	}
 
-	async function fetchPage(page: number) {
+	async function fetchAllCrashes() {
 		crashesLoading = true;
 		crashesError = false;
 		try {
 			const result: CrashListResult = await getCrashesList({
 				since: range.since,
 				until: range.until,
-				page,
+				perPage: 1000,
 				sort: 'desc'
 			});
-			crashes = parseCrashes(result.crashes);
+			allCrashes = parseCrashes(result.crashes);
 			totalCrashes = result.total;
-			perPage = result.per_page;
-			currentPage = result.page;
+			currentPage = 0;
 		} catch {
 			crashesError = true;
 		} finally {
@@ -224,7 +225,6 @@
 		chartLoading = true;
 		try {
 			if (month != null) {
-				// Daily bars: fetch enough days back to cover the target month
 				const now = new Date();
 				const firstDay = new Date(year, month - 1, 1);
 				const daysBack = Math.ceil((now.getTime() - firstDay.getTime()) / 86400000) + 5;
@@ -240,7 +240,6 @@
 						injuries_incapacitating: v.injuries_incapacitating ?? 0
 					}));
 			} else {
-				// Monthly bars: fetch enough months back to cover the target year
 				const now = new Date();
 				const last = Math.max((now.getFullYear() - year) * 12 + now.getMonth() + 2, 13);
 				const data = await getDateCount('month', last);
@@ -260,39 +259,42 @@
 	}
 
 	function goToPrev() {
-		if (hasPrev) fetchPage(currentPage - 1);
+		if (hasPrev) currentPage--;
 	}
 
 	function goToNext() {
-		if (hasNext) fetchPage(currentPage + 1);
+		if (hasNext) currentPage++;
 	}
 
 	function showCrashOnMap(crashId: string) {
-		const item = crashes.find((c) => c.crash_record_id === crashId);
-		if (item && mapRef) mapRef.fitToCrashes([item]);
+		if (mapRef) {
+			mapRef.openCrashPopup(crashId);
+			const mapEl = document.getElementById('map');
+			if (mapEl) {
+				mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
+		}
 	}
 
 	async function loadAll() {
-		// Reset state for fresh load
 		summary = null;
 		prevSummary = null;
 		yearAgoSummary = null;
 		chartBars = [];
-		crashes = [];
+		allCrashes = [];
 		totalCrashes = 0;
 		currentPage = 0;
 
-		await Promise.all([fetchStats(), fetchPage(0), fetchChart()]);
+		await Promise.all([fetchStats(), fetchAllCrashes(), fetchChart()]);
 		requestAnimationFrame(() => {
 			if (mapRef) {
-				mapRef.updateNearbyMarkers(crashes);
-				if (crashes.length > 0) mapRef.fitToCrashes(crashes);
+				mapRef.updateNearbyMarkers(allCrashes);
+				if (allCrashes.length > 0) mapRef.fitToCrashes(allCrashes);
 			}
 		});
 	}
 
 	$effect(() => {
-		// Track year and month so this re-runs on navigation
 		year;
 		month;
 		loadAll();
@@ -300,219 +302,222 @@
 </script>
 
 <div class="period-detail">
-	<!-- KPI Stats -->
-	{#if statsLoading}
-		<div class="kpi-card">
-			<div class="stats-loading">Loading stats...</div>
-		</div>
-	{:else if statsError}
-		<!-- silently omit on error -->
-	{:else if summary}
-		<div class="kpi-card">
-			<h3 class="kpi-heading">{range.label}</h3>
+	<!-- Top section: KPIs + chart left, map right -->
+	<div class="top-grid">
+		<div class="stats-col">
+			<!-- KPI Stats -->
+			{#if statsLoading}
+				<div class="kpi-card">
+					<div class="stats-loading">Loading stats...</div>
+				</div>
+			{:else if statsError}
+				<!-- silently omit on error -->
+			{:else if summary}
+				<div class="kpi-card">
+					<h3 class="kpi-heading">{range.label}</h3>
 
-			<!-- Primary values -->
-			<div class="kpi-grid">
-				<div class="kpi-col">
-					<div class="kpi-primary">{summary.total.toLocaleString()}</div>
-					<div class="kpi-label">Serious Crashes</div>
-				</div>
-				<div class="kpi-col">
-					<div class="kpi-primary kpi-fatal">{summary.fatal_injuries.toLocaleString()}</div>
-					<div class="kpi-label">People Killed</div>
-				</div>
-				<div class="kpi-col">
-					<div class="kpi-primary kpi-serious">
-						{summary.incapacitating_injuries.toLocaleString()}
-					</div>
-					<div class="kpi-label">Serious Injuries</div>
-				</div>
-			</div>
-
-			<!-- vs. previous period -->
-			{#if prevSummary}
-				<div class="kpi-compare">
-					<div class="kpi-compare-label">vs. {prevRange.label}</div>
 					<div class="kpi-grid">
 						<div class="kpi-col">
-							<span class="kpi-abs">{prevSummary.total.toLocaleString()}</span>
-							<span
-								class="kpi-delta"
-								class:up={crashesPrevDelta !== null && crashesPrevDelta > 0}
-								class:down={crashesPrevDelta !== null && crashesPrevDelta < 0}
-								class:flat={crashesPrevDelta === null || crashesPrevDelta === 0}
-								>{formatPct(crashesPrevDelta)}</span
-							>
+							<div class="kpi-primary">{summary.total.toLocaleString()}</div>
+							<div class="kpi-label">Serious Crashes</div>
 						</div>
 						<div class="kpi-col">
-							<span class="kpi-abs kpi-abs-fatal"
-								>{prevSummary.fatal_injuries.toLocaleString()}</span
-							>
-							<span
-								class="kpi-delta"
-								class:up={fatalPrevDelta !== null && fatalPrevDelta > 0}
-								class:down={fatalPrevDelta !== null && fatalPrevDelta < 0}
-								class:flat={fatalPrevDelta === null || fatalPrevDelta === 0}
-								>{formatPct(fatalPrevDelta)}</span
-							>
+							<div class="kpi-primary kpi-fatal">{summary.fatal_injuries.toLocaleString()}</div>
+							<div class="kpi-label">People Killed</div>
 						</div>
 						<div class="kpi-col">
-							<span class="kpi-abs kpi-abs-serious"
-								>{prevSummary.incapacitating_injuries.toLocaleString()}</span
-							>
-							<span
-								class="kpi-delta"
-								class:up={seriousPrevDelta !== null && seriousPrevDelta > 0}
-								class:down={seriousPrevDelta !== null && seriousPrevDelta < 0}
-								class:flat={seriousPrevDelta === null || seriousPrevDelta === 0}
-								>{formatPct(seriousPrevDelta)}</span
-							>
+							<div class="kpi-primary kpi-serious">
+								{summary.incapacitating_injuries.toLocaleString()}
+							</div>
+							<div class="kpi-label">Serious Injuries</div>
 						</div>
 					</div>
+
+					{#if prevSummary}
+						<div class="kpi-compare">
+							<div class="kpi-compare-label">vs. {prevRange.label}</div>
+							<div class="kpi-grid">
+								<div class="kpi-col">
+									<span class="kpi-abs">{prevSummary.total.toLocaleString()}</span>
+									<span
+										class="kpi-delta"
+										class:up={crashesPrevDelta !== null && crashesPrevDelta > 0}
+										class:down={crashesPrevDelta !== null && crashesPrevDelta < 0}
+										class:flat={crashesPrevDelta === null || crashesPrevDelta === 0}
+										>{formatPct(crashesPrevDelta)}</span
+									>
+								</div>
+								<div class="kpi-col">
+									<span class="kpi-abs kpi-abs-fatal"
+										>{prevSummary.fatal_injuries.toLocaleString()}</span
+									>
+									<span
+										class="kpi-delta"
+										class:up={fatalPrevDelta !== null && fatalPrevDelta > 0}
+										class:down={fatalPrevDelta !== null && fatalPrevDelta < 0}
+										class:flat={fatalPrevDelta === null || fatalPrevDelta === 0}
+										>{formatPct(fatalPrevDelta)}</span
+									>
+								</div>
+								<div class="kpi-col">
+									<span class="kpi-abs kpi-abs-serious"
+										>{prevSummary.incapacitating_injuries.toLocaleString()}</span
+									>
+									<span
+										class="kpi-delta"
+										class:up={seriousPrevDelta !== null && seriousPrevDelta > 0}
+										class:down={seriousPrevDelta !== null && seriousPrevDelta < 0}
+										class:flat={seriousPrevDelta === null || seriousPrevDelta === 0}
+										>{formatPct(seriousPrevDelta)}</span
+									>
+								</div>
+							</div>
+						</div>
+					{/if}
+
+					{#if yearAgoSummary && yearAgoRange}
+						<div class="kpi-compare">
+							<div class="kpi-compare-label">vs. {yearAgoRange.label}</div>
+							<div class="kpi-grid">
+								<div class="kpi-col">
+									<span class="kpi-abs">{yearAgoSummary.total.toLocaleString()}</span>
+									<span
+										class="kpi-delta"
+										class:up={crashesYoyDelta !== null && crashesYoyDelta > 0}
+										class:down={crashesYoyDelta !== null && crashesYoyDelta < 0}
+										class:flat={crashesYoyDelta === null || crashesYoyDelta === 0}
+										>{formatPct(crashesYoyDelta)}</span
+									>
+								</div>
+								<div class="kpi-col">
+									<span class="kpi-abs kpi-abs-fatal"
+										>{yearAgoSummary.fatal_injuries.toLocaleString()}</span
+									>
+									<span
+										class="kpi-delta"
+										class:up={fatalYoyDelta !== null && fatalYoyDelta > 0}
+										class:down={fatalYoyDelta !== null && fatalYoyDelta < 0}
+										class:flat={fatalYoyDelta === null || fatalYoyDelta === 0}
+										>{formatPct(fatalYoyDelta)}</span
+									>
+								</div>
+								<div class="kpi-col">
+									<span class="kpi-abs kpi-abs-serious"
+										>{yearAgoSummary.incapacitating_injuries.toLocaleString()}</span
+									>
+									<span
+										class="kpi-delta"
+										class:up={seriousYoyDelta !== null && seriousYoyDelta > 0}
+										class:down={seriousYoyDelta !== null && seriousYoyDelta < 0}
+										class:flat={seriousYoyDelta === null || seriousYoyDelta === 0}
+										>{formatPct(seriousYoyDelta)}</span
+									>
+								</div>
+							</div>
+						</div>
+					{/if}
 				</div>
 			{/if}
 
-			<!-- vs. year-ago month (month view only) -->
-			{#if yearAgoSummary && yearAgoRange}
-				<div class="kpi-compare">
-					<div class="kpi-compare-label">vs. {yearAgoRange.label}</div>
-					<div class="kpi-grid">
-						<div class="kpi-col">
-							<span class="kpi-abs">{yearAgoSummary.total.toLocaleString()}</span>
-							<span
-								class="kpi-delta"
-								class:up={crashesYoyDelta !== null && crashesYoyDelta > 0}
-								class:down={crashesYoyDelta !== null && crashesYoyDelta < 0}
-								class:flat={crashesYoyDelta === null || crashesYoyDelta === 0}
-								>{formatPct(crashesYoyDelta)}</span
-							>
-						</div>
-						<div class="kpi-col">
-							<span class="kpi-abs kpi-abs-fatal"
-								>{yearAgoSummary.fatal_injuries.toLocaleString()}</span
-							>
-							<span
-								class="kpi-delta"
-								class:up={fatalYoyDelta !== null && fatalYoyDelta > 0}
-								class:down={fatalYoyDelta !== null && fatalYoyDelta < 0}
-								class:flat={fatalYoyDelta === null || fatalYoyDelta === 0}
-								>{formatPct(fatalYoyDelta)}</span
-							>
-						</div>
-						<div class="kpi-col">
-							<span class="kpi-abs kpi-abs-serious"
-								>{yearAgoSummary.incapacitating_injuries.toLocaleString()}</span
-							>
-							<span
-								class="kpi-delta"
-								class:up={seriousYoyDelta !== null && seriousYoyDelta > 0}
-								class:down={seriousYoyDelta !== null && seriousYoyDelta < 0}
-								class:flat={seriousYoyDelta === null || seriousYoyDelta === 0}
-								>{formatPct(seriousYoyDelta)}</span
+			<!-- Bar chart -->
+			{#if chartLoading}
+				<div class="chart-card chart-loading-card">
+					<div class="chart-loading-text">Loading chart...</div>
+				</div>
+			{:else if chartBars.length > 0}
+				<div class="chart-card">
+					<div class="chart-header">
+						<h3 class="chart-title">
+							{month != null ? 'Daily' : 'Monthly'} Crashes — {range.label}
+						</h3>
+						<div class="chart-legend">
+							<span class="legend-item"><span class="legend-swatch legend-fatal"></span>Fatal</span>
+							<span class="legend-item"
+								><span class="legend-swatch legend-serious"></span>Serious injury</span
 							>
 						</div>
 					</div>
-				</div>
-			{/if}
-		</div>
-	{/if}
-
-	<!-- Bar chart -->
-	{#if chartLoading}
-		<div class="chart-card chart-loading-card">
-			<div class="chart-loading-text">Loading chart...</div>
-		</div>
-	{:else if chartBars.length > 0}
-		<div class="chart-card">
-			<div class="chart-header">
-				<h3 class="chart-title">
-					{month != null ? 'Daily' : 'Monthly'} Crashes — {range.label}
-				</h3>
-				<div class="chart-legend">
-					<span class="legend-item"><span class="legend-swatch legend-fatal"></span>Fatal</span>
-					<span class="legend-item"
-						><span class="legend-swatch legend-serious"></span>Serious injury</span
-					>
-				</div>
-			</div>
-			<div class="chart-scroll">
-				<svg
-					width={chartBars.length * (barWidth + barGap)}
-					height={chartHeight + 22}
-					role="img"
-					aria-label="{month != null ? 'Daily' : 'Monthly'} crash trend for {range.label}"
-				>
-					{#each chartBars as bar, i}
-						{@const incapH = barH(bar.injuries_incapacitating)}
-						{@const fatalH = barH(bar.injuries_fatal)}
-						{@const x = i * (barWidth + barGap)}
-						<rect {x} y={chartHeight - incapH} width={barWidth} height={incapH} fill="#9333ea">
-							<title>{formatTooltip(bar)}</title>
-						</rect>
-						<rect
-							{x}
-							y={chartHeight - incapH - fatalH}
-							width={barWidth}
-							height={fatalH}
-							fill="#dc2626"
+					<div class="chart-scroll">
+						<svg
+							width={chartBars.length * (barWidth + barGap)}
+							height={chartHeight + 22}
+							role="img"
+							aria-label="{month != null ? 'Daily' : 'Monthly'} crash trend for {range.label}"
 						>
-							<title>{formatTooltip(bar)}</title>
-						</rect>
-						{#if showBarLabel(bar)}
-							<text
-								x={x + barWidth / 2}
-								y={chartHeight + 14}
-								text-anchor="middle"
-								font-size="9"
-								fill="#9ca3af">{bar.label}</text
-							>
-						{/if}
-					{/each}
-				</svg>
+							{#each chartBars as bar, i}
+								{@const incapH = barH(bar.injuries_incapacitating)}
+								{@const fatalH = barH(bar.injuries_fatal)}
+								{@const x = i * (barWidth + barGap)}
+								<rect {x} y={chartHeight - incapH} width={barWidth} height={incapH} fill="#9333ea">
+									<title>{formatTooltip(bar)}</title>
+								</rect>
+								<rect
+									{x}
+									y={chartHeight - incapH - fatalH}
+									width={barWidth}
+									height={fatalH}
+									fill="#dc2626"
+								>
+									<title>{formatTooltip(bar)}</title>
+								</rect>
+								{#if showBarLabel(bar)}
+									<text
+										x={x + barWidth / 2}
+										y={chartHeight + 14}
+										text-anchor="middle"
+										font-size="9"
+										fill="#9ca3af">{bar.label}</text
+									>
+								{/if}
+							{/each}
+						</svg>
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<div class="map-col">
+			<div class="map-card">
+				<MapContainer bind:this={mapRef} crashes={allCrashes} {defaultGeoCenter} />
 			</div>
 		</div>
-	{/if}
-
-	<!-- Map -->
-	<div class="map-card">
-		<MapContainer bind:this={mapRef} {crashes} {defaultGeoCenter} />
 	</div>
 
-	<!-- Top pagination -->
+	<!-- Pagination + crash list -->
 	{#if totalCrashes > 0}
 		<div class="pagination-bar">
 			<span class="pagination-text">
 				Showing {rangeStart}–{rangeEnd} of {totalCrashes} crashes
 			</span>
-			<div class="pager-controls">
-				<button
-					class="pager-button pager-nav"
-					disabled={!hasPrev || crashesLoading}
-					onclick={goToPrev}>Prev</button
-				>
-				{#each pageNumbers as pg}
-					{#if pg === null}
-						<span class="pager-ellipsis">…</span>
-					{:else}
-						<button
-							class="pager-button pager-page"
-							class:active-page={pg === currentPage}
-							class:inactive-page={pg !== currentPage}
-							disabled={crashesLoading}
-							onclick={() => fetchPage(pg)}>{pg + 1}</button
-						>
-					{/if}
-				{/each}
-				<button
-					class="pager-button pager-nav"
-					disabled={!hasNext || crashesLoading}
-					onclick={goToNext}>Next</button
-				>
-			</div>
+			{#if totalPages > 1}
+				<div class="pager-controls">
+					<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}>
+						Prev
+					</button>
+					{#each pageNumbers as pg}
+						{#if pg === null}
+							<span class="pager-ellipsis">…</span>
+						{:else}
+							<button
+								class="pager-button pager-page"
+								class:active-page={pg === currentPage}
+								class:inactive-page={pg !== currentPage}
+								onclick={() => {
+									currentPage = pg;
+								}}
+							>
+								{pg + 1}
+							</button>
+						{/if}
+					{/each}
+					<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}>
+						Next
+					</button>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
-	<!-- Crash list -->
 	{#if crashesError}
 		<div class="empty-state">
 			<p class="empty-text">Failed to load crashes.</p>
@@ -529,28 +534,30 @@
 	{:else}
 		<p class="crash-heading">
 			{#if totalPages > 1}
-				Crashes — Page {currentPage + 1} of {totalPages}
+				Crashes &mdash; Page {currentPage + 1} of {totalPages}
 			{:else}
 				Crashes
 			{/if}
 		</p>
-		{#if crashes.length === 0}
+
+		{#if pagedCrashes.length === 0}
 			<div class="empty-state">
 				<p class="empty-text">No serious crashes found for this period.</p>
 			</div>
 		{:else}
-			<CrashList {crashes} selectedLocation={null} distanceUnits="feet" {showCrashOnMap} />
+			<CrashList
+				crashes={pagedCrashes}
+				selectedLocation={null}
+				distanceUnits="feet"
+				{showCrashOnMap}
+			/>
 		{/if}
 	{/if}
 
 	<!-- Bottom pagination -->
 	{#if totalPages > 1 && !crashesLoading}
 		<div class="pager-footer">
-			<button
-				class="pager-button pager-nav"
-				disabled={!hasPrev || crashesLoading}
-				onclick={goToPrev}>Prev</button
-			>
+			<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}> Prev </button>
 			{#each pageNumbers as pg}
 				{#if pg === null}
 					<span class="pager-ellipsis">…</span>
@@ -559,16 +566,15 @@
 						class="pager-button pager-page"
 						class:active-page={pg === currentPage}
 						class:inactive-page={pg !== currentPage}
-						disabled={crashesLoading}
-						onclick={() => fetchPage(pg)}>{pg + 1}</button
+						onclick={() => {
+							currentPage = pg;
+						}}
 					>
+						{pg + 1}
+					</button>
 				{/if}
 			{/each}
-			<button
-				class="pager-button pager-nav"
-				disabled={!hasNext || crashesLoading}
-				onclick={goToNext}>Next</button
-			>
+			<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}> Next </button>
 		</div>
 	{/if}
 </div>
@@ -577,7 +583,34 @@
 	.period-detail {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 1rem;
+	}
+
+	/* ── Two-column layout ── */
+	.top-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	@media (min-width: 768px) {
+		.top-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 1rem;
+			align-items: start;
+		}
+	}
+
+	.stats-col {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.map-col {
+		min-width: 0;
 	}
 
 	/* ── KPI card ── */
@@ -755,7 +788,17 @@
 		background: #fff;
 	}
 
-	/* ── Pagination (shared pattern with LocationDetail) ── */
+	.map-card :global(#map) {
+		height: 20rem;
+	}
+
+	@media (min-width: 768px) {
+		.map-card :global(#map) {
+			height: 28rem;
+		}
+	}
+
+	/* ── Pagination ── */
 	.pagination-bar {
 		display: flex;
 		align-items: center;

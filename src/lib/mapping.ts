@@ -79,10 +79,10 @@ export class Mapper {
 					);
 					const isStreet = category === 'street';
 					return {
-						weight: isStreet ? 5 : 1,
-						color: '#4455bb',
+						weight: isStreet ? 2 : 1,
+						color: isStreet ? '#94a3b8' : '#4455bb',
 						fillOpacity: isStreet ? 0 : 0.4,
-						opacity: isStreet ? 1 : 0.8
+						opacity: isStreet ? 0.7 : 0.8
 					};
 				},
 				onEachFeature: (feature: import('geojson').Feature, layer: Layer) => {

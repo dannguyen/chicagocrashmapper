@@ -100,6 +100,10 @@ class AppStateManager {
 		this.#state.crashes = crashes;
 	}
 
+	setLoading(value: boolean) {
+		this.#state.loading = value;
+	}
+
 	// Filter management
 	setMaxDistance(value: number) {
 		if (value < 1) return;

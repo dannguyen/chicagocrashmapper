@@ -19,16 +19,16 @@
 		maxDistance?: number;
 	}>();
 
-	// Create a local instance of Mapper
 	const MapperInstance = new Mapper();
 
 	let activeMarker: import('leaflet').Layer | null = null;
 	let mapCircleLayer: any = null;
-	let clusterGroup: any = null;
+	let markerLayerGroup: any = null;
+	let heatLayer: any = null;
 	let markerMap = new Map<string, import('leaflet').Marker>();
 
 	function dotIconHtml(isFatal: boolean) {
-		const color = isFatal ? '#dc2626' : '#6d28d9';
+		const color = isFatal ? '#dc2626' : '#eab308';
 		return `<div class="marker-dot" style="background:${color}"></div>`;
 	}
 
@@ -36,28 +36,31 @@
 		await MapperInstance.init('map', defaultGeoCenter, 11);
 
 		if (MapperInstance.L && MapperInstance.map) {
-			// Dynamically import markercluster
-			await import('leaflet.markercluster');
-			// @ts-ignore - markerClusterGroup is added to L by the plugin
-			clusterGroup = MapperInstance.L.markerClusterGroup({
-				maxClusterRadius: 40,
-				spiderfyOnMaxZoom: true,
-				showCoverageOnHover: false,
-				iconCreateFunction: (cluster: any) => {
-					const children: import('leaflet').Marker[] = cluster.getAllChildMarkers();
-					const hasFatal = children.some((m: any) => m.options._isFatal);
-					const count = cluster.getChildCount();
-					const bg = hasFatal ? '#dc2626' : '#6d28d9';
-					const size = count < 10 ? 28 : count < 100 ? 32 : 36;
-					return MapperInstance.L!.divIcon({
-						html: `<div class="marker-cluster-icon" style="background:${bg};width:${size}px;height:${size}px">${count}</div>`,
-						className: '',
-						iconSize: [size, size],
-						iconAnchor: [size / 2, size / 2]
-					});
-				}
-			});
-			clusterGroup.addTo(MapperInstance.map);
+			// Import heat plugin (adds L.heatLayer)
+			await import('leaflet.heat');
+			markerLayerGroup = MapperInstance.L.layerGroup().addTo(MapperInstance.map);
+
+			// Scale dots based on zoom: small/borderless when zoomed out, full when zoomed in
+			MapperInstance.map.on('zoomend', updateDotScale);
+			updateDotScale();
+		}
+	}
+
+	function updateDotScale() {
+		if (!MapperInstance.map) return;
+		const mapEl = document.getElementById('map');
+		if (!mapEl) return;
+		const zoom = MapperInstance.map.getZoom();
+		mapEl.classList.toggle('zoom-far', zoom < 14);
+		mapEl.classList.toggle('zoom-mid', zoom >= 14 && zoom < 16);
+
+		// Hide heatmap when zoomed in enough to see individual dots
+		if (heatLayer) {
+			if (zoom >= 14) {
+				MapperInstance.map.removeLayer(heatLayer);
+			} else if (!MapperInstance.map.hasLayer(heatLayer)) {
+				MapperInstance.map.addLayer(heatLayer);
+			}
 		}
 	}
 
@@ -110,51 +113,94 @@
 		}
 	}
 
-	export function updateNearbyMarkers(items: Crash[]) {
-		if (!MapperInstance.map || !MapperInstance.L || !clusterGroup) return;
+	// Jitter marker positions so overlapping dots spread out visually.
+	// ~0.0003 degrees ≈ 30 meters — enough to scatter at zoomed-out views
+	// but negligible at street level.
+	function jitter(coord: number): number {
+		return coord + (Math.random() - 0.5) * 0.0006;
+	}
 
-		clusterGroup.clearLayers();
+	export function updateNearbyMarkers(items: Crash[]) {
+		if (!MapperInstance.map || !MapperInstance.L || !markerLayerGroup) return;
+
+		markerLayerGroup.clearLayers();
 		markerMap.clear();
+
+		// Remove old heat layer
+		if (heatLayer && MapperInstance.map) {
+			MapperInstance.map.removeLayer(heatLayer);
+			heatLayer = null;
+		}
+
+		// Build heatmap data using exact positions for accurate density
+		const heatData: [number, number, number][] = [];
 
 		items.forEach((item) => {
 			const lat = item.latitude;
 			const lon = item.longitude;
 
-			if (!isNaN(lat) && !isNaN(lon)) {
+			if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
+				// Heatmap uses exact coords
+				heatData.push([lat, lon, item.isFatal ? 1.0 : 0.4]);
+
+				// Dot marker uses jittered coords so overlapping crashes spread out
 				const popup = popupHtml(item);
 				const icon = MapperInstance.L!.divIcon({
 					html: dotIconHtml(item.isFatal),
 					className: '',
-					iconSize: [12, 12],
-					iconAnchor: [6, 6]
+					iconSize: [10, 10],
+					iconAnchor: [5, 5]
 				});
-				const crashMarker = MapperInstance.L!.marker([lat, lon], {
-					icon,
-					// @ts-ignore - custom option for cluster icon coloring
-					_isFatal: item.isFatal
+				const crashMarker = MapperInstance.L!.marker([jitter(lat), jitter(lon)], {
+					icon
 				}).bindPopup(popup, {
 					maxWidth: 280
 				});
 
 				crashMarker.on('click', () => setCrashDetail(item));
-
-				clusterGroup.addLayer(crashMarker);
+				crashMarker.addTo(markerLayerGroup);
 				markerMap.set(item.crash_record_id, crashMarker);
 			}
 		});
+
+		// Create heat layer
+		if (heatData.length > 0) {
+			// @ts-ignore - L.heatLayer added by leaflet.heat plugin
+			heatLayer = MapperInstance.L.heatLayer(heatData, {
+				radius: 25,
+				blur: 18,
+				maxZoom: 15,
+				max: 0.6,
+				minOpacity: 0.2,
+				gradient: {
+					0.0: 'rgba(254, 249, 195, 0.4)',
+					0.2: 'rgba(253, 224, 71, 0.6)',
+					0.4: '#facc15',
+					0.6: '#eab308',
+					0.8: '#ca8a04',
+					1.0: '#a16207'
+				}
+			}).addTo(MapperInstance.map);
+		}
 
 		fitToCrashes(items);
 	}
 
 	export function openCrashPopup(crashId: string) {
-		if (!MapperInstance.map || !clusterGroup) return;
+		if (!MapperInstance.map) return;
 		const marker = markerMap.get(crashId);
 		if (!marker) return;
 
-		// Zoom to the marker and spiderfy its cluster if needed
-		clusterGroup.zoomToShowLayer(marker, () => {
-			marker.openPopup();
-		});
+		// Zoom in close enough to see the marker, then open popup
+		const latlng = marker.getLatLng();
+		const currentZoom = MapperInstance.map.getZoom();
+		if (currentZoom < 15) {
+			MapperInstance.map.setView(latlng, 16, { animate: true });
+			setTimeout(() => marker.openPopup(), 350);
+		} else {
+			MapperInstance.map.panTo(latlng, { animate: true });
+			setTimeout(() => marker.openPopup(), 200);
+		}
 	}
 
 	export function fitToCrashes(items: Crash[]) {
@@ -218,8 +264,8 @@
 		}
 		if (crashes.length > 0) {
 			updateNearbyMarkers(crashes);
-		} else if (clusterGroup) {
-			clusterGroup.clearLayers();
+		} else if (markerLayerGroup) {
+			markerLayerGroup.clearLayers();
 		}
 	}
 
@@ -252,8 +298,12 @@
 	$effect(() => {
 		if (crashes.length > 0) {
 			updateNearbyMarkers(crashes);
-		} else if (clusterGroup) {
-			clusterGroup.clearLayers();
+		} else if (markerLayerGroup) {
+			markerLayerGroup.clearLayers();
+			if (heatLayer && MapperInstance.map) {
+				MapperInstance.map.removeLayer(heatLayer);
+				heatLayer = null;
+			}
 			fitToCrashes([]);
 		}
 	});
@@ -291,27 +341,39 @@
 		z-index: 0;
 	}
 
-	/* Dot markers */
+	/* Dot markers — default (zoomed in, zoom 16+) */
 	:global(.marker-dot) {
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		border: 2px solid #fff;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+		border: 2px solid rgba(0, 0, 0, 0.6);
+		box-shadow:
+			0 0 0 2px rgba(255, 255, 255, 0.7),
+			0 1px 4px rgba(0, 0, 0, 0.3);
+		transition:
+			width 150ms,
+			height 150ms,
+			border 150ms,
+			box-shadow 150ms;
 	}
 
-	/* Cluster icons */
-	:global(.marker-cluster-icon) {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 50%;
-		color: #fff;
-		font-size: 12px;
-		font-weight: 700;
-		line-height: 1;
-		border: 2px solid rgba(255, 255, 255, 0.8);
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+	/* Zoomed out (< 14): tiny dots, no border, let heatmap dominate */
+	:global(.zoom-far .marker-dot) {
+		width: 5px;
+		height: 5px;
+		border: none;
+		box-shadow: none;
+		opacity: 0.7;
+	}
+
+	/* Mid zoom (14-15): medium dots with stroke */
+	:global(.zoom-mid .marker-dot) {
+		width: 9px;
+		height: 9px;
+		border: 1.5px solid rgba(0, 0, 0, 0.5);
+		box-shadow:
+			0 0 0 1.5px rgba(255, 255, 255, 0.6),
+			0 1px 3px rgba(0, 0, 0, 0.25);
 	}
 
 	/* Rich popup content — Leaflet injects popups outside Svelte scope */

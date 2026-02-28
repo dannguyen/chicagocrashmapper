@@ -152,7 +152,7 @@ describe('Mapper', () => {
 			}
 		} as unknown as import('geojson').Feature);
 
-		expect(style?.weight).toBe(5);
+		expect(style?.weight).toBe(2);
 		expect(style?.fillOpacity).toBe(0);
 	});
 });

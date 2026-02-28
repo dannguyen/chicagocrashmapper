@@ -5,6 +5,9 @@
 	import { appState } from '$lib/components/AppState.svelte';
 	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { Crash } from '$lib/crash';
+	import { parseCrashes } from '$lib/crash';
+	import { getCrashesList } from '$lib/api/client';
+	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import CrashList from '$lib/components/CrashList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import TrendChart from '$lib/components/TrendChart.svelte';
@@ -23,8 +26,25 @@
 		if (item) setCrashDetail(item);
 	}
 
-	onMount(() => {
-		appState.loadRecentCrashes(20);
+	onMount(async () => {
+		appState.setLoading(true);
+		try {
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			const since = toDateStr(addDays(today, -29));
+			const until = toDateStr(today);
+			const result = await getCrashesList({
+				since,
+				until,
+				perPage: 1000,
+				sort: 'desc'
+			});
+			appState.setCrashes(parseCrashes(result.crashes));
+		} catch {
+			appState.setCrashes([]);
+		} finally {
+			appState.setLoading(false);
+		}
 	});
 </script>
 
@@ -71,7 +91,7 @@
 				<span class="loading-label">Loading...</span>
 			{:else}
 				<span class="results-summary">
-					{appState.crashes.length} recent serious crashes citywide
+					{appState.crashes.length} serious crashes in the last 30 days
 				</span>
 			{/if}
 		</div>

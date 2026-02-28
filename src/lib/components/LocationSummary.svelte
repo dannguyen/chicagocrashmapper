@@ -19,22 +19,26 @@
 		if (summary) {
 			const byYear = Object.entries(summary.by_year).sort((a, b) => a[0].localeCompare(b[0]));
 			const maxYearCount = byYear.reduce((m, [, c]) => Math.max(m, c as number), 1);
-			const yearKeys = byYear.map(([y]) => y);
-			const yearRange =
-				yearKeys.length > 0
-					? yearKeys.length === 1
-						? yearKeys[0]
-						: `${yearKeys[0]}–${yearKeys[yearKeys.length - 1]}`
+			const numYears = byYear.length || 1;
+			const avgPerYear = Math.round(summary.total / numYears);
+
+			// Compute most recent from crashes array
+			const mostRecent =
+				crashes.length > 0
+					? crashes.reduce(
+							(latest: Date, c: Crash) => (c.date > latest ? c.date : latest),
+							crashes[0].date
+						)
 					: null;
+
 			return {
 				total: summary.total,
 				fatalCount: summary.fatal_injuries,
 				incapCount: summary.incapacitating_injuries,
-				mostRecent: null as Date | null,
-				oldest: null as Date | null,
+				avgPerYear,
+				mostRecent,
 				byYear,
-				maxYearCount,
-				yearRange
+				maxYearCount
 			};
 		}
 
@@ -49,7 +53,6 @@
 			.map((i: Crash) => i.date)
 			.sort((a: Date, b: Date) => b.getTime() - a.getTime());
 		const mostRecent = dates[0];
-		const oldest = dates[dates.length - 1];
 
 		const yearCounts = new Map<string, number>();
 		for (const inc of crashes) {
@@ -58,38 +61,36 @@
 		}
 		const byYear = [...yearCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 		const maxYearCount = byYear.reduce((m, [, c]) => Math.max(m, c), 1);
-		const yearKeys = byYear.map(([y]) => y);
-		const yearRange =
-			yearKeys.length > 0
-				? yearKeys.length === 1
-					? yearKeys[0]
-					: `${yearKeys[0]}–${yearKeys[yearKeys.length - 1]}`
-				: null;
+		const numYears = byYear.length || 1;
+		const avgPerYear = Math.round(total / numYears);
 
 		return {
 			total,
 			fatalCount,
 			incapCount,
+			avgPerYear,
 			mostRecent,
-			oldest,
 			byYear,
-			maxYearCount,
-			yearRange
+			maxYearCount
 		};
 	});
 
-	function shortDate(d: Date): string {
-		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+	function daysSince(d: Date): number {
+		const now = new Date();
+		now.setHours(0, 0, 0, 0);
+		const then = new Date(d);
+		then.setHours(0, 0, 0, 0);
+		return Math.floor((now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24));
 	}
 </script>
 
 {#if stats}
-	<div class:summary-compact={compact}>
-		<!-- Stat chips row -->
+	<div class="summary-wrap">
+		<!-- Stat chips: 2x2 + 1 grid -->
 		<div class="summary-grid">
 			<div class="summary-card">
 				<div class="summary-value summary-value-total">{stats.total}</div>
-				<div class="summary-label">Total Crashes</div>
+				<div class="summary-label">Crashes</div>
 			</div>
 
 			<div class="summary-card">
@@ -102,26 +103,34 @@
 				<div class="summary-label">Serious Injury</div>
 			</div>
 
-			<div class="summary-card summary-card-tight">
-				{#if stats.yearRange}
-					<div class="summary-value summary-value-total" title={stats.yearRange}>
-						{stats.yearRange}
+			<div class="summary-card">
+				<div class="summary-value summary-value-total">{stats.avgPerYear}</div>
+				<div class="summary-label">Avg. Per Year</div>
+			</div>
+
+			<div class="summary-card summary-card-wide">
+				{#if stats.mostRecent}
+					{@const days = daysSince(stats.mostRecent)}
+					<div
+						class="summary-value"
+						class:summary-value-urgent={days <= 7}
+						class:summary-value-recent={days > 7 && days <= 30}
+						class:summary-value-muted={days > 30}
+					>
+						{days}
 					</div>
-					<div class="summary-label">Year Range</div>
-				{:else if stats.oldest && stats.mostRecent}
-					<div class="summary-value summary-value-range">{shortDate(stats.oldest)}</div>
-					<div class="summary-label">to {shortDate(stats.mostRecent)}</div>
+					<div class="summary-label">Days Since Latest Crash</div>
 				{:else}
 					<div class="summary-value summary-value-muted">—</div>
-					<div class="summary-label">Date Range</div>
+					<div class="summary-label">Days Since Latest Crash</div>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Year by Year -->
+		<!-- Year by Year (compact) -->
 		{#if stats.byYear.length > 1}
-			<div class="summary-card summary-card-block">
-				<h4 class="summary-heading">Year by Year</h4>
+			<div class="chart-card">
+				<h4 class="chart-heading">Year by Year</h4>
 				{#each stats.byYear as [year, count]}
 					<div class="chart-row">
 						<div class="chart-year">{year}</div>
@@ -140,48 +149,34 @@
 {/if}
 
 <style>
-	.summary-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.75rem;
-		margin-bottom: 1.5rem;
+	.summary-wrap {
+		display: flex;
+		flex-direction: column;
+		gap: 0.625rem;
 	}
 
-	@media (min-width: 640px) {
+	.summary-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.5rem;
+	}
+
+	@media (min-width: 640px) and (max-width: 767px) {
 		.summary-grid {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			grid-template-columns: repeat(4, 1fr);
 		}
 	}
 
 	.summary-card {
 		background: #fff;
-		border-radius: 0.75rem;
+		border-radius: 0.625rem;
 		border: 1px solid #e5e7eb;
-		padding: 1rem;
+		padding: 0.5rem 0.625rem;
 		text-align: center;
 	}
 
-	.summary-compact .summary-grid {
-		margin-bottom: 0.75rem;
-		gap: 0.5rem;
-	}
-
-	.summary-compact .summary-card {
-		padding: 0.625rem 0.5rem;
-		border-radius: 0.625rem;
-	}
-
-	.summary-card-tight {
-		overflow: hidden;
-	}
-
-	.summary-card-block {
-		text-align: left;
-		margin-bottom: 1rem;
-	}
-
 	.summary-value {
-		font-size: 1.5rem;
+		font-size: 1.125rem;
 		font-weight: 700;
 		line-height: 1.2;
 		white-space: nowrap;
@@ -189,8 +184,8 @@
 		text-overflow: ellipsis;
 	}
 
-	.summary-compact .summary-value {
-		font-size: 1.125rem;
+	.summary-card-wide {
+		grid-column: 1 / -1;
 	}
 
 	.summary-value-total {
@@ -205,10 +200,12 @@
 		color: #7c3aed;
 	}
 
-	.summary-value-range {
-		font-size: 0.875rem;
-		color: #1d4ed8;
-		font-weight: 700;
+	.summary-value-urgent {
+		color: #dc2626;
+	}
+
+	.summary-value-recent {
+		color: #f59e0b;
 	}
 
 	.summary-value-muted {
@@ -216,30 +213,32 @@
 	}
 
 	.summary-label {
-		margin-top: 0.25rem;
-		font-size: 0.75rem;
+		margin-top: 0.125rem;
+		font-size: 0.6875rem;
 		color: #6b7280;
 	}
 
-	.summary-compact .summary-label {
-		font-size: 0.6875rem;
-		margin-top: 0.125rem;
+	.chart-card {
+		background: #fff;
+		border-radius: 0.625rem;
+		border: 1px solid #e5e7eb;
+		padding: 0.625rem 0.75rem;
 	}
 
-	.summary-heading {
-		font-size: 0.75rem;
+	.chart-heading {
+		font-size: 0.6875rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: #6b7280;
-		margin-bottom: 0.75rem;
+		margin-bottom: 0.375rem;
 	}
 
 	.chart-row {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 0.5rem;
+		gap: 0.5rem;
+		margin-bottom: 0.25rem;
 	}
 
 	.chart-row:last-child {
@@ -247,9 +246,9 @@
 	}
 
 	.chart-year {
-		width: 2.5rem;
+		width: 2.25rem;
 		flex-shrink: 0;
-		font-size: 0.75rem;
+		font-size: 0.6875rem;
 		font-weight: 500;
 		color: #374151;
 	}
@@ -258,7 +257,7 @@
 		flex: 1;
 		background: #bfdbfe;
 		border-radius: 9999px;
-		height: 0.5rem;
+		height: 0.375rem;
 		overflow: hidden;
 	}
 
@@ -270,9 +269,9 @@
 	}
 
 	.chart-count {
-		width: 2rem;
+		width: 1.5rem;
 		text-align: right;
-		font-size: 0.75rem;
+		font-size: 0.6875rem;
 		color: #6b7280;
 		flex-shrink: 0;
 	}

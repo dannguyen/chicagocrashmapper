@@ -28,7 +28,7 @@
 			class="period-arrow"
 			aria-label="Previous year"
 		>
-			>&larr; {data.year - 1}</a
+			&larr; {data.year - 1}</a
 		>
 		{#if hasNext}
 			<a
@@ -36,7 +36,7 @@
 				class="period-arrow"
 				aria-label="Next year"
 			>
-				>{data.year + 1} &rarr;</a
+				{data.year + 1} &rarr;</a
 			>
 		{/if}
 	</div>
