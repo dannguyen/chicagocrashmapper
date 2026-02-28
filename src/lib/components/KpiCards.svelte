@@ -97,12 +97,12 @@
 				<div class="kpi-label">Serious Crashes</div>
 			</div>
 			<div class="kpi-col">
-				<div class="kpi-primary kpi-fatal">{cur.fatal.toLocaleString()}</div>
-				<div class="kpi-label">People Killed</div>
-			</div>
-			<div class="kpi-col">
 				<div class="kpi-primary kpi-serious">{cur.incap.toLocaleString()}</div>
 				<div class="kpi-label">Serious Injuries</div>
+			</div>
+			<div class="kpi-col">
+				<div class="kpi-primary kpi-fatal">{cur.fatal.toLocaleString()}</div>
+				<div class="kpi-label">People Killed</div>
 			</div>
 		</div>
 
@@ -120,21 +120,21 @@
 					>
 				</div>
 				<div class="kpi-col">
-					<span class="kpi-abs kpi-abs-fatal">{prev.fatal.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={killedPop !== null && killedPop > 0}
-						class:down={killedPop !== null && killedPop < 0}
-						class:flat={killedPop === null || killedPop === 0}>{formatPct(killedPop)}</span
-					>
-				</div>
-				<div class="kpi-col">
 					<span class="kpi-abs kpi-abs-serious">{prev.incap.toLocaleString()}</span>
 					<span
 						class="kpi-delta"
 						class:up={injuredPop !== null && injuredPop > 0}
 						class:down={injuredPop !== null && injuredPop < 0}
 						class:flat={injuredPop === null || injuredPop === 0}>{formatPct(injuredPop)}</span
+					>
+				</div>
+				<div class="kpi-col">
+					<span class="kpi-abs kpi-abs-fatal">{prev.fatal.toLocaleString()}</span>
+					<span
+						class="kpi-delta"
+						class:up={killedPop !== null && killedPop > 0}
+						class:down={killedPop !== null && killedPop < 0}
+						class:flat={killedPop === null || killedPop === 0}>{formatPct(killedPop)}</span
 					>
 				</div>
 			</div>
@@ -154,21 +154,21 @@
 					>
 				</div>
 				<div class="kpi-col">
-					<span class="kpi-abs kpi-abs-fatal">{yoy.fatal.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={killedYoy !== null && killedYoy > 0}
-						class:down={killedYoy !== null && killedYoy < 0}
-						class:flat={killedYoy === null || killedYoy === 0}>{formatPct(killedYoy)}</span
-					>
-				</div>
-				<div class="kpi-col">
 					<span class="kpi-abs kpi-abs-serious">{yoy.incap.toLocaleString()}</span>
 					<span
 						class="kpi-delta"
 						class:up={injuredYoy !== null && injuredYoy > 0}
 						class:down={injuredYoy !== null && injuredYoy < 0}
 						class:flat={injuredYoy === null || injuredYoy === 0}>{formatPct(injuredYoy)}</span
+					>
+				</div>
+				<div class="kpi-col">
+					<span class="kpi-abs kpi-abs-fatal">{yoy.fatal.toLocaleString()}</span>
+					<span
+						class="kpi-delta"
+						class:up={killedYoy !== null && killedYoy > 0}
+						class:down={killedYoy !== null && killedYoy < 0}
+						class:flat={killedYoy === null || killedYoy === 0}>{formatPct(killedYoy)}</span
 					>
 				</div>
 			</div>
@@ -226,7 +226,7 @@
 	}
 
 	.kpi-primary.kpi-serious {
-		color: #7c3aed;
+		color: #d97706;
 	}
 
 	.kpi-label {
@@ -262,7 +262,7 @@
 	}
 
 	.kpi-abs-serious {
-		color: #7c3aed;
+		color: #d97706;
 	}
 
 	.kpi-delta {

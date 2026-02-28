@@ -26,6 +26,7 @@
 		<nav class="desktop-nav" aria-label="Site navigation">
 			<a href="{base}/neighborhoods" class="nav-link">Neighborhoods</a>
 			<a href="{base}/wards" class="nav-link">Wards</a>
+			<a href="{base}/periods" class="nav-link">Periods</a>
 		</nav>
 
 		<!-- Mobile hamburger -->
@@ -70,6 +71,9 @@
 				>Neighborhoods</a
 			>
 			<a href="{base}/wards" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Wards</a>
+			<a href="{base}/periods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
+				>Periods</a
+			>
 		</nav>
 	{/if}
 </header>

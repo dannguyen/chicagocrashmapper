@@ -17,7 +17,7 @@ export function crashSeverity(inc: Crash): SeverityLevel {
 /** CSS class for card left border */
 export function severityBorderClass(level: SeverityLevel): string {
 	if (level === 'fatal') return 'border-l-red-600';
-	if (level === 'serious') return 'border-l-purple-600';
+	if (level === 'serious') return 'border-l-amber-600';
 	if (level === 'minor') return 'border-l-amber-500';
 	return 'border-l-gray-200';
 }
@@ -25,7 +25,7 @@ export function severityBorderClass(level: SeverityLevel): string {
 /** CSS class for circular badge background+text */
 export function severityBadgeClass(level: SeverityLevel): string {
 	if (level === 'fatal') return 'bg-red-100 text-red-700';
-	if (level === 'serious') return 'bg-purple-100 text-purple-700';
+	if (level === 'serious') return 'bg-amber-100 text-amber-700';
 	if (level === 'minor') return 'bg-amber-100 text-amber-700';
 	return 'bg-gray-100 text-gray-600';
 }
@@ -33,7 +33,7 @@ export function severityBadgeClass(level: SeverityLevel): string {
 /** CSS class for map-pin / numbered badge background (solid color, white text) */
 export function severityPinClass(level: SeverityLevel): string {
 	if (level === 'fatal') return 'bg-red-600';
-	if (level === 'serious') return 'bg-purple-600';
+	if (level === 'serious') return 'bg-amber-600';
 	if (level === 'minor') return 'bg-amber-500';
 	return 'bg-gray-400';
 }
@@ -49,7 +49,7 @@ export function severityLabel(level: SeverityLevel): string {
 /** CSS class for severity label text */
 export function severityLabelClass(level: SeverityLevel): string {
 	if (level === 'fatal') return 'text-red-600';
-	if (level === 'serious') return 'text-purple-600';
+	if (level === 'serious') return 'text-amber-600';
 	if (level === 'minor') return 'text-amber-600';
 	return 'text-gray-400';
 }
@@ -68,7 +68,7 @@ export function personInjuryLevel(p: Person): InjuryLevel {
 /** CSS class for injury dot color */
 export function injuryDotClass(level: InjuryLevel): string {
 	if (level === 'fatal') return 'bg-red-600';
-	if (level === 'serious') return 'bg-purple-600';
+	if (level === 'serious') return 'bg-amber-600';
 	if (level === 'minor') return 'bg-amber-500';
 	if (level === 'none') return 'bg-green-600';
 	return 'bg-gray-400';
@@ -77,7 +77,7 @@ export function injuryDotClass(level: InjuryLevel): string {
 /** CSS class for injury text color */
 export function injuryTextClass(level: InjuryLevel): string {
 	if (level === 'fatal') return 'text-red-600 font-semibold';
-	if (level === 'serious') return 'text-purple-600 font-semibold';
+	if (level === 'serious') return 'text-amber-600 font-semibold';
 	if (level === 'minor') return 'text-amber-600';
 	if (level === 'none') return 'text-green-600';
 	return 'text-gray-400';

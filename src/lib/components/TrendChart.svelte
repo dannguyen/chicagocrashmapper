@@ -59,7 +59,7 @@
 
 	function periodUrl(period: string): string {
 		const [year, month] = period.split('-');
-		return `${base}/crashes/period/${year}/${parseInt(month)}`;
+		return `${base}/periods/${year}/${parseInt(month)}`;
 	}
 
 	function formatTooltipLabel(p: PeriodData): string {
@@ -152,7 +152,7 @@
 						y={chartHeight - inCapH}
 						width={barWidth}
 						height={inCapH}
-						fill="#9333ea"
+						fill="#f59e0b"
 						opacity={isHovered ? 0.8 : 1}
 						class="bar-segment"
 						pointer-events="none"
@@ -268,7 +268,7 @@
 	}
 
 	.trend-stat-serious {
-		color: #7c3aed;
+		color: #d97706;
 	}
 
 	.trend-chart {
@@ -329,7 +329,7 @@
 	}
 
 	.tooltip-serious {
-		background: #9333ea;
+		background: #f59e0b;
 	}
 
 	.trend-legend {
@@ -358,6 +358,6 @@
 	}
 
 	.legend-serious {
-		background: #7c3aed;
+		background: #d97706;
 	}
 </style>

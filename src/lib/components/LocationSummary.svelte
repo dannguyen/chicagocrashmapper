@@ -94,13 +94,13 @@
 			</div>
 
 			<div class="summary-card">
-				<div class="summary-value summary-value-fatal">{stats.fatalCount}</div>
-				<div class="summary-label">Fatal</div>
+				<div class="summary-value summary-value-serious">{stats.incapCount}</div>
+				<div class="summary-label">Serious Injury</div>
 			</div>
 
 			<div class="summary-card">
-				<div class="summary-value summary-value-serious">{stats.incapCount}</div>
-				<div class="summary-label">Serious Injury</div>
+				<div class="summary-value summary-value-fatal">{stats.fatalCount}</div>
+				<div class="summary-label">Fatal</div>
 			</div>
 
 			<div class="summary-card">
@@ -197,7 +197,7 @@
 	}
 
 	.summary-value-serious {
-		color: #7c3aed;
+		color: #d97706;
 	}
 
 	.summary-value-urgent {

@@ -312,13 +312,14 @@ export class Crash {
 			day: 'numeric',
 			year: 'numeric'
 		});
+		const time = this.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
 		return (
 			headline +
 			` near ` +
 			`${this.street_no ?? ''} ${this.street_direction} ` +
 			`${this.street_name}` +
-			` on ${dateline}`
+			` on ${dateline} at ${time}`
 		);
 	}
 	get isFatal(): boolean {

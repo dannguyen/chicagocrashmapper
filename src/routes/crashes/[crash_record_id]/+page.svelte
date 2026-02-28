@@ -23,7 +23,7 @@
 			await MapperInstance.init(mapId, [crash.latitude, crash.longitude], 16);
 			if (destroyed || !MapperInstance.map || !MapperInstance.L) return;
 
-			const markerColor = crash.isFatal ? '#dc2626' : '#7c3aed';
+			const markerColor = crash.isFatal ? '#dc2626' : '#d97706';
 			MapperInstance.L.circleMarker([crash.latitude, crash.longitude], {
 				radius: 10,
 				color: markerColor,
@@ -46,7 +46,7 @@
 	<title>{crash.title}</title>
 </svelte:head>
 
-<div class="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
+<div class="max-w-7xl mx-auto px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
 	<!-- Back link -->
 	<nav class="text-sm">
 		<button
@@ -57,11 +57,13 @@
 	</nav>
 
 	<!-- Page title -->
-	<h1 class="text-2xl font-bold text-gray-900">{crash.title}</h1>
+	<h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight break-words">
+		{crash.title}
+	</h1>
 
 	<!-- Map -->
 	<div class="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-		<div bind:this={mapEl} class="w-full" style="height:350px"></div>
+		<div bind:this={mapEl} class="w-full h-[240px] sm:h-[350px]"></div>
 	</div>
 
 	<!-- Main content delegated to CrashDetail -->

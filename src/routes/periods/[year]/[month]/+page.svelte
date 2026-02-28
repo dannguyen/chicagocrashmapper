@@ -28,7 +28,7 @@
 	);
 
 	function monthUrl(y: number, m: number): string {
-		return `${base}/crashes/period/${y}/${m}`;
+		return `${base}/periods/${y}/${m}`;
 	}
 
 	const prevLabel = $derived(`${MONTH_SHORT[prev.month - 1]} ${prev.year}`);
@@ -41,9 +41,9 @@
 
 <div class="period-header">
 	<nav class="breadcrumb">
-		<a href={`${base}/crashes`} class="crumb-link">Crashes</a>
+		<a href={`${base}/periods`} class="crumb-link">Crashes</a>
 		<span class="crumb-sep">/</span>
-		<a href={`${base}/crashes/period/${data.year}`} class="crumb-link">{data.year}</a>
+		<a href={`${base}/periods/${data.year}`} class="crumb-link">{data.year}</a>
 		<span class="crumb-sep">/</span>
 		<h1 class="crumb-heading">{monthName} Serious Crashes</h1>
 	</nav>

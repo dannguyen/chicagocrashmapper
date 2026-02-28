@@ -70,7 +70,7 @@
 					{
 						label: 'Serious',
 						count: crash.injuries_incapacitating,
-						color: 'bg-purple-600'
+						color: 'bg-amber-600'
 					},
 					{
 						label: 'Minor',
@@ -137,7 +137,9 @@
 
 			<!-- Date / age aligned right -->
 			<div class="hero-meta">
-				<time datetime={crash.date.toISOString()} class="hero-date">{crash.prettyDate}</time>
+				<time datetime={crash.date.toISOString()} class="hero-date"
+					>{crash.prettyDate} at {crash.prettyTime}</time
+				>
 				<span class="hero-age">{currentAgeSimplified(crash.date)}</span>
 			</div>
 		</div>
@@ -322,9 +324,18 @@
 
 	.hero-header {
 		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 1rem;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 640px) {
+		.hero-header {
+			flex-direction: row;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 1rem;
+		}
 	}
 
 	.hero-main {
@@ -363,16 +374,26 @@
 
 	.hero-cause {
 		margin-top: 0.5rem;
-		font-size: 1.25rem;
+		font-size: 1.125rem;
 		font-weight: 600;
 		color: #111827;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
 		word-break: break-word;
+	}
+
+	@media (min-width: 640px) {
+		.hero-cause {
+			font-size: 1.25rem;
+		}
 	}
 
 	.hero-location {
 		margin-top: 0.25rem;
 		font-size: 0.875rem;
 		color: #4b5563;
+		line-height: 1.5;
+		overflow-wrap: anywhere;
 		word-break: break-word;
 	}
 
@@ -386,19 +407,29 @@
 	}
 
 	.hero-meta {
-		text-align: right;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		text-align: left;
 		flex-shrink: 0;
+	}
+
+	@media (min-width: 640px) {
+		.hero-meta {
+			text-align: right;
+			align-items: flex-end;
+		}
 	}
 
 	.hero-date {
 		display: block;
 		font-size: 0.875rem;
-		color: #9ca3af;
+		color: #6b7280;
 	}
 
 	.hero-age {
 		font-size: 0.875rem;
-		color: #9ca3af;
+		color: #6b7280;
 		font-style: italic;
 	}
 
@@ -444,10 +475,21 @@
 
 	.info-row {
 		display: flex;
-		justify-content: space-between;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.25rem;
 		padding: 0.375rem 0;
 		border-bottom: 1px solid #f3f4f6;
 		font-size: 0.875rem;
+	}
+
+	@media (min-width: 640px) {
+		.info-row {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+		}
 	}
 
 	.info-row-last {
@@ -465,11 +507,18 @@
 	.info-value {
 		font-weight: 500;
 		color: #1f2937;
+		overflow-wrap: anywhere;
 	}
 
 	.info-value-right {
-		text-align: right;
+		text-align: left;
 		word-break: break-word;
+	}
+
+	@media (min-width: 640px) {
+		.info-value-right {
+			text-align: right;
+		}
 	}
 
 	.injury-item {
@@ -510,11 +559,21 @@
 
 	.person-row {
 		display: flex;
-		align-items: center;
+		flex-direction: column;
+		align-items: flex-start;
 		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
-		padding: 0.75rem 1rem;
+		gap: 0.5rem;
+		padding: 0.75rem 0;
+	}
+
+	@media (min-width: 640px) {
+		.person-row {
+			flex-direction: row;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 0.25rem 1rem;
+			padding: 0.75rem 1rem;
+		}
 	}
 
 	.person-row + .person-row {
@@ -525,6 +584,13 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
+		width: 100%;
+	}
+
+	@media (min-width: 640px) {
+		.person-main {
+			width: auto;
+		}
 	}
 
 	.person-header {
@@ -546,6 +612,7 @@
 	.person-name {
 		font-size: 0.875rem;
 		color: #1f2937;
+		overflow-wrap: anywhere;
 	}
 
 	.person-vehicle {
@@ -572,6 +639,13 @@
 		align-items: center;
 		gap: 0.375rem;
 		flex-shrink: 0;
+		align-self: flex-start;
+	}
+
+	@media (min-width: 640px) {
+		.person-injury {
+			align-self: center;
+		}
 	}
 
 	.person-dot {

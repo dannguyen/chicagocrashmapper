@@ -322,14 +322,14 @@
 							<div class="kpi-label">Serious Crashes</div>
 						</div>
 						<div class="kpi-col">
-							<div class="kpi-primary kpi-fatal">{summary.fatal_injuries.toLocaleString()}</div>
-							<div class="kpi-label">People Killed</div>
-						</div>
-						<div class="kpi-col">
 							<div class="kpi-primary kpi-serious">
 								{summary.incapacitating_injuries.toLocaleString()}
 							</div>
 							<div class="kpi-label">Serious Injuries</div>
+						</div>
+						<div class="kpi-col">
+							<div class="kpi-primary kpi-fatal">{summary.fatal_injuries.toLocaleString()}</div>
+							<div class="kpi-label">People Killed</div>
 						</div>
 					</div>
 
@@ -348,18 +348,6 @@
 									>
 								</div>
 								<div class="kpi-col">
-									<span class="kpi-abs kpi-abs-fatal"
-										>{prevSummary.fatal_injuries.toLocaleString()}</span
-									>
-									<span
-										class="kpi-delta"
-										class:up={fatalPrevDelta !== null && fatalPrevDelta > 0}
-										class:down={fatalPrevDelta !== null && fatalPrevDelta < 0}
-										class:flat={fatalPrevDelta === null || fatalPrevDelta === 0}
-										>{formatPct(fatalPrevDelta)}</span
-									>
-								</div>
-								<div class="kpi-col">
 									<span class="kpi-abs kpi-abs-serious"
 										>{prevSummary.incapacitating_injuries.toLocaleString()}</span
 									>
@@ -369,6 +357,18 @@
 										class:down={seriousPrevDelta !== null && seriousPrevDelta < 0}
 										class:flat={seriousPrevDelta === null || seriousPrevDelta === 0}
 										>{formatPct(seriousPrevDelta)}</span
+									>
+								</div>
+								<div class="kpi-col">
+									<span class="kpi-abs kpi-abs-fatal"
+										>{prevSummary.fatal_injuries.toLocaleString()}</span
+									>
+									<span
+										class="kpi-delta"
+										class:up={fatalPrevDelta !== null && fatalPrevDelta > 0}
+										class:down={fatalPrevDelta !== null && fatalPrevDelta < 0}
+										class:flat={fatalPrevDelta === null || fatalPrevDelta === 0}
+										>{formatPct(fatalPrevDelta)}</span
 									>
 								</div>
 							</div>
@@ -390,18 +390,6 @@
 									>
 								</div>
 								<div class="kpi-col">
-									<span class="kpi-abs kpi-abs-fatal"
-										>{yearAgoSummary.fatal_injuries.toLocaleString()}</span
-									>
-									<span
-										class="kpi-delta"
-										class:up={fatalYoyDelta !== null && fatalYoyDelta > 0}
-										class:down={fatalYoyDelta !== null && fatalYoyDelta < 0}
-										class:flat={fatalYoyDelta === null || fatalYoyDelta === 0}
-										>{formatPct(fatalYoyDelta)}</span
-									>
-								</div>
-								<div class="kpi-col">
 									<span class="kpi-abs kpi-abs-serious"
 										>{yearAgoSummary.incapacitating_injuries.toLocaleString()}</span
 									>
@@ -411,6 +399,18 @@
 										class:down={seriousYoyDelta !== null && seriousYoyDelta < 0}
 										class:flat={seriousYoyDelta === null || seriousYoyDelta === 0}
 										>{formatPct(seriousYoyDelta)}</span
+									>
+								</div>
+								<div class="kpi-col">
+									<span class="kpi-abs kpi-abs-fatal"
+										>{yearAgoSummary.fatal_injuries.toLocaleString()}</span
+									>
+									<span
+										class="kpi-delta"
+										class:up={fatalYoyDelta !== null && fatalYoyDelta > 0}
+										class:down={fatalYoyDelta !== null && fatalYoyDelta < 0}
+										class:flat={fatalYoyDelta === null || fatalYoyDelta === 0}
+										>{formatPct(fatalYoyDelta)}</span
 									>
 								</div>
 							</div>
@@ -448,7 +448,7 @@
 								{@const incapH = barH(bar.injuries_incapacitating)}
 								{@const fatalH = barH(bar.injuries_fatal)}
 								{@const x = i * (barWidth + barGap)}
-								<rect {x} y={chartHeight - incapH} width={barWidth} height={incapH} fill="#9333ea">
+								<rect {x} y={chartHeight - incapH} width={barWidth} height={incapH} fill="#f59e0b">
 									<title>{formatTooltip(bar)}</title>
 								</rect>
 								<rect
@@ -658,7 +658,7 @@
 	}
 
 	.kpi-primary.kpi-serious {
-		color: #7c3aed;
+		color: #d97706;
 	}
 
 	.kpi-label {
@@ -694,7 +694,7 @@
 	}
 
 	.kpi-abs-serious {
-		color: #7c3aed;
+		color: #d97706;
 	}
 
 	.kpi-delta {
@@ -773,7 +773,7 @@
 	}
 
 	.legend-serious {
-		background: #9333ea;
+		background: #f59e0b;
 	}
 
 	.chart-scroll {
