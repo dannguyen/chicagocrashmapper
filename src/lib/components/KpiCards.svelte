@@ -13,11 +13,13 @@
 	let loading = $state(true);
 	let error = $state(false);
 
+	let useYtd = $state(false);
 	let cur = $state<WindowTotals>({ crashes: 0, fatal: 0, incap: 0 });
 	let prev = $state<WindowTotals>({ crashes: 0, fatal: 0, incap: 0 });
 	let yoy = $state<WindowTotals>({ crashes: 0, fatal: 0, incap: 0 });
 	let curStart = $state(new Date());
 	let curEnd = $state(new Date());
+	let lastYear = $state(0);
 
 	function sumWindow(
 		periods: Record<string, DateCountPeriod>,
@@ -51,17 +53,34 @@
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
 
-			curStart = addDays(today, -29);
-			curEnd = today;
-			cur = sumWindow(periods, curStart, curEnd);
+			const jan1 = new Date(today.getFullYear(), 0, 1);
+			const daysYtd = Math.round((today.getTime() - jan1.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+			useYtd = daysYtd >= 31;
 
-			const prevStart = addDays(today, -59);
-			const prevEnd = addDays(today, -30);
-			prev = sumWindow(periods, prevStart, prevEnd);
+			if (useYtd) {
+				// YTD mode: Jan 1 to today, compare same period last year
+				curStart = jan1;
+				curEnd = today;
+				cur = sumWindow(periods, curStart, curEnd);
 
-			const yoyStart = addDays(today, -394);
-			const yoyEnd = addDays(today, -365);
-			yoy = sumWindow(periods, yoyStart, yoyEnd);
+				const yoyStart = new Date(today.getFullYear() - 1, 0, 1);
+				const yoyEnd = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+				yoy = sumWindow(periods, yoyStart, yoyEnd);
+				lastYear = today.getFullYear() - 1;
+			} else {
+				// 30-day mode: previous 30d + same period last year
+				curStart = addDays(today, -29);
+				curEnd = today;
+				cur = sumWindow(periods, curStart, curEnd);
+
+				const prevStart = addDays(today, -59);
+				const prevEnd = addDays(today, -30);
+				prev = sumWindow(periods, prevStart, prevEnd);
+
+				const yoyStart = addDays(today, -394);
+				const yoyEnd = addDays(today, -365);
+				yoy = sumWindow(periods, yoyStart, yoyEnd);
+			}
 		} catch {
 			error = true;
 		} finally {
@@ -85,7 +104,8 @@
 {:else}
 	<div class="kpi-card">
 		<h3 class="kpi-heading">
-			Last 30 days <span class="kpi-date-range"
+			{#if useYtd}{curEnd.getFullYear()} Year to Date{:else}Last 30 days{/if}
+			<span class="kpi-date-range"
 				>({formatShortDate(curStart)} &ndash; {formatShortDate(curEnd)})</span
 			>
 		</h3>
@@ -106,43 +126,47 @@
 			</div>
 		</div>
 
-		<!-- Row 2: previous 30d -->
-		<div class="kpi-compare">
-			<div class="kpi-compare-label">Previous 30-day period</div>
-			<div class="kpi-grid">
-				<div class="kpi-col">
-					<span class="kpi-abs">{prev.crashes.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={crashesPop !== null && crashesPop > 0}
-						class:down={crashesPop !== null && crashesPop < 0}
-						class:flat={crashesPop === null || crashesPop === 0}>{formatPct(crashesPop)}</span
-					>
-				</div>
-				<div class="kpi-col">
-					<span class="kpi-abs kpi-abs-serious">{prev.incap.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={injuredPop !== null && injuredPop > 0}
-						class:down={injuredPop !== null && injuredPop < 0}
-						class:flat={injuredPop === null || injuredPop === 0}>{formatPct(injuredPop)}</span
-					>
-				</div>
-				<div class="kpi-col">
-					<span class="kpi-abs kpi-abs-fatal">{prev.fatal.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={killedPop !== null && killedPop > 0}
-						class:down={killedPop !== null && killedPop < 0}
-						class:flat={killedPop === null || killedPop === 0}>{formatPct(killedPop)}</span
-					>
+		<!-- Row 2: previous 30d (only in 30-day mode) -->
+		{#if !useYtd}
+			<div class="kpi-compare">
+				<div class="kpi-compare-label">Previous 30-day period</div>
+				<div class="kpi-grid">
+					<div class="kpi-col">
+						<span class="kpi-abs">{prev.crashes.toLocaleString()}</span>
+						<span
+							class="kpi-delta"
+							class:up={crashesPop !== null && crashesPop > 0}
+							class:down={crashesPop !== null && crashesPop < 0}
+							class:flat={crashesPop === null || crashesPop === 0}>{formatPct(crashesPop)}</span
+						>
+					</div>
+					<div class="kpi-col">
+						<span class="kpi-abs kpi-abs-serious">{prev.incap.toLocaleString()}</span>
+						<span
+							class="kpi-delta"
+							class:up={injuredPop !== null && injuredPop > 0}
+							class:down={injuredPop !== null && injuredPop < 0}
+							class:flat={injuredPop === null || injuredPop === 0}>{formatPct(injuredPop)}</span
+						>
+					</div>
+					<div class="kpi-col">
+						<span class="kpi-abs kpi-abs-fatal">{prev.fatal.toLocaleString()}</span>
+						<span
+							class="kpi-delta"
+							class:up={killedPop !== null && killedPop > 0}
+							class:down={killedPop !== null && killedPop < 0}
+							class:flat={killedPop === null || killedPop === 0}>{formatPct(killedPop)}</span
+						>
+					</div>
 				</div>
 			</div>
-		</div>
+		{/if}
 
 		<!-- Row 3: last year -->
 		<div class="kpi-compare">
-			<div class="kpi-compare-label">Same period last year</div>
+			<div class="kpi-compare-label">
+				{#if useYtd}Same period in {lastYear}{:else}Same period last year{/if}
+			</div>
 			<div class="kpi-grid">
 				<div class="kpi-col">
 					<span class="kpi-abs">{yoy.crashes.toLocaleString()}</span>

@@ -11,6 +11,7 @@
 	import CrashList from '$lib/components/CrashList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import TrendChart from '$lib/components/TrendChart.svelte';
+	import NarrativeSummary from '$lib/components/NarrativeSummary.svelte';
 	import KpiCards from '$lib/components/KpiCards.svelte';
 	import SiteNav from '$lib/components/layout/SiteNav.svelte';
 
@@ -31,7 +32,12 @@
 		try {
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
-			const since = toDateStr(addDays(today, -29));
+
+			const jan1 = new Date(today.getFullYear(), 0, 1);
+			const daysYtd = Math.round((today.getTime() - jan1.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+			const useYtd = daysYtd >= 31;
+
+			const since = toDateStr(useYtd ? jan1 : addDays(today, -29));
 			const until = toDateStr(today);
 			const result = await getCrashesList({
 				since,
@@ -51,6 +57,12 @@
 <svelte:head>
 	<title>{SITE_NAME}</title>
 </svelte:head>
+
+{#if !appState.loading}
+	<div class="narrative-summary">
+		<NarrativeSummary />
+	</div>
+{/if}
 
 <div class="homepage-search">
 	<SiteNav />
@@ -90,9 +102,9 @@
 				</svg>
 				<span class="loading-label">Loading...</span>
 			{:else}
-				<span class="results-summary">
-					{appState.crashes.length} serious crashes in the last 30 days
-				</span>
+				<div class="results-summary">
+					{appState.crashes.length} serious crashes (with locations)
+				</div>
 			{/if}
 		</div>
 		<!-- Crash list -->
@@ -211,6 +223,12 @@
 		font-size: 0.875rem;
 		font-weight: 500;
 		color: #6b7280;
+	}
+
+	.narrative-summary {
+		font-size: 1.2rem;
+		font-weight: 400;
+		margin: 0.1rem 0 1rem 0;
 	}
 
 	.results-summary {
