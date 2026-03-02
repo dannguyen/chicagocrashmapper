@@ -27,8 +27,12 @@
 	let tooltipY = $state(0);
 
 	const chartHeight = 80;
-	const barWidth = 16;
-	const barGap = 3;
+	const labelHeight = 22;
+
+	// Compute bar geometry from period count; viewBox scales to fit container
+	const svgWidth = $derived(periods.length > 0 ? periods.length * 19 : 456);
+	const barGap = $derived((svgWidth / periods.length) * 0.16);
+	const barWidth = $derived(svgWidth / periods.length - barGap);
 
 	onMount(async () => {
 		try {
@@ -117,8 +121,8 @@
 		<!-- Chart -->
 		<div class="trend-chart">
 			<svg
-				width={periods.length * (barWidth + barGap)}
-				height={chartHeight + 22}
+				viewBox="0 0 {svgWidth} {chartHeight + labelHeight}"
+				preserveAspectRatio="xMinYMin meet"
 				class="trend-svg"
 				role="img"
 				aria-label="Monthly injury trend chart"
@@ -278,12 +282,13 @@
 	}
 
 	.trend-chart {
-		overflow-x: auto;
 		position: relative;
 	}
 
 	.trend-svg {
 		display: block;
+		width: 100%;
+		height: auto;
 	}
 
 	.bar-hit {

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { Crash, parseCrashes, Person, Vehicle } from '$lib/crash';
+import { Crash, parseCrashes } from '$lib/models/crash';
+import { Person } from '$lib/models/person';
+import { Vehicle } from '$lib/models/vehicle';
+
 import { makeCrashRecord, makePersonRecord, makeVehicleRecord } from './fixtures';
 
 function datelineFor(crashDate: string): string {
@@ -149,8 +152,8 @@ describe('Crash', () => {
 	});
 
 	describe('title', () => {
-		it('includes killed count and location', () => {
-			const crashDate = '2024-03-01';
+		it('includes killed count and location, and date and time', () => {
+			const crashDate = '2024-03-01 13:01';
 			const crash = new Crash(
 				makeCrashRecord({
 					injuries_fatal: 1,
@@ -161,7 +164,9 @@ describe('Crash', () => {
 					street_name: 'State'
 				})
 			);
-			expect(crash.title).toBe(`1 killed near 1200 S State on ${datelineFor(crashDate)}`);
+			expect(crash.title).toBe(
+				`1 killed near 1200 S State on ${datelineFor(crashDate)} at 1:01 PM`
+			);
 		});
 
 		it('includes seriously injured count', () => {

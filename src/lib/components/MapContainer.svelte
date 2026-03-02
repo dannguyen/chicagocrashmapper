@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping';
-	import { Crash } from '$lib/crash';
+	import { Crash } from '$lib/models/crash';
 	import { Location } from '$lib/location';
-	import { popupHtml } from '$lib/crashFormat';
+	import { popupHtml } from '$lib/models/crashFormat';
 
 	let {
 		selectedLocation = null,

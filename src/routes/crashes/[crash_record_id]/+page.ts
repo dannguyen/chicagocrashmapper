@@ -1,6 +1,6 @@
 import type { PageLoad } from './$types';
 import { getCrashById } from '$lib/api/client';
-import { Crash } from '$lib/crash';
+import { Crash } from '$lib/models/crash';
 import { error } from '@sveltejs/kit';
 
 export const ssr = false;

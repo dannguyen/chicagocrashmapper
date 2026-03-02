@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Crash } from '$lib/crash';
+	import type { Crash } from '$lib/models/crash';
 	import type { Location } from '$lib/location';
 	import type { CrashSummary } from '$lib/db/types';
 	let {

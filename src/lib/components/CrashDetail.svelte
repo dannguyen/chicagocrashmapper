@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type { Crash, Person, Vehicle } from '$lib/crash';
+	import type { Crash } from '$lib/models/crash';
+	import type { Person } from '$lib/models/person';
+	import type { Vehicle } from '$lib/models/vehicle';
+
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
 	import {
 		crashSeverity,

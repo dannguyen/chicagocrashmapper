@@ -3,7 +3,7 @@
 	import { Mapper } from '$lib/mapping';
 	import { SITE_NAME } from '$lib/constants';
 	import CrashDetail from '$lib/components/CrashDetail.svelte';
-	import type { Crash } from '$lib/crash';
+	import type { Crash } from '$lib/models/crash';
 	import type { PageData } from './$types';
 
 	let { data } = $props<{ data: PageData }>();

@@ -1,5 +1,5 @@
-import type { Crash } from '$lib/crash';
-import type { Person } from '$lib/crash';
+import type { Crash } from '$lib/models/crash';
+import type { Person } from '$lib/models/person';
 
 export type SeverityLevel = 'fatal' | 'serious' | 'minor' | 'none';
 export type InjuryLevel = 'fatal' | 'serious' | 'minor' | 'unclear' | 'none' | 'unknown';

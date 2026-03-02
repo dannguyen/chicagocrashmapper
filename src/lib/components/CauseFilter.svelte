@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Crash } from '$lib/crash';
-	import { fmtCause } from '$lib/crashFormat';
+	import type { Crash } from '$lib/models/crash';
+	import { fmtCause } from '$lib/models/crashFormat';
 
 	let { crashes, activeCause, onSelectCause } = $props<{
 		crashes: Crash[];

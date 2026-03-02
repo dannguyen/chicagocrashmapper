@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Crash, parseCrashes } from '$lib/crash';
-	import type { CrashRecord } from '$lib/crash';
+	import { Crash, parseCrashes } from '$lib/models/crash';
 	import { Location } from '$lib/location';
 	import { getCrashSummary, getCrashesList } from '$lib/api/client';
 	import type { CrashListResult } from '$lib/api/client';

@@ -1,6 +1,6 @@
 import { Location } from '$lib/location';
-import type { Crash } from '$lib/crash';
-import { parseCrashes } from '$lib/crash';
+import type { Crash } from '$lib/models/crash';
+import { parseCrashes } from '$lib/models/crash';
 import { getCrashesNearPoint, getCrashesWithin, getRecentCrashes } from '$lib/api/client';
 import type { LocationRecord } from '$lib/db/types';
 import { DEFAULT_MAX_DISTANCE_FT, DEFAULT_MAX_DAYS } from '$lib/constants';

@@ -1,4 +1,7 @@
-import type { CrashRecord, PersonRecord, VehicleRecord } from '$lib/crash';
+import type { CrashRecord } from '$lib/models/crash';
+import type { PersonRecord } from '$lib/models/person';
+import type { VehicleRecord } from '$lib/models/vehicle';
+
 import type { LocationRecord } from '$lib/db/types';
 
 export function makePersonRecord(overrides: Partial<PersonRecord> = {}): PersonRecord {

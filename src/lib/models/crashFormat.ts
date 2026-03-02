@@ -1,5 +1,6 @@
 import { base } from '$app/paths';
-import type { Crash, Person } from '$lib/crash';
+import type { Crash } from '$lib/models/crash';
+import type { Person } from '$lib/models/person';
 import { crashSeverity, severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
 import { SEVERITY_COLORS } from '$lib/constants';

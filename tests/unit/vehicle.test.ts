@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { Person, Vehicle } from '$lib/crash';
+import { Person } from '$lib/models/person';
+import { Vehicle } from '$lib/models/vehicle';
+
 import { makePersonRecord, makeVehicleRecord } from './fixtures';
 
 describe('Vehicle', () => {

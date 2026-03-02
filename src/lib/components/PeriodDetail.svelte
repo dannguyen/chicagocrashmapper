@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Crash, parseCrashes } from '$lib/crash';
+	import { Crash, parseCrashes } from '$lib/models/crash';
 	import { getCrashSummary, getCrashesList, getDateCount } from '$lib/api/client';
 	import type { CrashListResult } from '$lib/api/client';
 	import type { CrashSummary } from '$lib/db/types';

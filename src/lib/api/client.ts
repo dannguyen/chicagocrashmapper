@@ -11,7 +11,7 @@ import type {
 	CrashSummary,
 	DateCountPeriod
 } from '$lib/db/types';
-import type { CrashRecord } from '$lib/crash';
+import type { CrashRecord } from '$lib/models/crash';
 
 const API_BASE = PUBLIC_API_BASE_URL ?? '';
 

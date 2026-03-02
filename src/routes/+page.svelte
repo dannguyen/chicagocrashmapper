@@ -4,8 +4,8 @@
 
 	import { appState } from '$lib/components/AppState.svelte';
 	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
-	import type { Crash } from '$lib/crash';
-	import { parseCrashes } from '$lib/crash';
+	import type { Crash } from '$lib/models/crash';
+	import { parseCrashes } from '$lib/models/crash';
 	import { getCrashesList, getDateCount } from '$lib/api/client';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import MapContainer from '$lib/components/MapContainer.svelte';
@@ -221,7 +221,7 @@
 		min-height: calc(100vh - 8rem);
 	}
 
-	@media (min-width: 1024px) {
+	@media (min-width: 768px) {
 		.dashboard-layout {
 			flex-direction: row;
 			gap: 1.5rem;
@@ -235,9 +235,10 @@
 		gap: 0.75rem;
 	}
 
-	@media (min-width: 1024px) {
+	@media (min-width: 768px) {
 		.left-column {
-			width: 55%;
+			flex: 55 1 0%;
+			min-width: 0;
 			position: sticky;
 			top: 3.5rem;
 			height: calc(100vh - 3.5rem);
@@ -264,9 +265,10 @@
 		gap: 1rem;
 	}
 
-	@media (min-width: 1024px) {
+	@media (min-width: 768px) {
 		.right-column {
-			width: 45%;
+			flex: 45 1 0%;
+			min-width: 0;
 			overflow-y: auto;
 			max-height: calc(100vh - 3.5rem);
 		}

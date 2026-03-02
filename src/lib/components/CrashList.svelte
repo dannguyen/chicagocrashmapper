@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { Crash } from '$lib/crash';
+	import { Crash } from '$lib/models/crash';
 	import type { Location } from '$lib/location';
-	import { fmtCause, peopleSummary } from '$lib/crashFormat';
+	import { fmtCause, peopleSummary } from '$lib/models/crashFormat';
 	import { crashSeverity, severityLabel } from '$lib/severity';
 
 	let { crashes, selectedLocation, distanceUnits, showCrashOnMap } = $props<{

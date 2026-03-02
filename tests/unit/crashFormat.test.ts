@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { Crash } from '$lib/crash';
-import { contextInfo, fmtCause, peopleSummary, popupHtml } from '$lib/crashFormat';
+import { Crash } from '$lib/models/crash';
+import { contextInfo, fmtCause, peopleSummary, popupHtml } from '$lib/models/crashFormat';
 import { makeCrashRecord, makePersonRecord, makeVehicleRecord } from './fixtures';
 
 describe('fmtCause', () => {

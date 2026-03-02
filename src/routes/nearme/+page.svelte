@@ -4,7 +4,7 @@
 	import { appState } from '$lib/components/AppState.svelte';
 	import { SEARCH_DEBOUNCE_MS, SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { Location } from '$lib/location';
-	import type { Crash } from '$lib/crash';
+	import type { Crash } from '$lib/models/crash';
 	import CrashList from '$lib/components/CrashList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
