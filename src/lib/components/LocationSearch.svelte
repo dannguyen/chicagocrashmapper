@@ -123,7 +123,8 @@
 		oninput={handleInput}
 		onkeydown={handleKeydown}
 		onclick={handleInputClick}
-		placeholder={locationName || 'Enter location name...'}
+		placeholder={locationName ||
+			'Enter the name of a ward, neighborhood, street, or intersection...'}
 		id="search-input-field"
 		autocomplete="off"
 		class="search-input"
@@ -170,8 +171,8 @@
 		width: 100%;
 		border-radius: 0.5rem;
 		border: 1px solid #d1d5db;
-		padding: 0.625rem 1rem;
-		font-size: 0.875rem;
+		padding: 0.4rem 1rem;
+		font-size: 0.775rem;
 		background: #fff;
 		transition:
 			border-color 120ms ease,
@@ -203,7 +204,7 @@
 	.search-option {
 		width: 100%;
 		text-align: left;
-		padding: 0.75rem 1rem;
+		padding: 0.55rem 1rem;
 		border-bottom: 1px solid #f3f4f6;
 		display: flex;
 		align-items: center;
@@ -227,9 +228,9 @@
 
 	.badge {
 		flex-shrink: 0;
-		font-size: 0.75rem;
-		font-weight: 500;
-		padding: 0.125rem 0.5rem;
+		font-size: 0.6rem;
+		font-weight: 400;
+		padding: 0.125rem 0.3rem;
 		border-radius: 9999px;
 	}
 
@@ -254,7 +255,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		font-size: 0.875rem;
+		font-size: 0.7rem;
 		font-weight: 500;
 		color: #111827;
 	}

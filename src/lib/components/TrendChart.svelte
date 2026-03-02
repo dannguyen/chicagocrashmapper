@@ -6,6 +6,12 @@
 	import type { DateCountPeriod } from '$lib/db/types';
 	import { MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
 
+	interface Props {
+		months?: number;
+	}
+
+	let { months = 24 }: Props = $props();
+
 	interface PeriodData {
 		period: string;
 		injuries_fatal: number;
@@ -26,7 +32,7 @@
 
 	onMount(async () => {
 		try {
-			const data = await getDateCount('month', 18);
+			const data = await getDateCount('month', months);
 			periods = Object.entries(data)
 				.map(([period, vals]: [string, DateCountPeriod]) => ({
 					period,
@@ -101,7 +107,7 @@
 	<div class="trend-card">
 		<!-- Header -->
 		<div class="trend-header">
-			<h3 class="trend-title">18-Month Injury Trend</h3>
+			<h3 class="trend-title">{months}-Month Injury Trend</h3>
 			<div class="trend-stats">
 				<span class="trend-stat trend-stat-fatal">{totalFatal} killed</span>
 				<span class="trend-stat trend-stat-serious">{totalIncap} seriously injured</span>

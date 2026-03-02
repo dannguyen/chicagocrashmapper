@@ -11,7 +11,9 @@
 
 <nav class="site-nav" aria-label="Search navigation">
 	<p class="nav-hint">
-		Type in a location name, or click <a class="near-me-link" href={`${base}/nearme`}>Near Me</a>
+		Show crashes
+		<a class="near-me-link" href={`${base}/nearme`}>near you</a>
+		or type in a location name:
 	</p>
 
 	<div class="nav-row">
