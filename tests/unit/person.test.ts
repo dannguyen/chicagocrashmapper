@@ -34,83 +34,209 @@ describe('Person', () => {
 		});
 	});
 
-	describe('ageLabel', () => {
-		it('returns age-year-old for positive ages', () => {
+	describe('identity bool props', () => {
+		describe('isAdult', () => {
+			it('based solely on age >= 18', () => {
+				expect(new Person(makePersonRecord({ age: 18 })).isAdult).toBe(true);
+				expect(new Person(makePersonRecord({ age: 17 })).isAdult).toBe(false);
+				expect(new Person(makePersonRecord({ age: null })).isAdult).toBe(false);
+				expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 0 })).isAdult).toBe(false);
+			});
+		});
+
+		describe('isLikelyInfant', () => {
+			it('age is 0, and another indicator', () => {
+				expect(
+					new Person(makePersonRecord({ age: 0, safety_equipment: 'CHILD RESTRAINT' }))
+						.isLikelyInfant
+				).toBe(true);
+				expect(
+					new Person(makePersonRecord({ age: 1, safety_equipment: 'CHILD RESTRAINT' }))
+						.isLikelyInfant
+				).toBe(false);
+
+				expect(
+					new Person(makePersonRecord({ age: 0, safety_equipment: 'SEATBELT' })).isLikelyInfant
+				).toBe(false);
+			});
+		});
+
+		describe('isDriver', () => {
+			it('derives isDriver from person_type', () => {
+				expect(new Person(makePersonRecord({ person_type: 'DRIVER' })).isDriver).toBe(true);
+				expect(new Person(makePersonRecord({ person_type: 'PASSENGER' })).isDriver).toBe(false);
+			});
+		});
+
+		describe('isCyclist', () => {
+			it('derives isCyclist from person_type', () => {
+				expect(new Person(makePersonRecord({ person_type: 'BICYCLE' })).isCyclist).toBe(true);
+				expect(new Person(makePersonRecord({ person_type: 'NON-MOTOR VEHICLE' })).isCyclist).toBe(
+					false
+				);
+			});
+		});
+	});
+
+	describe('basic bool props', () => {
+		describe('usedChildSafetyDevice', () => {
+			it('looks for CHILD or BOOSTER in the safety_equipment', () => {
+				expect(
+					new Person(
+						makePersonRecord({ age: 20, safety_equipment: 'CHILD RESTRAINT - fORWARD FACING' })
+					).usedChildSafetyDevice
+				).toBe(true);
+				expect(
+					new Person(makePersonRecord({ age: 40, safety_equipment: 'BOOSTER seat' }))
+						.usedChildSafetyDevice
+				).toBe(true);
+
+				expect(
+					new Person(makePersonRecord({ age: 0, safety_equipment: 'SEAT BELT' }))
+						.usedChildSafetyDevice
+				).toBe(false);
+			});
+		});
+
+		describe('isDriver and ageUnknown', () => {
+			it('treats pedestrian age 0 as ageUnknown', () => {
+				expect(new Person(makePersonRecord({ person_type: 'PEDESTRIAN', age: 0 })).ageUnknown).toBe(
+					true
+				);
+			});
+
+			it('treats cyclist age 0 as ageUnknown', () => {
+				expect(new Person(makePersonRecord({ person_type: 'BICYCLE', age: 0 })).ageUnknown).toBe(
+					true
+				);
+			});
+
+			it('does flags passengers with age 0 and no other detail as ageUnknown', () => {
+				expect(new Person(makePersonRecord({ person_type: 'PASSENGER', age: 0 })).ageUnknown).toBe(
+					true
+				);
+			});
+
+			it('a driver with 0/null age is ALWAYS ageUnknown', () => {
+				expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 0 })).ageUnknown).toBe(
+					true
+				);
+				expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: null })).ageUnknown).toBe(
+					true
+				);
+			});
+
+			it('does not flag drivers with age >= 2 as ageUnknown', () => {
+				expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 2 })).ageUnknown).toBe(
+					false
+				);
+			});
+
+			it('treats any person with null age as ageUnknown', () => {
+				expect(
+					new Person(makePersonRecord({ person_type: 'PASSENGER', age: null })).ageUnknown
+				).toBe(true);
+				expect(
+					new Person(makePersonRecord({ person_type: 'PEDESTRIAN', age: null })).ageUnknown
+				).toBe(true);
+			});
+		});
+	});
+
+	describe('ageLabel normal', () => {
+		it('returns age-y.o. for positive ages', () => {
 			expect(new Person(makePersonRecord({ age: 1, person_type: 'PASSENGER' })).ageLabel).toBe(
-				'1-year-old'
+				'1-y.o.'
 			);
 			expect(new Person(makePersonRecord({ age: 123, person_type: 'PASSENGER' })).ageLabel).toBe(
-				'123-year-old'
-			);
-		});
-
-		it('returns infant for age-0 passengers', () => {
-			expect(new Person(makePersonRecord({ age: 0, person_type: 'PASSENGER' })).ageLabel).toBe(
-				'baby or person of unknown age'
-			);
-		});
-
-		it('returns age unknown for non-passenger with null age', () => {
-			expect(new Person(makePersonRecord({ age: null, person_type: 'PASSENGER' })).ageLabel).toBe(
-				'age unknown'
-			);
-		});
-
-		it('returns age unknown for drivers with age 0', () => {
-			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 0 })).ageLabel).toBe(
-				'age unknown'
-			);
-		});
-
-		it('returns age unknown for drivers with null age', () => {
-			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: null })).ageLabel).toBe(
-				'age unknown'
+				'123-y.o.'
 			);
 		});
 	});
 
-	describe('noun', () => {
+	describe('ageLabel: 0-age persons', () => {
+		it('always returns unknown for drivers', () => {
+			expect(new Person(makePersonRecord({ age: 0, person_type: 'DRIVER' })).ageLabel).toBe(
+				'unknown age'
+			);
+		});
+
+		it('returns infant for age-0 passengers, sans other details', () => {
+			expect(new Person(makePersonRecord({ age: 0, person_type: 'PASSENGER' })).ageLabel).toBe(
+				'unknown age'
+			);
+		});
+
+		it('returns unknown age for non-passenger with null age', () => {
+			expect(new Person(makePersonRecord({ age: null, person_type: 'PASSENGER' })).ageLabel).toBe(
+				'unknown age'
+			);
+		});
+
+		it('returns unknown age for drivers with age 0', () => {
+			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 0 })).ageLabel).toBe(
+				'unknown age'
+			);
+		});
+
+		it('returns unknown age for drivers with null age', () => {
+			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: null })).ageLabel).toBe(
+				'unknown age'
+			);
+		});
+	});
+
+	describe('human_noun', () => {
 		it('derives man/woman for adults by sex', () => {
-			expect(new Person(makePersonRecord({ sex: 'M', age: 30 })).noun).toBe('man');
-			expect(new Person(makePersonRecord({ sex: 'F', age: 30 })).noun).toBe('woman');
+			expect(new Person(makePersonRecord({ sex: 'M', age: 30 })).human_noun).toBe('man');
+			expect(new Person(makePersonRecord({ sex: 'F', age: 30 })).human_noun).toBe('woman');
 		});
 
 		it('derives boy/girl for minors by sex', () => {
-			expect(new Person(makePersonRecord({ sex: 'M', age: 15 })).noun).toBe('boy');
-			expect(new Person(makePersonRecord({ sex: 'F', age: 15 })).noun).toBe('girl');
+			expect(new Person(makePersonRecord({ sex: 'M', age: 17 })).human_noun).toBe('boy');
+			expect(new Person(makePersonRecord({ sex: 'F', age: 15 })).human_noun).toBe('girl');
 		});
 
-		it('returns infant for age-0 passengers', () => {
+		it('returns infant for age-0 passengers sans more detail', () => {
 			expect(
-				new Person(makePersonRecord({ sex: 'X', age: 0, person_type: 'PASSENGER' })).noun
-			).toBe('baby or person of unknown age');
+				new Person(makePersonRecord({ sex: 'X', age: 0, person_type: 'PASSENGER' })).human_noun
+			).toBe('infant or unknown age person');
 		});
 
 		it('returns person for non-binary or unknown sex', () => {
-			expect(new Person(makePersonRecord({ sex: 'X', age: 20 })).noun).toBe('person');
-			expect(new Person(makePersonRecord({ sex: null, age: 20 })).noun).toBe('person');
+			expect(new Person(makePersonRecord({ sex: 'X', age: 20 })).human_noun).toBe('person');
+			expect(new Person(makePersonRecord({ sex: null, age: 20 })).human_noun).toBe('person');
 		});
 
 		it('returns person when ageUnknown is true (driver with age 0)', () => {
-			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 0, sex: 'M' })).noun).toBe(
-				'person'
-			);
+			expect(
+				new Person(makePersonRecord({ person_type: 'DRIVER', age: 0, sex: 'M' })).human_noun
+			).toBe('infant or unknown age person');
 		});
 	});
 
 	describe('description', () => {
-		it('combines ageLabel and noun', () => {
-			expect(new Person(makePersonRecord({ sex: 'M', age: 30 })).description).toBe(
-				'30-year-old man'
+		it('combines ageLabel and human_noun', () => {
+			expect(new Person(makePersonRecord({ sex: 'M', age: 30 })).description).toBe('30-y.o. man');
+			expect(new Person(makePersonRecord({ sex: 'F', age: 15 })).description).toBe('15-y.o. girl');
+		});
+
+		it('says unknown age when age is unknown', () => {
+			expect(new Person(makePersonRecord({ sex: 'M', age: null })).description).toBe(
+				'unknown age male'
 			);
-			expect(new Person(makePersonRecord({ sex: 'F', age: 15 })).description).toBe(
-				'15-year-old girl'
+			expect(new Person(makePersonRecord({ sex: 'F', age: null })).description).toBe(
+				'unknown age female'
+			);
+
+			expect(new Person(makePersonRecord({ sex: null, age: null })).description).toBe(
+				'unknown age person'
 			);
 		});
 
-		it('deduplicates when ageLabel and noun are the same', () => {
+		it('deduplicates when ageLabel and human_noun are the same', () => {
 			const infant = new Person(makePersonRecord({ sex: 'X', age: 0, person_type: 'PASSENGER' }));
-			expect(infant.description).toBe('baby or person of unknown age');
+			expect(infant.description).toBe('infant or unknown age person');
 		});
 	});
 
@@ -158,53 +284,6 @@ describe('Person', () => {
 			expect(none.isKilled).toBe(false);
 			expect(none.isInjured).toBe(false);
 			expect(none.isUninjured).toBe(true);
-		});
-	});
-
-	describe('isDriver and ageUnknown', () => {
-		it('derives isDriver from person_type', () => {
-			expect(new Person(makePersonRecord({ person_type: 'DRIVER' })).isDriver).toBe(true);
-			expect(new Person(makePersonRecord({ person_type: 'PASSENGER' })).isDriver).toBe(false);
-		});
-
-		it('treats driver age 0 or missing as ageUnknown', () => {
-			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 0 })).ageUnknown).toBe(true);
-			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: null })).ageUnknown).toBe(
-				true
-			);
-		});
-
-		it('treats pedestrian age 0 as ageUnknown', () => {
-			expect(new Person(makePersonRecord({ person_type: 'PEDESTRIAN', age: 0 })).ageUnknown).toBe(
-				true
-			);
-		});
-
-		it('treats cyclist age 0 as ageUnknown', () => {
-			expect(new Person(makePersonRecord({ person_type: 'BICYCLE', age: 0 })).ageUnknown).toBe(
-				true
-			);
-		});
-
-		it('does not flag passengers with age 0 as ageUnknown', () => {
-			expect(new Person(makePersonRecord({ person_type: 'PASSENGER', age: 0 })).ageUnknown).toBe(
-				false
-			);
-		});
-
-		it('does not flag drivers with age >= 2 as ageUnknown', () => {
-			expect(new Person(makePersonRecord({ person_type: 'DRIVER', age: 2 })).ageUnknown).toBe(
-				false
-			);
-		});
-
-		it('treats any person with null age as ageUnknown', () => {
-			expect(new Person(makePersonRecord({ person_type: 'PASSENGER', age: null })).ageUnknown).toBe(
-				true
-			);
-			expect(
-				new Person(makePersonRecord({ person_type: 'PEDESTRIAN', age: null })).ageUnknown
-			).toBe(true);
 		});
 	});
 });

@@ -39,7 +39,7 @@ describe('peopleSummary', () => {
 				non_passengers: []
 			})
 		);
-		expect(peopleSummary(crash)).toBe('40-year-old man killed');
+		expect(peopleSummary(crash)).toBe('40-y.o. man killed');
 	});
 
 	it('uses count for multiple killed people', () => {
@@ -83,7 +83,7 @@ describe('peopleSummary', () => {
 			})
 		);
 		expect(peopleSummary(crash)).toBe(
-			'40-year-old man killed, 12-year-old girl seriously injured, 1 minor injury'
+			'40-y.o. man killed, 12-y.o. girl seriously injured, 1 minor injury'
 		);
 	});
 

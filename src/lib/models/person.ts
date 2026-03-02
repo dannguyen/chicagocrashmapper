@@ -33,35 +33,82 @@ export class Person {
 		this.driver_action = record.driver_action ?? null;
 	}
 
-	get noun(): string {
-		if (this.ageUnknown) {
-			return 'person';
-		} else if (this.age === 0 && this.person_type === 'PASSENGER') {
-			return 'baby or person of unknown age';
-		} else if (this.sex === 'M') {
-			return this.age != null && this.age >= 18 ? 'man' : 'boy';
-		} else if (this.sex === 'F') {
-			return this.age != null && this.age >= 18 ? 'woman' : 'girl';
+	get isFemale(): boolean {
+		return this.sex === 'F';
+	}
+
+	get isMale(): boolean {
+		return this.sex === 'M';
+	}
+
+	get sexUnknown(): boolean {
+		return (this.isFemale || this.isMale) === false;
+	}
+
+	get isChild(): boolean {
+		return this.isLikelyInfant || (this.age !== null && this.age > 0 && this.age < 18);
+	}
+
+	get isAdult(): boolean {
+		return this.age !== null && this.age >= 18;
+	}
+
+	get usedChildSafetyDevice(): boolean {
+		return this.safety_equipment !== null && /CHILD|BOOSTER/i.test(this.safety_equipment);
+	}
+
+	get ageZero(): boolean {
+		return this.age === 0;
+	}
+
+	get ageAmbiguousZero(): boolean {
+		return this.ageZero && !this.isLikelyInfant;
+	}
+
+	get human_noun(): string {
+		if (this.ageAmbiguousZero) {
+			return 'infant or unknown age person';
+		} else if (this.ageZero) {
+			return this.isFemale ? 'female' : 'male';
+		} else if (this.ageUnknown) {
+			if (this.sexUnknown) {
+				return 'person';
+			} else {
+				return this.isFemale ? 'female' : 'male';
+			}
+		} else if (this.isChild) {
+			if (this.sexUnknown) {
+				return 'child';
+			} else {
+				return this.isFemale ? 'girl' : 'boy';
+			}
+		} else if (this.isAdult) {
+			if (this.sexUnknown) {
+				return 'person';
+			} else {
+				return this.isFemale ? 'woman' : 'man';
+			}
 		} else {
 			return 'person';
 		}
 	}
 
-	get ageLabel(): string {
-		if (this.ageUnknown) {
-			return 'age unknown';
-		} else if (this.age === 0 && this.person_type === 'PASSENGER') {
-			return 'baby or person of unknown age';
-		} else if (this.age != null && this.age > 0) {
-			return `${this.age}-year-old`;
+	get ageLabel(): string | null {
+		if (this.isLikelyInfant) {
+			return 'baby';
+		} else if (!this.ageUnknown) {
+			return `${this.age}-y.o.`;
 		} else {
-			return 'age unknown';
+			return 'unknown age';
 		}
 	}
 
 	get description(): string {
-		const thing = [this.ageLabel, this.noun].filter((t) => t != null && t !== '');
-		return [...new Set(thing)].join(' ');
+		if (this.ageAmbiguousZero) {
+			return this.human_noun;
+		} else {
+			return `${this.ageLabel} ${this.human_noun}`;
+		}
 	}
 
 	get injury_level(): string {
@@ -103,12 +150,21 @@ export class Person {
 	get category(): string {
 		return this.person_type;
 	}
+
+	get isCyclist(): boolean {
+		return this.category === 'BICYCLE';
+	}
+
 	get isDriver(): boolean {
 		return this.category === 'DRIVER';
 	}
 
 	get ageUnknown(): boolean {
-		return this.age === null || (this.age === 0 && this.person_type !== 'PASSENGER');
+		return this.age === null || (this.ageZero && !this.isLikelyInfant);
+	}
+
+	get isLikelyInfant(): boolean {
+		return this.age === 0 && this.usedChildSafetyDevice;
 	}
 }
 
