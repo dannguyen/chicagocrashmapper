@@ -4,3 +4,71 @@
 @theme {
 	--font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
+
+/* ── Severity (crash-level) ─────────────────────────────────────────────── */
+
+/* Hero card left border */
+[data-severity='fatal'].hero-card {
+	@apply border-l-red-600;
+}
+[data-severity='serious'].hero-card {
+	@apply border-l-amber-600;
+}
+[data-severity='minor'].hero-card {
+	@apply border-l-amber-500;
+}
+[data-severity='none'].hero-card {
+	@apply border-l-gray-200;
+}
+
+/* Severity badge */
+.severity-badge[data-severity='fatal'] {
+	@apply bg-red-100 text-red-700;
+}
+.severity-badge[data-severity='serious'] {
+	@apply bg-amber-100 text-amber-700;
+}
+.severity-badge[data-severity='minor'] {
+	@apply bg-amber-100 text-amber-700;
+}
+.severity-badge[data-severity='none'] {
+	@apply bg-gray-100 text-gray-600;
+}
+
+/* ── Injury (person-level) ──────────────────────────────────────────────── */
+
+/* Dot color */
+.person-dot[data-injury='fatal'] {
+	@apply bg-red-600;
+}
+.person-dot[data-injury='serious'] {
+	@apply bg-amber-600;
+}
+.person-dot[data-injury='minor'] {
+	@apply bg-amber-500;
+}
+.person-dot[data-injury='none'] {
+	@apply bg-green-600;
+}
+.person-dot[data-injury='unclear'],
+.person-dot[data-injury='unknown'] {
+	@apply bg-gray-400;
+}
+
+/* Injury text */
+.person-injury-label[data-injury='fatal'] {
+	@apply text-red-600 font-semibold;
+}
+.person-injury-label[data-injury='serious'] {
+	@apply text-amber-600 font-semibold;
+}
+.person-injury-label[data-injury='minor'] {
+	@apply text-amber-600;
+}
+.person-injury-label[data-injury='none'] {
+	@apply text-green-600;
+}
+.person-injury-label[data-injury='unclear'],
+.person-injury-label[data-injury='unknown'] {
+	@apply text-gray-400;
+}

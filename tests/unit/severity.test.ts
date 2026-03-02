@@ -3,18 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { Crash } from '$lib/models/crash';
 import { Person } from '$lib/models/person';
 
-import {
-	crashSeverity,
-	injuryDotClass,
-	injuryLabel,
-	injuryTextClass,
-	personInjuryLevel,
-	severityBadgeClass,
-	severityBorderClass,
-	severityLabel,
-	severityLabelClass,
-	severityPinClass
-} from '$lib/severity';
+import { crashSeverity, injuryLabel, personInjuryLevel, severityLabel } from '$lib/severity';
 import { makeCrashRecord, makePersonRecord } from './fixtures';
 
 describe('crashSeverity', () => {
@@ -73,40 +62,12 @@ describe('crashSeverity', () => {
 	});
 });
 
-describe('severity CSS helpers', () => {
-	it('maps severity levels to border classes', () => {
-		expect(severityBorderClass('fatal')).toBe('border-l-red-600');
-		expect(severityBorderClass('serious')).toBe('border-l-amber-600');
-		expect(severityBorderClass('minor')).toBe('border-l-amber-500');
-		expect(severityBorderClass('none')).toBe('border-l-gray-200');
-	});
-
-	it('maps severity levels to badge classes', () => {
-		expect(severityBadgeClass('fatal')).toBe('bg-red-100 text-red-700');
-		expect(severityBadgeClass('serious')).toBe('bg-amber-100 text-amber-700');
-		expect(severityBadgeClass('minor')).toBe('bg-amber-100 text-amber-700');
-		expect(severityBadgeClass('none')).toBe('bg-gray-100 text-gray-600');
-	});
-
-	it('maps severity levels to pin classes', () => {
-		expect(severityPinClass('fatal')).toBe('bg-red-600');
-		expect(severityPinClass('serious')).toBe('bg-amber-600');
-		expect(severityPinClass('minor')).toBe('bg-amber-500');
-		expect(severityPinClass('none')).toBe('bg-gray-400');
-	});
-
+describe('severityLabel', () => {
 	it('maps severity levels to human labels', () => {
 		expect(severityLabel('fatal')).toBe('Fatal');
 		expect(severityLabel('serious')).toBe('Serious');
 		expect(severityLabel('minor')).toBe('Minor');
 		expect(severityLabel('none')).toBe('No injury');
-	});
-
-	it('maps severity levels to label text classes', () => {
-		expect(severityLabelClass('fatal')).toBe('text-red-600');
-		expect(severityLabelClass('serious')).toBe('text-amber-600');
-		expect(severityLabelClass('minor')).toBe('text-amber-600');
-		expect(severityLabelClass('none')).toBe('text-gray-400');
 	});
 });
 
@@ -143,23 +104,7 @@ describe('personInjuryLevel', () => {
 	});
 });
 
-describe('injury CSS and label helpers', () => {
-	it('maps injury levels to dot classes', () => {
-		expect(injuryDotClass('fatal')).toBe('bg-red-600');
-		expect(injuryDotClass('serious')).toBe('bg-amber-600');
-		expect(injuryDotClass('minor')).toBe('bg-amber-500');
-		expect(injuryDotClass('none')).toBe('bg-green-600');
-		expect(injuryDotClass('unknown')).toBe('bg-gray-400');
-	});
-
-	it('maps injury levels to text classes', () => {
-		expect(injuryTextClass('fatal')).toBe('text-red-600 font-semibold');
-		expect(injuryTextClass('serious')).toBe('text-amber-600 font-semibold');
-		expect(injuryTextClass('minor')).toBe('text-amber-600');
-		expect(injuryTextClass('none')).toBe('text-green-600');
-		expect(injuryTextClass('unknown')).toBe('text-gray-400');
-	});
-
+describe('injuryLabel', () => {
 	it('maps injury levels to human labels', () => {
 		expect(injuryLabel('fatal')).toBe('Fatal');
 		expect(injuryLabel('serious')).toBe('Serious');

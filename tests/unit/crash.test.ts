@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { Crash, parseCrashes } from '$lib/models/crash';
-import { Person } from '$lib/models/person';
+import { Crash, Crashes, parseCrashes } from '$lib/models/crash';
+import { Person, People } from '$lib/models/person';
 import { Vehicle } from '$lib/models/vehicle';
 
 import { makeCrashRecord, makePersonRecord, makeVehicleRecord } from './fixtures';
@@ -196,6 +196,172 @@ describe('Crash', () => {
 	});
 });
 
+describe('passengers and people', () => {
+	it('collects passengers from all vehicles', () => {
+		const crash = new Crash(
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						vehicle_id: 1,
+						passengers: [
+							makePersonRecord({ person_id: 'V1P1' }),
+							makePersonRecord({ person_id: 'V1P2' })
+						]
+					}),
+					makeVehicleRecord({
+						vehicle_id: 2,
+						passengers: [makePersonRecord({ person_id: 'V2P1' })]
+					})
+				],
+				non_passengers: []
+			})
+		);
+
+		expect(crash.passengers).toHaveLength(3);
+		expect(crash.passengers.map((p) => p.person_id)).toEqual(['V1P1', 'V1P2', 'V2P1']);
+	});
+
+	it('combines passengers and non_passengers into people', () => {
+		const crash = new Crash(
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_id: 'P1' })]
+					})
+				],
+				non_passengers: [makePersonRecord({ person_id: 'NP1', person_type: 'PEDESTRIAN' })]
+			})
+		);
+
+		expect(crash.people).toHaveLength(2);
+		expect(crash.people.map((p) => p.person_id)).toEqual(['P1', 'NP1']);
+	});
+
+	it('has empty passengers and people when there are no vehicles or non_passengers', () => {
+		const crash = new Crash(makeCrashRecord({ vehicles: [], non_passengers: [] }));
+		expect(crash.passengers).toEqual([]);
+		expect(crash.people).toEqual([]);
+	});
+});
+
+describe('people filter properties (via People class)', () => {
+	function crashWithPeople(personOverrides: Partial<import('$lib/models/person').PersonRecord>[]) {
+		return new Crash(
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						passengers: personOverrides.map((o, i) =>
+							makePersonRecord({ person_id: `P${i}`, ...o })
+						)
+					})
+				],
+				non_passengers: []
+			})
+		);
+	}
+
+	it('crash.people is a People instance', () => {
+		const crash = crashWithPeople([{ person_type: 'DRIVER' }]);
+		expect(crash.people).toBeInstanceOf(People);
+	});
+
+	it('filters pedestrians', () => {
+		const crash = crashWithPeople([
+			{ person_type: 'PEDESTRIAN' },
+			{ person_type: 'DRIVER' },
+			{ person_type: 'PEDESTRIAN' }
+		]);
+		expect(crash.people.pedestrians).toHaveLength(2);
+		expect(crash.people.pedestrians.every((p) => p.isPedestrian)).toBe(true);
+	});
+
+	it('filters cyclists', () => {
+		const crash = crashWithPeople([{ person_type: 'BICYCLE' }, { person_type: 'DRIVER' }]);
+		expect(crash.people.cyclists).toHaveLength(1);
+		expect(crash.people.cyclists[0].isCyclist).toBe(true);
+	});
+
+	it('filters drivers', () => {
+		const crash = crashWithPeople([
+			{ person_type: 'DRIVER' },
+			{ person_type: 'PEDESTRIAN' },
+			{ person_type: 'DRIVER' }
+		]);
+		expect(crash.people.drivers).toHaveLength(2);
+		expect(crash.people.drivers.every((p) => p.isDriver)).toBe(true);
+	});
+
+	it('filters killed', () => {
+		const crash = crashWithPeople([
+			{ injury_classification: 'FATAL' },
+			{ injury_classification: 'INCAPACITATING INJURY' },
+			{ injury_classification: 'FATAL' }
+		]);
+		expect(crash.people.killed).toHaveLength(2);
+		expect(crash.people.killed.every((p) => p.isKilled)).toBe(true);
+	});
+
+	it('filters seriously wounded', () => {
+		const crash = crashWithPeople([
+			{ injury_classification: 'FATAL' },
+			{ injury_classification: 'INCAPACITATING INJURY' },
+			{ injury_classification: 'NONINCAPACITATING INJURY' }
+		]);
+		expect(crash.people.seriously_injured).toHaveLength(1);
+		expect(crash.people.seriously_injured[0].isseriously_injured).toBe(true);
+	});
+
+	it('returns empty People when no people match', () => {
+		const crash = crashWithPeople([
+			{ person_type: 'DRIVER', injury_classification: 'NO INDICATION OF INJURY' }
+		]);
+		expect(crash.people.pedestrians).toHaveLength(0);
+		expect(crash.people.cyclists).toHaveLength(0);
+		expect(crash.people.killed).toHaveLength(0);
+		expect(crash.people.seriously_injured).toHaveLength(0);
+	});
+
+	it('chains category and injury filters: pedestrians.killed', () => {
+		const crash = crashWithPeople([
+			{ person_type: 'PEDESTRIAN', injury_classification: 'FATAL' },
+			{ person_type: 'PEDESTRIAN', injury_classification: 'NONINCAPACITATING INJURY' },
+			{ person_type: 'DRIVER', injury_classification: 'FATAL' }
+		]);
+		const result = crash.people.pedestrians.killed;
+		expect(result).toHaveLength(1);
+		expect(result[0].isPedestrian).toBe(true);
+		expect(result[0].isKilled).toBe(true);
+	});
+
+	it('chains category and injury filters: cyclists.injured', () => {
+		const crash = crashWithPeople([
+			{ person_type: 'BICYCLE', injury_classification: 'INCAPACITATING INJURY' },
+			{ person_type: 'BICYCLE', injury_classification: 'NO INDICATION OF INJURY' },
+			{ person_type: 'DRIVER', injury_classification: 'INCAPACITATING INJURY' }
+		]);
+		const result = crash.people.cyclists.injured;
+		expect(result).toHaveLength(1);
+		expect(result[0].isCyclist).toBe(true);
+		expect(result[0].isInjured).toBe(true);
+	});
+
+	it('chained results are still People instances', () => {
+		const crash = crashWithPeople([{ person_type: 'PEDESTRIAN', injury_classification: 'FATAL' }]);
+		expect(crash.people.pedestrians).toBeInstanceOf(People);
+		expect(crash.people.pedestrians.killed).toBeInstanceOf(People);
+	});
+
+	it('People is iterable, spreadable, and has .length', () => {
+		const crash = crashWithPeople([{ person_type: 'PEDESTRIAN' }, { person_type: 'PEDESTRIAN' }]);
+		const peds = crash.people.pedestrians;
+		expect(peds.length).toBe(2);
+		expect([...peds]).toHaveLength(2);
+		const collected: Person[] = [];
+		for (const p of peds) collected.push(p);
+		expect(collected).toHaveLength(2);
+	});
+});
+
 describe('parseCrashes', () => {
 	it('maps an array of records into Crash instances', () => {
 		const crashes = parseCrashes([
@@ -205,5 +371,218 @@ describe('parseCrashes', () => {
 		expect(crashes).toHaveLength(2);
 		expect(crashes.map((c) => c.crash_record_id)).toEqual(['a', 'b']);
 		expect(crashes[1].isFatal).toBe(true);
+	});
+
+	it('returns a Crashes instance', () => {
+		const crashes = parseCrashes([makeCrashRecord()]);
+		expect(crashes).toBeInstanceOf(Crashes);
+	});
+});
+
+describe('Crashes collection', () => {
+	it('flattens people from all crashes into one People', () => {
+		const crashes = parseCrashes([
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_id: 'C1P1', person_type: 'DRIVER' })]
+					})
+				],
+				non_passengers: [makePersonRecord({ person_id: 'C1NP1', person_type: 'PEDESTRIAN' })]
+			}),
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_id: 'C2P1', person_type: 'BICYCLE' })]
+					})
+				],
+				non_passengers: []
+			})
+		]);
+
+		expect(crashes.people).toHaveLength(3);
+		expect(crashes.people).toBeInstanceOf(People);
+		expect(crashes.people.map((p) => p.person_id)).toEqual(['C1P1', 'C1NP1', 'C2P1']);
+	});
+
+	it('chains through People filters: crashes.people.pedestrians.killed', () => {
+		const crashes = parseCrashes([
+			makeCrashRecord({
+				non_passengers: [
+					makePersonRecord({
+						person_id: 'A',
+						person_type: 'PEDESTRIAN',
+						injury_classification: 'FATAL'
+					})
+				]
+			}),
+			makeCrashRecord({
+				non_passengers: [
+					makePersonRecord({
+						person_id: 'B',
+						person_type: 'PEDESTRIAN',
+						injury_classification: 'NONINCAPACITATING INJURY'
+					}),
+					makePersonRecord({
+						person_id: 'C',
+						person_type: 'DRIVER',
+						injury_classification: 'FATAL'
+					})
+				]
+			})
+		]);
+
+		const result = crashes.people.pedestrians.killed;
+		expect(result).toHaveLength(1);
+		expect(result[0].person_id).toBe('A');
+	});
+
+	it('is iterable and has .length', () => {
+		const crashes = new Crashes(
+			new Crash(makeCrashRecord({ crash_record_id: 'x' })),
+			new Crash(makeCrashRecord({ crash_record_id: 'y' }))
+		);
+		expect(crashes.length).toBe(2);
+		expect([...crashes]).toHaveLength(2);
+		const ids: string[] = [];
+		for (const c of crashes) ids.push(c.crash_record_id);
+		expect(ids).toEqual(['x', 'y']);
+	});
+
+	it('returns empty People when there are no crashes', () => {
+		const crashes = new Crashes();
+		expect(crashes.people).toHaveLength(0);
+		expect(crashes.people).toBeInstanceOf(People);
+	});
+
+	it('filters fatal crashes', () => {
+		const crashes = parseCrashes([
+			makeCrashRecord({ crash_record_id: 'a', injuries_fatal: 1 }),
+			makeCrashRecord({ crash_record_id: 'b', injuries_fatal: 0 }),
+			makeCrashRecord({ crash_record_id: 'c', injuries_fatal: 2 })
+		]);
+		const fatal = crashes.fatal;
+		expect(fatal).toBeInstanceOf(Crashes);
+		expect(fatal).toHaveLength(2);
+		expect(fatal.map((c) => c.crash_record_id)).toEqual(['a', 'c']);
+	});
+
+	it('filters pedestrian-harmed crashes', () => {
+		const crashes = parseCrashes([
+			makeCrashRecord({
+				crash_record_id: 'ped-hurt',
+				non_passengers: [
+					makePersonRecord({
+						person_type: 'PEDESTRIAN',
+						injury_classification: 'INCAPACITATING INJURY'
+					})
+				]
+			}),
+			makeCrashRecord({
+				crash_record_id: 'driver-only',
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_type: 'DRIVER' })]
+					})
+				],
+				non_passengers: []
+			}),
+			makeCrashRecord({
+				crash_record_id: 'ped2',
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_type: 'PEDESTRIAN' })]
+					})
+				]
+			})
+		]);
+		const pedCrashes = crashes.harmed_pedestrians;
+		expect(pedCrashes).toBeInstanceOf(Crashes);
+		expect(pedCrashes).toHaveLength(1);
+		expect(pedCrashes.map((c) => c.crash_record_id)).toEqual(['ped-hurt']);
+	});
+
+	it('returns empty Crashes when no (seriously) pedestrian-harmed crashes exist', () => {
+		const crashes = parseCrashes([
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_type: 'DRIVER' })]
+					})
+				],
+				non_passengers: [
+					makePersonRecord({
+						person_type: 'PEDESTRIAN',
+						injury_classification: 'NONINCAPACITATING INJURY' //non-incapacitating injuries not considered "serious harm"
+					})
+				]
+			})
+		]);
+		expect(crashes.harmed_pedestrians).toHaveLength(0);
+		expect(crashes.harmed_pedestrians).toBeInstanceOf(Crashes);
+	});
+
+	it('chains: killed_pedestrian', () => {
+		const crashes = parseCrashes([
+			makeCrashRecord({
+				crash_record_id: 'ped-fatal',
+				injuries_fatal: 1,
+				non_passengers: [
+					makePersonRecord({ person_type: 'PEDESTRIAN', injury_classification: 'FATAL' })
+				]
+			}),
+			makeCrashRecord({
+				crash_record_id: 'ped-nonfatal',
+				injuries_fatal: 0,
+				non_passengers: [makePersonRecord({ person_type: 'PEDESTRIAN' })]
+			}),
+			makeCrashRecord({
+				crash_record_id: 'non-ped-fatal',
+				injuries_fatal: 1,
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [
+							makePersonRecord({ person_type: 'DRIVER', injury_classification: 'FATAL' })
+						]
+					})
+				],
+				non_passengers: []
+			})
+		]);
+		const result = crashes.killed_pedestrians;
+		expect(result).toHaveLength(1);
+		expect(result[0].crash_record_id).toBe('ped-fatal');
+	});
+
+	it('harmed_cyclists filters crashes that killed/injured cyclists', () => {
+		const crashes = parseCrashes([
+			makeCrashRecord({
+				crash_record_id: 'biker-dead',
+				non_passengers: [
+					makePersonRecord({ person_type: 'BICYCLE', injury_classification: 'FATAL' })
+				]
+			}),
+			makeCrashRecord({
+				crash_record_id: 'driver-only',
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_type: 'DRIVER' })]
+					})
+				],
+				non_passengers: []
+			}),
+			makeCrashRecord({
+				crash_record_id: 'biker-safe',
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [makePersonRecord({ person_type: 'BICYCLE' })]
+					})
+				]
+			})
+		]);
+		const bikeCrashes = crashes.harmed_cyclists;
+		expect(bikeCrashes).toBeInstanceOf(Crashes);
+		expect(bikeCrashes).toHaveLength(1);
+		expect(bikeCrashes.map((c) => c.crash_record_id)).toEqual(['biker-dead']);
 	});
 });

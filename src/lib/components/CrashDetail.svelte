@@ -4,16 +4,7 @@
 	import type { Vehicle } from '$lib/models/vehicle';
 
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
-	import {
-		crashSeverity,
-		severityBorderClass,
-		severityBadgeClass,
-		severityLabel,
-		personInjuryLevel,
-		injuryDotClass,
-		injuryTextClass,
-		injuryLabel
-	} from '$lib/severity';
+	import { crashSeverity, severityLabel, personInjuryLevel, injuryLabel } from '$lib/severity';
 
 	let { crash, neighborhood, ward } = $props<{
 		crash: Crash | null;
@@ -109,12 +100,12 @@
 
 {#if crash}
 	<!-- ── Hero card ─────────────────────────────────────────────────────────── -->
-	<div class="hero-card {severityBorderClass(severity)}">
+	<div class="hero-card" data-severity={severity}>
 		<div class="hero-header">
 			<div class="hero-main">
 				<!-- Severity badge + optional hit-and-run -->
 				<div class="hero-badges">
-					<span class="severity-badge {severityBadgeClass(severity)}">
+					<span class="severity-badge" data-severity={severity}>
 						{severityLabel(severity)}
 					</span>
 					{#if crash.hit_and_run}
@@ -217,8 +208,8 @@
 
 						{#if pLabel}
 							<div class="person-injury">
-								<span class="person-dot {injuryDotClass(pLevel)}"></span>
-								<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
+								<span class="person-dot" data-injury={pLevel}></span>
+								<span class="person-injury-label" data-injury={pLevel}>{pLabel}</span>
 							</div>
 						{/if}
 					</div>

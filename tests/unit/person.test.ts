@@ -76,6 +76,15 @@ describe('Person', () => {
 				);
 			});
 		});
+
+		describe('isPedestrian', () => {
+			it('derives isPedestrian from person_type', () => {
+				expect(new Person(makePersonRecord({ person_type: 'PEDESTRIAN' })).isPedestrian).toBe(true);
+				expect(
+					new Person(makePersonRecord({ person_type: 'NON-MOTOR VEHICLE' })).isPedestrian
+				).toBe(false);
+			});
+		});
 	});
 
 	describe('basic bool props', () => {

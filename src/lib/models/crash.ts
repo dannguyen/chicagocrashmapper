@@ -1,6 +1,6 @@
 import { prettifyDate } from '$lib/transformHelpers';
 
-import { Person } from '$lib/models/person';
+import { Person, People } from '$lib/models/person';
 import type { PersonRecord } from '$lib/models/person';
 import { Vehicle } from '$lib/models/vehicle';
 import type { VehicleRecord } from '$lib/models/vehicle';
@@ -14,91 +14,87 @@ function isUnknownCause(cause: string | null | undefined): boolean {
 
 export interface CrashRecord {
 	crash_record_id: string;
-	longitude: number;
-	latitude: number;
+	crash_date: string;
+	crash_type?: string;
+	distance?: number;
+	first_crash_type: string;
+	hit_and_run_i?: boolean | null;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
-	injuries_total: number;
+	injuries_no_indication: number;
 	injuries_non_incapacitating: number;
 	injuries_reported_not_evident: number;
-	injuries_no_indication: number;
+	injuries_total: number;
 	injuries_unknown: number;
-	hit_and_run_i?: boolean | null;
-	posted_speed_limit?: number | null;
-	vehicles?: VehicleRecord[] | string | null;
+	latitude: number;
+	longitude: number;
 	non_passengers?: PersonRecord[] | string | null;
-	first_crash_type: string;
-	crash_type?: string;
-	street_no?: string | null;
-	street_direction: string;
-	street_name: string;
-	crash_date: string;
+	posted_speed_limit?: number | null;
 	prim_contributory_cause?: string;
 	sec_contributory_cause?: string;
-	weather_condition?: string | null;
+	street_direction: string;
+	street_name: string;
+	street_no?: string | null;
 	trafficway_type?: string | null;
-	distance?: number;
+	vehicles?: VehicleRecord[] | string | null;
+	weather_condition?: string | null;
 }
 
 export class Crash {
-	crash_record_id: string;
-	longitude: number;
-	latitude: number;
-	date: Date;
 	category: string;
+	crash_record_id: string;
+	date: Date;
 	distance?: number;
+	hit_and_run: boolean | null;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
-	injuries_total: number;
+	injuries_no_indication: number;
 	injuries_non_incapacitating: number;
 	injuries_reported_not_evident: number;
-	injuries_no_indication: number;
+	injuries_total: number;
 	injuries_unknown: number;
-	hit_and_run: boolean | null;
+	latitude: number;
+	longitude: number;
+	non_passengers: People;
+	passengers: People;
+	people: People;
 	posted_speed_limit: number | null;
-	street_no?: string | null;
-	street_direction: string;
-	street_name: string;
-	vehicles: Vehicle[];
-	non_passengers: Person[];
 	primary_cause: string;
 	secondary_cause: string;
-	weather_condition: string | null;
+	street_direction: string;
+	street_name: string;
+	street_no?: string | null;
 	trafficway_type: string | null;
+	vehicles: Vehicle[];
+	weather_condition: string | null;
 
 	constructor(record: CrashRecord) {
 		this.crash_record_id = record.crash_record_id;
-		this.longitude = record.longitude;
-		this.latitude = record.latitude;
+		this.category = record.first_crash_type;
+		this.date = new Date(Date.parse(record.crash_date));
+		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
+		this.hit_and_run = record.hit_and_run_i ?? null;
 		this.injuries_fatal = record.injuries_fatal;
 		this.injuries_incapacitating = record.injuries_incapacitating;
-		this.injuries_total = record.injuries_total;
+		this.injuries_no_indication = record.injuries_no_indication;
 		this.injuries_non_incapacitating = record.injuries_non_incapacitating;
 		this.injuries_reported_not_evident = record.injuries_reported_not_evident;
-		this.injuries_no_indication = record.injuries_no_indication;
+		this.injuries_total = record.injuries_total;
 		this.injuries_unknown = record.injuries_unknown;
-		this.hit_and_run = record.hit_and_run_i ?? null;
+		this.latitude = record.latitude;
+		this.longitude = record.longitude;
 		this.posted_speed_limit = record.posted_speed_limit ?? null;
-		this.street_no = record.street_no ?? null;
-		this.street_direction = record.street_direction;
-		this.street_name = record.street_name;
-		this.date = new Date(Date.parse(record.crash_date));
-		this.category = record.first_crash_type;
-		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
-		this.vehicles = parseVehicles(record.vehicles);
-		this.non_passengers = parsePeople(record.non_passengers);
 		this.primary_cause = record.prim_contributory_cause ?? UNKNOWN_CAUSE_LABEL;
 		this.secondary_cause = record.sec_contributory_cause ?? UNKNOWN_CAUSE_LABEL;
-		this.weather_condition = record.weather_condition ?? null;
+		this.street_direction = record.street_direction;
+		this.street_name = record.street_name;
+		this.street_no = record.street_no ?? null;
 		this.trafficway_type = record.trafficway_type ?? null;
-	}
-
-	get hasKnownCause(): boolean {
-		return !isUnknownCause(this.primary_cause);
-	}
-
-	get main_cause(): string {
-		return this.hasKnownCause ? this.primary_cause : UNKNOWN_CAUSE_LABEL;
+		this.vehicles = parseVehicles(record.vehicles);
+		this.passengers = new People(...parsePassengers(this.vehicles));
+		this.non_passengers = new People(...parsePeople(record.non_passengers));
+		this.people = new People(...this.passengers, ...this.non_passengers);
+		this.weather_condition = record.weather_condition ?? null;
 	}
 
 	get fullCause(): string {
@@ -111,6 +107,50 @@ export class Crash {
 		}
 
 		return `${this.primary_cause} (${this.secondary_cause})`;
+	}
+
+	get harmedChildren(): boolean {
+		return this.people.seriously_harmed.children.length > 0;
+	}
+
+	get harmedCyclists(): boolean {
+		return this.people.seriously_harmed.cyclists.length > 0;
+	}
+
+	get harmedPedestrians(): boolean {
+		return this.people.seriously_harmed.pedestrians.length > 0;
+	}
+
+	get hasKnownCause(): boolean {
+		return !isUnknownCause(this.primary_cause);
+	}
+
+	get isFatal(): boolean {
+		return this.injuries_fatal > 0;
+	}
+
+	get killedChildren(): boolean {
+		return this.people.killed.children.length > 0;
+	}
+
+	get killedCyclists(): boolean {
+		return this.people.killed.cyclists.length > 0;
+	}
+
+	get killedPedestrians(): boolean {
+		return this.people.killed.pedestrians.length > 0;
+	}
+
+	get main_cause(): string {
+		return this.hasKnownCause ? this.primary_cause : UNKNOWN_CAUSE_LABEL;
+	}
+
+	get prettyDate(): string {
+		return prettifyDate(this.date);
+	}
+
+	get prettyTime(): string {
+		return this.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 	}
 
 	get street_address(): string {
@@ -142,19 +182,59 @@ export class Crash {
 			` on ${dateline} at ${time}`
 		);
 	}
-	get isFatal(): boolean {
-		return this.injuries_fatal > 0;
+}
+
+export class Crashes extends Array<Crash> {
+	get fatal(): Crashes {
+		return new Crashes(...this.filter((c) => c.isFatal));
 	}
-	get prettyDate(): string {
-		return prettifyDate(this.date);
+	get harmed_children(): Crashes {
+		return new Crashes(...this.filter((c) => c.harmedChildren));
 	}
-	get prettyTime(): string {
-		return this.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+	get harmed_cyclists(): Crashes {
+		return new Crashes(...this.filter((c) => c.harmedCyclists));
+	}
+	get harmed_pedestrians(): Crashes {
+		return new Crashes(...this.filter((c) => c.harmedPedestrians));
+	}
+	get killed_children(): Crashes {
+		return new Crashes(...this.filter((c) => c.killedChildren));
+	}
+	get killed_cyclists(): Crashes {
+		return new Crashes(...this.filter((c) => c.killedCyclists));
+	}
+	get killed_pedestrians(): Crashes {
+		return new Crashes(...this.filter((c) => c.killedPedestrians));
+	}
+
+	get people(): People {
+		return new People(...this.flatMap((c) => c.people));
 	}
 }
 
-export function parseCrashes(items: CrashRecord[]): Crash[] {
-	return items.map((item) => new Crash(item));
+export function parseCrashes(items: CrashRecord[]): Crashes {
+	return new Crashes(...items.map((item) => new Crash(item)));
+}
+
+function parsePassengers(vehicles: Vehicle[]): Person[] {
+	return vehicles.flatMap((v) => v.passengers);
+}
+
+function parsePeople(raw: CrashRecord['non_passengers']): Person[] {
+	if (!raw) return [];
+	let people: PersonRecord[] = [];
+	if (typeof raw === 'string') {
+		try {
+			people = JSON.parse(raw) as PersonRecord[];
+		} catch (e) {
+			return [];
+		}
+	} else {
+		people = raw;
+	}
+
+	if (!Array.isArray(people)) return [];
+	return people.map((p) => new Person(p));
 }
 
 function parseVehicles(raw: CrashRecord['vehicles']): Vehicle[] {
@@ -173,22 +253,4 @@ function parseVehicles(raw: CrashRecord['vehicles']): Vehicle[] {
 
 	if (!Array.isArray(vehicles)) return [];
 	return vehicles.filter((v) => v.vehicle_id != null).map((v) => new Vehicle(v));
-}
-
-function parsePeople(raw: CrashRecord['non_passengers']): Person[] {
-	if (!raw) return [];
-
-	let people: PersonRecord[] = [];
-	if (typeof raw === 'string') {
-		try {
-			people = JSON.parse(raw) as PersonRecord[];
-		} catch (e) {
-			return [];
-		}
-	} else {
-		people = raw;
-	}
-
-	if (!Array.isArray(people)) return [];
-	return people.map((p) => new Person(p));
 }
