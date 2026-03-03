@@ -15,6 +15,8 @@ export const load: PageLoad = async ({ params }) => {
 	return {
 		crash: new Crash(result.crash),
 		neighborhood: result.neighborhood,
-		ward: result.ward
+		ward: result.ward,
+		intersection: result.intersection,
+		nearby_crashes: result.nearby_crashes
 	};
 };

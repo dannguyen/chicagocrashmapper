@@ -4,7 +4,7 @@
 
 	import { getDateCount } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/db/types';
-	import { toDateStr, addDays, pctChange, formatPct } from '$lib/transformHelpers';
+	import { toDateStr, addDays } from '$lib/transformHelpers';
 
 	interface WindowSums {
 		days: number;
@@ -80,26 +80,26 @@
 	<div class="loading">Loading...</div>
 {:else if error}
 	<div class="error">
-		Oops error {error}
+		Loading error: {error}
 	</div>
-{:else}
+{:else if cur.crashes > 0}
 	<p>
-		{#if cur.ytd}So far in <a class="link" href="{base}/periods/{cur.year}">{cur.year}</a>
-		{:else}In the past {cur.days} days
-		{/if}, there have been <span class="kpi">{cur.crashes}</span> serious
-		{#if cur.fatal < 1 && cur.incap < 1}
-			crashes
+		{#if cur.ytd}
+			So far in <a class="link" href="{base}/periods/{cur.year}">{cur.year}</a>
 		{:else}
-			crashes, which have
-			{#if cur.fatal > 0 && cur.incap > 0}
-				killed <span class="kpi kpi-fatal">{cur.fatal}</span> people and incapacitated
-				<span class="kpi kpi-incap">{cur.incap}</span>
-			{:else if cur.fatal > 0}
-				killed <span class="kpi kpi-fatal">{cur.fatal}</span> people
-			{:else if cur.incap > 0}
-				incapacitated <span class="kpi kpi-incap">{cur.incap}</span> people
-			{/if}
+			In the past {cur.days} days
+		{/if},
+
+		<span class="kpi">{cur.crashes}</span> traffic crashes
+		{#if cur.fatal > 0 && cur.incap > 0}
+			have killed <span class="kpi kpi-fatal">{cur.fatal}</span> people and incapacitated
+			<span class="kpi kpi-incap">{cur.incap}</span> more
+		{:else if cur.fatal > 0}
+			killed <span class="kpi kpi-fatal">{cur.fatal}</span> people
+		{:else if cur.incap > 0}
+			incapacitated <span class="kpi kpi-incap">{cur.incap}</span> people
 		{/if}
+		in Chicago
 	</p>
 {/if}
 

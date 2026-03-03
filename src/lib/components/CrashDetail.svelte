@@ -5,11 +5,14 @@
 
 	import { currentAgeSimplified, prettifyInteger } from '$lib/transformHelpers';
 	import { crashSeverity, severityLabel, personInjuryLevel, injuryLabel } from '$lib/severity';
+	import type { NearbyCrash } from '$lib/api/client';
 
-	let { crash, neighborhood, ward } = $props<{
+	let { crash, neighborhood, ward, intersection, nearby_crashes } = $props<{
 		crash: Crash | null;
 		neighborhood: { id: string; name: string } | null;
 		ward: { id: string; name: string } | null;
+		intersection: { id: string; name: string } | null;
+		nearby_crashes: NearbyCrash[];
 	}>();
 
 	// ── filter helper ───────────────────────────────────────────────────────────
@@ -118,10 +121,12 @@
 
 				<!-- Location line -->
 				<p class="hero-location">
-					{address}{#if ward || neighborhood}&ensp;·&ensp;{/if}{#if ward}<a
-							href={`${base}/wards/${ward.id}`}
-							class="hero-link">{ward.name}</a
-						>{/if}{#if ward && neighborhood}&ensp;·&ensp;{/if}{#if neighborhood}<a
+					{address}{#if intersection}&ensp;·&ensp;<a
+							href={`${base}/intersections/${intersection.id}`}
+							class="hero-link">{intersection.name}</a
+						>{/if}{#if ward}&ensp;·&ensp;<a href={`${base}/wards/${ward.id}`} class="hero-link"
+							>{ward.name}</a
+						>{/if}{#if neighborhood}&ensp;·&ensp;<a
 							href={`${base}/neighborhoods/${neighborhood.id}`}
 							class="hero-link">{neighborhood.name}</a
 						>{/if}
@@ -254,8 +259,8 @@
 
 					{#if pLabel}
 						<div class="person-injury">
-							<span class="person-dot {injuryDotClass(pLevel)}"></span>
-							<span class="person-injury-label {injuryTextClass(pLevel)}">{pLabel}</span>
+							<span class="person-dot" data-injury={pLevel}></span>
+							<span class="person-injury-label" data-injury={pLevel}>{pLabel}</span>
 						</div>
 					{/if}
 				</div>
@@ -296,6 +301,42 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- ── Nearby crashes ─────────────────────────────────────────────────── -->
+	{#if nearby_crashes?.length}
+		<div class="info-card">
+			<p class="info-title">Nearby Crashes</p>
+			{#each nearby_crashes as nc}
+				{@const feetAway = Math.round(nc.distance_miles * 5280)}
+				{@const ncDate = new Date(nc.crash_date)}
+				{@const ncAddress = [nc.street_no, nc.street_direction, nc.street_name]
+					.filter(Boolean)
+					.join(' ')}
+				<a href={`${base}/crashes/${nc.crash_record_id}`} class="nearby-row">
+					<div class="nearby-main">
+						<span class="nearby-address">{ncAddress || 'Unknown location'}</span>
+						<span class="nearby-meta">
+							{ncDate.toLocaleDateString('en-US', {
+								month: 'short',
+								day: 'numeric',
+								year: 'numeric'
+							})}
+							&ensp;·&ensp;{feetAway} ft away
+						</span>
+					</div>
+					<div class="nearby-severity">
+						{#if nc.injuries_fatal > 0}
+							<span class="nearby-badge nearby-fatal">{nc.injuries_fatal} fatal</span>
+						{:else if nc.injuries_incapacitating > 0}
+							<span class="nearby-badge nearby-serious">{nc.injuries_incapacitating} serious</span>
+						{:else if nc.injuries_total > 0}
+							<span class="nearby-badge nearby-minor">{nc.injuries_total} injured</span>
+						{/if}
+					</div>
+				</a>
+			{/each}
+		</div>
+	{/if}
 {/if}
 
 <style>
@@ -650,5 +691,68 @@
 
 	.person-injury-label {
 		font-size: 0.875rem;
+	}
+
+	.nearby-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.5rem 0;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.nearby-row:hover {
+		background: #f9fafb;
+	}
+
+	.nearby-row + .nearby-row {
+		border-top: 1px solid #f3f4f6;
+	}
+
+	.nearby-main {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.nearby-address {
+		font-size: 0.875rem;
+		color: #1f2937;
+		font-weight: 500;
+		overflow-wrap: anywhere;
+	}
+
+	.nearby-meta {
+		font-size: 0.75rem;
+		color: #9ca3af;
+	}
+
+	.nearby-severity {
+		flex-shrink: 0;
+	}
+
+	.nearby-badge {
+		font-size: 0.675rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		padding: 0.125rem 0.5rem;
+		border-radius: 9999px;
+	}
+
+	.nearby-fatal {
+		background: #fef2f2;
+		color: #dc2626;
+	}
+
+	.nearby-serious {
+		background: #fffbeb;
+		color: #d97706;
+	}
+
+	.nearby-minor {
+		background: #f0fdf4;
+		color: #16a34a;
 	}
 </style>

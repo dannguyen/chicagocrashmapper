@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping';
 	import { SITE_NAME } from '$lib/constants';
@@ -10,6 +11,8 @@
 	const crash: Crash = $derived(data.crash);
 	const neighborhood = $derived(data.neighborhood);
 	const ward = $derived(data.ward);
+	const intersection = $derived(data.intersection);
+	const nearby_crashes = $derived(data.nearby_crashes);
 
 	let mapEl: HTMLDivElement | undefined = $state(undefined);
 	const MapperInstance = new Mapper();
@@ -31,6 +34,30 @@
 				fillOpacity: 0.8,
 				weight: 2
 			}).addTo(MapperInstance.map);
+
+			// Add nearby crash markers
+			if (nearby_crashes?.length) {
+				for (const nc of nearby_crashes) {
+					const ncColor =
+						nc.injuries_fatal > 0
+							? '#dc2626'
+							: nc.injuries_incapacitating > 0
+								? '#d97706'
+								: '#6b7280';
+					const feetAway = Math.round(nc.distance_miles * 5280);
+					MapperInstance.L.circleMarker([nc.latitude, nc.longitude], {
+						radius: 5,
+						color: ncColor,
+						fillColor: ncColor,
+						fillOpacity: 0.5,
+						weight: 1
+					})
+						.bindPopup(
+							`<a href="${base}/crashes/${nc.crash_record_id}">${nc.crash_date.slice(0, 10)}</a><br/>${feetAway} ft away`
+						)
+						.addTo(MapperInstance.map);
+				}
+			}
 
 			MapperInstance.map.invalidateSize();
 		})();
@@ -67,7 +94,7 @@
 	</div>
 
 	<!-- Main content delegated to CrashDetail -->
-	<CrashDetail {crash} {neighborhood} {ward} />
+	<CrashDetail {crash} {neighborhood} {ward} {intersection} {nearby_crashes} />
 
 	<!-- Footer -->
 	<p class="text-xs text-gray-400 text-center pt-2">Crash record: {crash.crash_record_id}</p>

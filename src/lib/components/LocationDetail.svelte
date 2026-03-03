@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Crash, parseCrashes } from '$lib/models/crash';
 	import { Location } from '$lib/location';
 	import { getCrashSummary, getCrashesList } from '$lib/api/client';
@@ -74,18 +73,22 @@
 		}
 	}
 
-	onMount(async () => {
-		const [, summary] = await Promise.all([
-			fetchAllCrashes(),
-			getCrashSummary({ locationId: location.id })
-		]);
-		allTimeSummary = summary;
+	$effect(() => {
+		// Track location.id so this re-runs on navigation
+		const locationId = location.id;
 
-		requestAnimationFrame(() => {
-			if (mapRef) {
-				mapRef.updateMapWithLocation(location);
-				mapRef.updateNearbyMarkers(allCrashes);
-			}
+		loading = true;
+		allTimeSummary = null;
+
+		Promise.all([fetchAllCrashes(), getCrashSummary({ locationId })]).then(([, summary]) => {
+			allTimeSummary = summary;
+
+			requestAnimationFrame(() => {
+				if (mapRef) {
+					mapRef.updateMapWithLocation(location);
+					mapRef.updateNearbyMarkers(allCrashes);
+				}
+			});
 		});
 	});
 </script>

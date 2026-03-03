@@ -81,16 +81,36 @@ export async function getCrashesWithin(
 	return data.crashes;
 }
 
+export interface LocationInfo {
+	id: string;
+	name: string;
+	category: string;
+	latitude: number;
+	longitude: number;
+}
+
+export interface NearbyCrash {
+	crash_record_id: string;
+	crash_date: string;
+	latitude: number;
+	longitude: number;
+	street_no: string | null;
+	street_direction: string;
+	street_name: string;
+	first_crash_type: string;
+	prim_contributory_cause: string | null;
+	injuries_fatal: number;
+	injuries_incapacitating: number;
+	injuries_total: number;
+	distance_miles: number;
+}
+
 export interface CrashByIdResult {
 	crash: CrashRecord;
-	neighborhood: {
-		id: string;
-		name: string;
-		category: string;
-		latitude: number;
-		longitude: number;
-	} | null;
-	ward: { id: string; name: string; category: string; latitude: number; longitude: number } | null;
+	neighborhood: LocationInfo | null;
+	ward: LocationInfo | null;
+	intersection: LocationInfo | null;
+	nearby_crashes: NearbyCrash[];
 }
 
 export async function getCrashById(id: string): Promise<CrashByIdResult | null> {
