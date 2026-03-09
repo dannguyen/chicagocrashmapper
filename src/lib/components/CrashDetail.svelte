@@ -306,7 +306,7 @@
 	{#if nearby_crashes?.length}
 		<div class="info-card">
 			<p class="info-title">Nearby Crashes</p>
-			{#each nearby_crashes as nc}
+			{#each nearby_crashes.sort((a, b) => new Date(b.crash_date).getTime() - new Date(a.crash_date).getTime()) as nc}
 				{@const feetAway = Math.round(nc.distance_miles * 5280)}
 				{@const ncDate = new Date(nc.crash_date)}
 				{@const ncAddress = [nc.street_no, nc.street_direction, nc.street_name]

@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import type { NeighborhoodStat, WardStat } from '$lib/db/types';
 	import { prettifyDate, currentAgeSimplified } from '$lib/transformHelpers';
+	import AreaShape from '$lib/components/AreaShape.svelte';
 
 	function parseAreaDate(s: string): Date {
 		// Append time so JS treats it as local time, not UTC midnight
@@ -61,6 +62,9 @@
 	let singularLabel = $derived(
 		category === 'neighborhoods' ? 'Neighborhood' : category === 'wards' ? 'Ward' : category
 	);
+
+	// Show shape column when any item has geometry data
+	let hasGeom = $derived(stats.some((s: AreaStat) => 'the_geom' in s && (s as WardStat).the_geom));
 </script>
 
 {#if loading}
@@ -93,6 +97,9 @@
 			<table class="area-table">
 				<thead class="table-head">
 					<tr>
+						{#if hasGeom}
+							<th scope="col" class="table-th table-th-shape"></th>
+						{/if}
 						<th
 							scope="col"
 							class="table-th"
@@ -200,6 +207,15 @@
 				<tbody class="table-body">
 					{#each sortedStats as item (item.id)}
 						<tr class="table-row">
+							{#if hasGeom}
+								<td class="table-cell table-cell-shape">
+									{#if 'the_geom' in item && item.the_geom}
+										<a href="{base}/{category}/{item.id}" class="shape-link">
+											<AreaShape wkt={item.the_geom} size={44} />
+										</a>
+									{/if}
+								</td>
+							{/if}
 							<td class="table-cell table-cell-strong">
 								<a href="{base}/{category}/{item.id}" class="table-link">
 									{item.name}
@@ -372,6 +388,29 @@
 		font-size: 0.875rem;
 		color: #374151;
 		white-space: nowrap;
+	}
+
+	.table-th-shape {
+		width: 3.5rem;
+		padding: 0.5rem;
+		cursor: default;
+	}
+
+	.table-cell-shape {
+		width: 3.5rem;
+		padding: 0.375rem 0.5rem;
+		vertical-align: middle;
+	}
+
+	.shape-link {
+		display: block;
+		line-height: 0;
+		border-radius: 0.25rem;
+		transition: opacity 120ms ease;
+	}
+
+	.shape-link:hover {
+		opacity: 0.7;
 	}
 
 	.table-cell-strong {

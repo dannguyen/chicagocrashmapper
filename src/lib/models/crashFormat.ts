@@ -64,7 +64,6 @@ export function popupHtml(item: Crash): string {
 	const label = severityLabel(severity).toUpperCase();
 	const color = severityColors[severity];
 	const people = peopleSummary(item);
-	const context = contextInfo(item);
 
 	return `<div class="popup-content">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">

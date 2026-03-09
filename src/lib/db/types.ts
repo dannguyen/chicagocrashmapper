@@ -16,6 +16,7 @@ export interface LocationRecord {
 export interface NeighborhoodStat {
 	id: string;
 	name: string;
+	the_geom?: string | null;
 	totalCrashes: number;
 	totalFatal: number;
 	totalSeriousInjuries: number;
@@ -28,6 +29,7 @@ export interface NeighborhoodStat {
 export interface WardStat {
 	id: string;
 	name: string;
+	the_geom?: string | null;
 	totalCrashes: number;
 	totalFatal: number;
 	totalSeriousInjuries: number;
