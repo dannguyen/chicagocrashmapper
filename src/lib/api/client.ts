@@ -7,6 +7,7 @@ import type {
 	LocationRecord,
 	NeighborhoodStat,
 	WardStat,
+	StreetStat,
 	IntersectionStat,
 	CrashSummary,
 	DateCountPeriod
@@ -135,6 +136,11 @@ export async function getNeighborhoodStats(): Promise<NeighborhoodStat[]> {
 
 export async function getWardStats(): Promise<WardStat[]> {
 	const data = await apiGet<{ stats: WardStat[] }>('/api/wards/stats');
+	return data.stats;
+}
+
+export async function getStreetStats(): Promise<StreetStat[]> {
+	const data = await apiGet<{ stats: StreetStat[] }>('/api/streets/stats');
 	return data.stats;
 }
 
