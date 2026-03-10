@@ -31,7 +31,7 @@
 
 <div class="mb-6">
 	<nav class="text-sm text-gray-500 mb-2">
-		{#if location.category === 'intersection' || location.category === 'street'}
+		{#if location.category === 'intersection'}
 			<span class="capitalize text-gray-600">{location.pluralCategory}</span>
 		{:else}
 			<a

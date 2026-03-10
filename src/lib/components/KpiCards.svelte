@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getDateCount } from '$lib/api/client';
+	import { getDateCount, getYearToDateComparison } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/db/types';
 	import { toDateStr, addDays, pctChange, formatPct } from '$lib/transformHelpers';
 
@@ -46,10 +46,17 @@
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
 
+	function periodToTotals(p: DateCountPeriod | undefined): WindowTotals {
+		if (!p) return { crashes: 0, fatal: 0, incap: 0 };
+		return {
+			crashes: p.crash_count ?? 0,
+			fatal: p.injuries_fatal ?? 0,
+			incap: p.injuries_incapacitating ?? 0
+		};
+	}
+
 	onMount(async () => {
 		try {
-			const periods = await getDateCount('day', 395);
-
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
 
@@ -58,17 +65,20 @@
 			useYtd = daysYtd >= 31;
 
 			if (useYtd) {
-				// YTD mode: Jan 1 to today, compare same period last year
+				// YTD mode: server computes year-to-date totals for this year and last year
+				const ytdPeriods = await getYearToDateComparison(today);
+				const yearStr = String(today.getFullYear());
+				const prevYearStr = String(today.getFullYear() - 1);
+
 				curStart = jan1;
 				curEnd = today;
-				cur = sumWindow(periods, curStart, curEnd);
-
-				const yoyStart = new Date(today.getFullYear() - 1, 0, 1);
-				const yoyEnd = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-				yoy = sumWindow(periods, yoyStart, yoyEnd);
+				cur = periodToTotals(ytdPeriods[yearStr]);
+				yoy = periodToTotals(ytdPeriods[prevYearStr]);
 				lastYear = today.getFullYear() - 1;
 			} else {
 				// 30-day mode: previous 30d + same period last year
+				const periods = await getDateCount('day', 395);
+
 				curStart = addDays(today, -29);
 				curEnd = today;
 				cur = sumWindow(periods, curStart, curEnd);

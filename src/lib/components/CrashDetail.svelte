@@ -7,11 +7,11 @@
 	import { crashSeverity, severityLabel, personInjuryLevel, injuryLabel } from '$lib/severity';
 	import type { NearbyCrash } from '$lib/api/client';
 
-	let { crash, neighborhood, ward, intersection, nearby_crashes } = $props<{
+	let { crash, neighborhood, ward, intersections, nearby_crashes } = $props<{
 		crash: Crash | null;
 		neighborhood: { id: string; name: string } | null;
 		ward: { id: string; name: string } | null;
-		intersection: { id: string; name: string } | null;
+		intersections: { id: string; name: string }[];
 		nearby_crashes: NearbyCrash[];
 	}>();
 
@@ -121,10 +121,10 @@
 
 				<!-- Location line -->
 				<p class="hero-location">
-					{address}{#if intersection}&ensp;·&ensp;<a
-							href={`${base}/intersections/${intersection.id}`}
-							class="hero-link">{intersection.name}</a
-						>{/if}{#if ward}&ensp;·&ensp;<a href={`${base}/wards/${ward.id}`} class="hero-link"
+					{address}{#each intersections as ix}&ensp;·&ensp;<a
+							href={`${base}/intersections/${ix.id}`}
+							class="hero-link">{ix.name}</a
+						>{/each}{#if ward}&ensp;·&ensp;<a href={`${base}/wards/${ward.id}`} class="hero-link"
 							>{ward.name}</a
 						>{/if}{#if neighborhood}&ensp;·&ensp;<a
 							href={`${base}/neighborhoods/${neighborhood.id}`}

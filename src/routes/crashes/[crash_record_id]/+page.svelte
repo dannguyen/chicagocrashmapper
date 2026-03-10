@@ -11,7 +11,7 @@
 	const crash: Crash = $derived(data.crash);
 	const neighborhood = $derived(data.neighborhood);
 	const ward = $derived(data.ward);
-	const intersection = $derived(data.intersection);
+	const intersections = $derived(data.intersections);
 	const nearby_crashes = $derived(data.nearby_crashes);
 
 	let mapEl: HTMLDivElement | undefined = $state(undefined);
@@ -94,7 +94,7 @@
 	</div>
 
 	<!-- Main content delegated to CrashDetail -->
-	<CrashDetail {crash} {neighborhood} {ward} {intersection} {nearby_crashes} />
+	<CrashDetail {crash} {neighborhood} {ward} {intersections} {nearby_crashes} />
 
 	<!-- Footer -->
 	<p class="text-xs text-gray-400 text-center pt-2">Crash record: {crash.crash_record_id}</p>

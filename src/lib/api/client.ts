@@ -110,7 +110,7 @@ export interface CrashByIdResult {
 	crash: CrashRecord;
 	neighborhood: LocationInfo | null;
 	ward: LocationInfo | null;
-	intersection: LocationInfo | null;
+	intersections: LocationInfo[];
 	nearby_crashes: NearbyCrash[];
 }
 
@@ -211,5 +211,16 @@ export async function getDateCount(
 		last: number;
 		periods: Record<string, DateCountPeriod>;
 	}>('/api/crashes/date-count', { unit, last });
+	return data.periods;
+}
+export async function getYearToDateComparison(
+	date: Date = new Date()
+): Promise<Record<string, DateCountPeriod>> {
+	const dateStr = date.toISOString().slice(0, 10);
+	const data = await apiGet<{
+		unit: string;
+		last: number;
+		periods: Record<string, DateCountPeriod>;
+	}>('/api/crashes/ytd-comparison', { date: dateStr });
 	return data.periods;
 }
