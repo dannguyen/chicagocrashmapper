@@ -1,20 +1,4 @@
-export interface PersonRecord {
-	person_id: string;
-	person_type: string;
-	age: number | null;
-	airbag_deployed: string | null;
-	city: string | null;
-	driver_action: string | null;
-	driver_vision: string | null;
-	drivers_license_state: string | null;
-	ejection: string | null;
-	hospital: string | null;
-	injury_classification: string;
-	physical_condition: string | null;
-	safety_equipment: string | null;
-	sex: string | null;
-	state: string | null;
-}
+import type { PersonRecord } from '$lib/models/types';
 
 export class Person {
 	age: number | null;

@@ -9,9 +9,9 @@ import type {
 	IntersectionStat,
 	CrashSummary,
 	DateCountPeriod,
-	DenseCrash
-} from '$lib/db/types';
-import type { CrashRecord } from '$lib/models/crash';
+	DenseCrash,
+	CrashRecord
+} from '$lib/models/types';
 
 const API_BASE = PUBLIC_API_BASE_URL ?? '';
 
@@ -220,9 +220,21 @@ export async function getCrashesList(params: {
 	});
 }
 
-export async function getCrashesDense(): Promise<DenseCrash[]> {
-	const data = await apiGet<{ crashes: DenseCrash[] }>('/api/crashes/dense');
-	return data.crashes;
+export interface DenseCrashResult {
+	total: number;
+	crashes: DenseCrash[];
+}
+
+export async function getCrashesDense(params?: {
+	since?: string;
+	until?: string;
+	locationId?: string;
+}): Promise<DenseCrashResult> {
+	return apiGet<DenseCrashResult>('/api/crashes/dense', {
+		since: params?.since,
+		until: params?.until,
+		location_id: params?.locationId
+	});
 }
 
 export async function getDateCount(

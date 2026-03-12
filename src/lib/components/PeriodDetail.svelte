@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Crash, parseCrashes } from '$lib/models/crash';
-	import { getCrashSummary, getCrashesList, getDateCount } from '$lib/api/client';
+	import { getCrashSummary, getCrashesList, getCrashesDense, getDateCount } from '$lib/api/client';
 	import type { CrashListResult } from '$lib/api/client';
-	import type { CrashSummary } from '$lib/db/types';
+	import type { CrashSummary, DenseCrash } from '$lib/models/types';
 	import { CHICAGO_CENTER, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
 	import { pctChange, formatPct } from '$lib/transformHelpers';
 	import MapContainer from '$lib/components/MapContainer.svelte';
@@ -108,7 +108,8 @@
 	}
 	let chartBars: BarData[] = $state([]);
 
-	let allCrashes: Crash[] = $state([]);
+	let mapCrashes: DenseCrash[] = $state([]);
+	let pagedCrashes: Crash[] = $state([]);
 	let totalCrashes = $state(0);
 	let currentPage = $state(0);
 	const perPage = 25;
@@ -122,11 +123,8 @@
 	let mapRef: MapContainer | undefined = $state(undefined);
 	let loadRequestId = 0;
 
-	// ── Client-side pagination ──────────────────────────────────────────────────
+	// ── Server-side pagination ──────────────────────────────────────────────────
 
-	const pagedCrashes = $derived(
-		allCrashes.slice(currentPage * perPage, (currentPage + 1) * perPage)
-	);
 	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
 	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
 	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));
@@ -205,26 +203,41 @@
 		}
 	}
 
-	async function fetchAllCrashes(requestId: number) {
+	async function fetchPage(requestId: number, page: number = 0) {
 		crashesLoading = true;
 		crashesError = false;
 		try {
 			const result: CrashListResult = await getCrashesList({
 				since: range.since,
 				until: range.until,
-				perPage: 1000,
+				page,
+				perPage,
 				sort: 'desc'
 			});
 			if (requestId !== loadRequestId) return;
-			allCrashes = parseCrashes(result.crashes);
+			pagedCrashes = parseCrashes(result.crashes);
 			totalCrashes = result.total;
-			currentPage = 0;
+			currentPage = page;
 		} catch {
 			if (requestId !== loadRequestId) return;
 			crashesError = true;
 		} finally {
 			if (requestId !== loadRequestId) return;
 			crashesLoading = false;
+		}
+	}
+
+	async function fetchMapCrashes(requestId: number) {
+		try {
+			const result = await getCrashesDense({
+				since: range.since,
+				until: range.until
+			});
+			if (requestId !== loadRequestId) return;
+			mapCrashes = result.crashes;
+		} catch {
+			if (requestId !== loadRequestId) return;
+			mapCrashes = [];
 		}
 	}
 
@@ -272,11 +285,15 @@
 	}
 
 	function goToPrev() {
-		if (hasPrev) currentPage--;
+		if (hasPrev) goToPage(currentPage - 1);
 	}
 
 	function goToNext() {
-		if (hasNext) currentPage++;
+		if (hasNext) goToPage(currentPage + 1);
+	}
+
+	function goToPage(page: number) {
+		fetchPage(loadRequestId, page);
 	}
 
 	function showCrashOnMap(crashId: string) {
@@ -294,16 +311,22 @@
 		prevSummary = null;
 		yearAgoSummary = null;
 		chartBars = [];
-		allCrashes = [];
+		mapCrashes = [];
+		pagedCrashes = [];
 		totalCrashes = 0;
 		currentPage = 0;
 
-		await Promise.all([fetchStats(requestId), fetchAllCrashes(requestId), fetchChart(requestId)]);
+		await Promise.all([
+			fetchStats(requestId),
+			fetchPage(requestId, 0),
+			fetchMapCrashes(requestId),
+			fetchChart(requestId)
+		]);
 		if (requestId !== loadRequestId) return;
 		requestAnimationFrame(() => {
 			if (requestId !== loadRequestId || !mapRef) return;
-			mapRef.updateNearbyMarkers(allCrashes);
-			if (allCrashes.length > 0) mapRef.fitToCrashes(allCrashes);
+			mapRef.updateNearbyMarkers(mapCrashes);
+			if (mapCrashes.length > 0) mapRef.fitToCrashes(mapCrashes);
 		});
 	}
 
@@ -498,7 +521,7 @@
 
 		<div class="map-col">
 			<div class="map-card">
-				<MapContainer bind:this={mapRef} crashes={allCrashes} {defaultGeoCenter} />
+				<MapContainer bind:this={mapRef} crashes={mapCrashes} {defaultGeoCenter} />
 			</div>
 		</div>
 	</div>
@@ -522,9 +545,7 @@
 								class="pager-button pager-page"
 								class:active-page={pg === currentPage}
 								class:inactive-page={pg !== currentPage}
-								onclick={() => {
-									currentPage = pg;
-								}}
+								onclick={() => goToPage(pg)}
 							>
 								{pg + 1}
 							</button>
@@ -565,12 +586,7 @@
 				<p class="empty-text">No serious crashes found for this period.</p>
 			</div>
 		{:else}
-			<CrashList
-				crashes={pagedCrashes}
-				selectedLocation={null}
-				distanceUnits="feet"
-				{showCrashOnMap}
-			/>
+			<CrashList crashes={pagedCrashes} selectedLocation={null} {showCrashOnMap} />
 		{/if}
 	{/if}
 
@@ -586,9 +602,7 @@
 						class="pager-button pager-page"
 						class:active-page={pg === currentPage}
 						class:inactive-page={pg !== currentPage}
-						onclick={() => {
-							currentPage = pg;
-						}}
+						onclick={() => goToPage(pg)}
 					>
 						{pg + 1}
 					</button>

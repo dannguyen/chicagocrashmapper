@@ -1,5 +1,6 @@
 import { base } from '$app/paths';
 import type { Crash } from '$lib/models/crash';
+import type { DenseCrash } from '$lib/models/types';
 import type { Person } from '$lib/models/person';
 import { crashSeverity, severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
@@ -74,4 +75,45 @@ export function popupHtml(item: Crash): string {
 ${people ? `<div style="font-size:12px;color:#374151;margin-bottom:2px">${people}</div>` : ''}
 <a href="${base}/crashes/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
 </div>`;
+}
+
+function denseSeverity(item: DenseCrash): SeverityLevel {
+	if (item.injuries_fatal > 0) return 'fatal';
+	if (item.injuries_incapacitating > 0) return 'serious';
+	return 'none';
+}
+
+export function densePopupHtml(item: DenseCrash): string {
+	const severity = denseSeverity(item);
+	const label = severityLabel(severity).toUpperCase();
+	const color = severityColors[severity];
+	const dateStr = new Date(item.crash_date).toLocaleDateString('en-US', {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric'
+	});
+	const cause = item.prim_contributory_cause
+		? fmtCause(item.prim_contributory_cause)
+		: 'Unknown cause';
+
+	return `<div class="popup-content">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+	<span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:${color}">${label}</span>
+	<span style="font-size:11px;color:#9ca3af">${dateStr}</span>
+</div>
+<div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:2px">${cause}</div>
+<a href="${base}/crashes/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
+</div>`;
+}
+
+export function crashToDense(c: Crash): DenseCrash {
+	return {
+		crash_record_id: c.crash_record_id,
+		latitude: c.latitude,
+		longitude: c.longitude,
+		crash_date: c.date.toISOString().slice(0, 10),
+		injuries_fatal: c.injuries_fatal,
+		injuries_incapacitating: c.injuries_incapacitating,
+		prim_contributory_cause: c.primary_cause
+	};
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type { AreaStat } from '$lib/db/types';
+	import type { AreaStat } from '$lib/models/types';
 	import { prettifyDate, currentAgeSimplified } from '$lib/transformHelpers';
 	import StreetShape from '$lib/components/StreetShape.svelte';
 

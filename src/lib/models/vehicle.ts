@@ -1,20 +1,5 @@
 import { Person } from '$lib/models/person';
-import type { PersonRecord } from '$lib/models/person';
-
-export interface VehicleRecord {
-	vehicle_id: number;
-	lic_plate_state: string | null;
-	make: string | null;
-	maneuver: string | null;
-	model: string | null;
-	passengers?: PersonRecord[];
-	travel_direction: string | null;
-	unit_type: string | null;
-	vehicle_defect: string | null;
-	vehicle_type: string | null;
-	vehicle_use: string | null;
-	vehicle_year: number | null;
-}
+import type { PersonRecord, VehicleRecord } from '$lib/models/types';
 
 export class Vehicle {
 	lic_plate_state: string | null;

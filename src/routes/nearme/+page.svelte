@@ -9,8 +9,9 @@
 		DEFAULT_MAX_DAYS
 	} from '$lib/constants';
 	import { Location } from '$lib/location';
-	import type { LocationRecord } from '$lib/db/types';
+	import type { LocationRecord, DenseCrash } from '$lib/models/types';
 	import { parseCrashes, type Crash } from '$lib/models/crash';
+	import { crashToDense } from '$lib/models/crashFormat';
 	import { getCrashesNearPoint, getCrashesWithin } from '$lib/api/client';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import CrashList from '$lib/components/CrashList.svelte';
@@ -37,6 +38,8 @@
 	const filteredCrashes = $derived(
 		causeFilter ? crashes.filter((crash) => crash.primary_cause === causeFilter) : crashes
 	);
+
+	const mapCrashes: DenseCrash[] = $derived(filteredCrashes.map(crashToDense));
 
 	function invalidateSearch() {
 		searchRequestId++;
@@ -360,12 +363,7 @@
 		<!-- Crash list -->
 		{#if selectedLocation && filteredCrashes.length > 0}
 			<div class="panel-list">
-				<CrashList
-					crashes={filteredCrashes}
-					{selectedLocation}
-					distanceUnits="feet"
-					{showCrashOnMap}
-				/>
+				<CrashList crashes={filteredCrashes} {selectedLocation} {showCrashOnMap} />
 			</div>
 		{/if}
 	</div>
@@ -376,7 +374,7 @@
 			<MapContainer
 				bind:this={mapRef}
 				{selectedLocation}
-				{crashes}
+				crashes={mapCrashes}
 				{defaultGeoCenter}
 				{maxDistance}
 			/>

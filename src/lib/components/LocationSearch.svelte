@@ -5,7 +5,7 @@
 	import { highlightFilteredText } from '$lib/inputHelpers';
 	import { Location } from '$lib/location';
 	import { searchLocations } from '$lib/api/client';
-	import type { LocationRecord } from '$lib/db/types';
+	import type { LocationRecord } from '$lib/models/types';
 	import { AUTOCOMPLETE_DEBOUNCE_MS, BLUR_DELAY_MS } from '$lib/constants';
 
 	let { onSelect, locationName = '' } = $props<{

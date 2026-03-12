@@ -5,7 +5,8 @@
 	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { Crash } from '$lib/models/crash';
 	import { parseCrashes } from '$lib/models/crash';
-	import { getCrashesList, getDateCount } from '$lib/api/client';
+	import type { DenseCrash } from '$lib/models/types';
+	import { getCrashesDense, getDateCount } from '$lib/api/client';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import TrendChart from '$lib/components/TrendChart.svelte';
@@ -13,14 +14,14 @@
 	import KpiCards from '$lib/components/KpiCards.svelte';
 
 	const defaultGeoCenter = CHICAGO_CENTER;
-	let crashes: Crash[] = $state([]);
+	let mapCrashes: DenseCrash[] = $state([]);
 	let loading = $state(true);
 
 	// Latest 2 fatal crashes from loaded data
 	const latestFatals = $derived(
-		crashes
-			.filter((c) => c.isFatal)
-			.sort((a, b) => b.date.getTime() - a.date.getTime())
+		mapCrashes
+			.filter((c) => c.injuries_fatal > 0)
+			.sort((a, b) => b.crash_date.localeCompare(a.crash_date))
 			.slice(0, 2)
 	);
 
@@ -81,15 +82,10 @@
 
 			const since = toDateStr(useYtd ? jan1 : addDays(today, -29));
 			const until = toDateStr(today);
-			const result = await getCrashesList({
-				since,
-				until,
-				perPage: 1000,
-				sort: 'desc'
-			});
-			crashes = Array.from(parseCrashes(result.crashes));
+			const result = await getCrashesDense({ since, until });
+			mapCrashes = result.crashes;
 		} catch {
-			crashes = [];
+			mapCrashes = [];
 		} finally {
 			loading = false;
 		}
@@ -119,10 +115,15 @@
 						{#each latestFatals as crash}
 							<a href="{base}/crashes/{crash.crash_record_id}" class="fatality-card">
 								<div class="fatality-killed">{crash.injuries_fatal} killed</div>
-								<div class="fatality-location">{crash.street_address}</div>
-								<div class="fatality-date">{crash.prettyDate} at {crash.prettyTime}</div>
-								{#if crash.primary_cause && crash.hasKnownCause}
-									<div class="fatality-cause">{crash.primary_cause}</div>
+								<div class="fatality-date">
+									{new Date(crash.crash_date).toLocaleDateString('en-US', {
+										month: 'short',
+										day: 'numeric',
+										year: 'numeric'
+									})}
+								</div>
+								{#if crash.prim_contributory_cause}
+									<div class="fatality-cause">{crash.prim_contributory_cause}</div>
 								{/if}
 							</a>
 						{/each}
@@ -132,7 +133,7 @@
 		{/if}
 
 		<div class="map-container">
-			<MapContainer {crashes} {defaultGeoCenter} />
+			<MapContainer crashes={mapCrashes} {defaultGeoCenter} />
 		</div>
 	</div>
 
@@ -340,13 +341,6 @@
 		font-weight: 700;
 		color: #dc2626;
 		margin-bottom: 0.2rem;
-	}
-
-	.fatality-location {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: #111827;
-		line-height: 1.3;
 	}
 
 	.fatality-date {

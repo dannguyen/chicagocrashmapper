@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { SITE_NAME, MONTH_SHORT, MONTH_NAMES } from '$lib/constants';
 	import { getDateCount } from '$lib/api/client';
-	import type { DateCountPeriod } from '$lib/db/types';
+	import type { DateCountPeriod } from '$lib/models/types';
 
 	interface BarData {
 		period: string;

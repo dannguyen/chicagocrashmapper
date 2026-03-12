@@ -3,7 +3,7 @@
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { getDateCount } from '$lib/api/client';
-	import type { DateCountPeriod } from '$lib/db/types';
+	import type { DateCountPeriod } from '$lib/models/types';
 	import { MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
 
 	interface Props {
@@ -162,9 +162,8 @@
 						y={chartHeight - inCapH}
 						width={barWidth}
 						height={inCapH}
-						fill="#f59e0b"
+						class="bar-segment bar-serious"
 						opacity={isHovered ? 0.8 : 1}
-						class="bar-segment"
 						pointer-events="none"
 					/>
 					<!-- Fatal bar -->
@@ -173,9 +172,8 @@
 						y={chartHeight - inCapH - fatalH}
 						width={barWidth}
 						height={fatalH}
-						fill="#dc2626"
+						class="bar-segment bar-fatal"
 						opacity={isHovered ? 0.8 : 1}
-						class="bar-segment"
 						pointer-events="none"
 					/>
 					{#if i % 3 === 0}
@@ -274,11 +272,11 @@
 	}
 
 	.trend-stat-fatal {
-		color: #dc2626;
+		color: var(--color-fatal);
 	}
 
 	.trend-stat-serious {
-		color: #d97706;
+		color: var(--color-serious);
 	}
 
 	.trend-chart {
@@ -297,6 +295,14 @@
 
 	.bar-segment {
 		transition: opacity 100ms ease;
+	}
+
+	.bar-fatal {
+		fill: var(--color-fatal);
+	}
+
+	.bar-serious {
+		fill: var(--color-serious);
 	}
 
 	/* ── Tooltip ── */
@@ -336,11 +342,11 @@
 	}
 
 	.tooltip-fatal {
-		background: #dc2626;
+		background: var(--color-fatal);
 	}
 
 	.tooltip-serious {
-		background: #f59e0b;
+		background: var(--color-serious);
 	}
 
 	.trend-legend {
@@ -365,10 +371,10 @@
 	}
 
 	.legend-fatal {
-		background: #dc2626;
+		background: var(--color-fatal);
 	}
 
 	.legend-serious {
-		background: #d97706;
+		background: var(--color-serious);
 	}
 </style>

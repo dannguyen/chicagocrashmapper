@@ -5,10 +5,9 @@
 	import { fmtCause, peopleSummary } from '$lib/models/crashFormat';
 	import { crashSeverity, severityLabel } from '$lib/severity';
 
-	let { crashes, selectedLocation, distanceUnits, showCrashOnMap } = $props<{
+	let { crashes, selectedLocation, showCrashOnMap } = $props<{
 		crashes: Crash[];
 		selectedLocation: Location | null;
-		distanceUnits: string;
 		showCrashOnMap: (crashId: string) => void;
 	}>();
 
@@ -121,7 +120,7 @@
 	}
 
 	.sev-serious {
-		background: var(--color-minor);
+		background: var(--color-serious);
 	}
 
 	.sev-minor {
@@ -129,7 +128,7 @@
 	}
 
 	.sev-none {
-		background: var(--color-minor);
+		background: var(--color-none);
 	}
 
 	.row-body {

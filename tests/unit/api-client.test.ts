@@ -250,25 +250,28 @@ describe('api client', () => {
 	});
 
 	describe('getCrashesDense', () => {
-		it('fetches /api/crashes/dense and returns array of dense crashes', async () => {
+		it('fetches /api/crashes/dense and returns dense crash result', async () => {
 			const mockDense = [
 				{
+					crash_record_id: 'CR001',
 					latitude: 41.88,
 					longitude: -87.62,
 					crash_date: '2025-01-15',
 					injuries_fatal: 1,
-					injuries_incapacitating: 0
+					injuries_incapacitating: 0,
+					prim_contributory_cause: 'FAILING TO YIELD'
 				}
 			];
-			mockFetchOk({ crashes: mockDense });
+			mockFetchOk({ total: 1, crashes: mockDense });
 
 			const result = await getCrashesDense();
 			const url = lastFetchUrl();
 
 			expect(url.pathname).toBe('/api/crashes/dense');
-			expect(result).toHaveLength(1);
-			expect(result[0].latitude).toBe(41.88);
-			expect(result[0].injuries_fatal).toBe(1);
+			expect(result.total).toBe(1);
+			expect(result.crashes).toHaveLength(1);
+			expect(result.crashes[0].latitude).toBe(41.88);
+			expect(result.crashes[0].injuries_fatal).toBe(1);
 		});
 	});
 

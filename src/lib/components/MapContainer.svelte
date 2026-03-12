@@ -1,21 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping';
-	import { Crash } from '$lib/models/crash';
 	import { Location } from '$lib/location';
-	import { popupHtml } from '$lib/models/crashFormat';
+	import type { DenseCrash } from '$lib/models/types';
+	import { densePopupHtml } from '$lib/models/crashFormat';
 	import { SEVERITY_COLORS } from '$lib/constants';
 
 	let {
 		selectedLocation = null,
 		crashes,
-		setCrashDetail = (_item: Crash | null) => {},
 		defaultGeoCenter,
 		maxDistance = 5280
 	} = $props<{
 		selectedLocation?: Location | null;
-		crashes: Crash[];
-		setCrashDetail?: (item: Crash | null) => void;
+		crashes: DenseCrash[];
 		defaultGeoCenter: [number, number];
 		maxDistance?: number;
 	}>();
@@ -121,7 +119,7 @@
 		return coord + (Math.random() - 0.5) * 0.0006;
 	}
 
-	export function updateNearbyMarkers(items: Crash[]) {
+	export function updateNearbyMarkers(items: DenseCrash[]) {
 		if (!MapperInstance.map || !MapperInstance.L || !markerLayerGroup) return;
 
 		markerLayerGroup.clearLayers();
@@ -139,15 +137,16 @@
 		items.forEach((item) => {
 			const lat = item.latitude;
 			const lon = item.longitude;
+			const isFatal = item.injuries_fatal > 0;
 
-			if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
+			if (lat != null && lon != null && !isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
 				// Heatmap uses exact coords
-				heatData.push([lat, lon, item.isFatal ? 1.0 : 0.4]);
+				heatData.push([lat, lon, isFatal ? 1.0 : 0.4]);
 
 				// Dot marker uses jittered coords so overlapping crashes spread out
-				const popup = popupHtml(item);
+				const popup = densePopupHtml(item);
 				const icon = MapperInstance.L!.divIcon({
-					html: dotIconHtml(item.isFatal),
+					html: dotIconHtml(isFatal),
 					className: '',
 					iconSize: [10, 10],
 					iconAnchor: [5, 5]
@@ -158,7 +157,6 @@
 					maxWidth: 280
 				});
 
-				crashMarker.on('click', () => setCrashDetail(item));
 				crashMarker.addTo(markerLayerGroup);
 				markerMap.set(item.crash_record_id, crashMarker);
 			}
@@ -204,12 +202,14 @@
 		}
 	}
 
-	export function fitToCrashes(items: Crash[]) {
+	export function fitToCrashes(items: DenseCrash[]) {
 		if (!MapperInstance.map || !MapperInstance.L) return;
 
 		const validLatLngs: import('leaflet').LatLngExpression[] = items
 			.filter(
 				(item) =>
+					item.latitude != null &&
+					item.longitude != null &&
 					!isNaN(item.latitude) &&
 					!isNaN(item.longitude) &&
 					(item.latitude !== 0 || item.longitude !== 0)

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getStreetStats } from '$lib/api/client';
 	import { SITE_NAME } from '$lib/constants';
-	import type { AreaStat } from '$lib/db';
+	import type { AreaStat } from '$lib/models/types';
 	import StreetList from '$lib/components/StreetList.svelte';
 
 	let stats: AreaStat[] = $state([]);

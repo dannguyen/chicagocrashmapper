@@ -3,7 +3,7 @@
 	import { base } from '$app/paths';
 	import { getTopIntersections } from '$lib/api/client';
 	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
-	import type { IntersectionStat } from '$lib/db';
+	import type { IntersectionStat } from '$lib/models/types';
 	import { escapeHtml } from '$lib/inputHelpers';
 
 	const defaultCenter = CHICAGO_CENTER;

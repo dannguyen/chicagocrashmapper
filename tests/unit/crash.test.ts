@@ -245,7 +245,7 @@ describe('passengers and people', () => {
 });
 
 describe('people filter properties (via People class)', () => {
-	function crashWithPeople(personOverrides: Partial<import('$lib/models/person').PersonRecord>[]) {
+	function crashWithPeople(personOverrides: Partial<import('$lib/models/types').PersonRecord>[]) {
 		return new Crash(
 			makeCrashRecord({
 				vehicles: [

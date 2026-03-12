@@ -2,16 +2,22 @@
 	import { base } from '$app/paths';
 	import { Crash, parseCrashes } from '$lib/models/crash';
 	import { Location } from '$lib/location';
-	import { getCrashSummary, getCrashesList, getNearbyLocations } from '$lib/api/client';
+	import {
+		getCrashSummary,
+		getCrashesList,
+		getCrashesDense,
+		getNearbyLocations
+	} from '$lib/api/client';
 	import type { CrashListResult, NearbyLocation } from '$lib/api/client';
-	import type { CrashSummary } from '$lib/db/types';
+	import type { CrashSummary, DenseCrash } from '$lib/models/types';
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import CrashList from '$lib/components/CrashList.svelte';
 
 	let { location } = $props<{ location: Location }>();
 
-	let allCrashes: Crash[] = $state([]);
+	let mapCrashes: DenseCrash[] = $state([]);
+	let pagedCrashes: Crash[] = $state([]);
 	let totalCrashes: number = $state(0);
 	let currentPage: number = $state(0);
 	const perPage = 25;
@@ -22,10 +28,7 @@
 	let loadRequestId = 0;
 	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
 
-	// Client-side pagination derived from allCrashes
-	const pagedCrashes = $derived(
-		allCrashes.slice(currentPage * perPage, (currentPage + 1) * perPage)
-	);
+	// Server-side pagination
 	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
 	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));
 	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
@@ -37,25 +40,46 @@
 			: [0, 1, 2, null, totalPages - 3, totalPages - 2, totalPages - 1]
 	);
 
-	async function fetchAllCrashes(locationId: string, sortByDate: boolean) {
+	async function fetchPage(locationId: string, page: number) {
 		const result: CrashListResult = await getCrashesList({
 			locationId,
-			perPage: 1000,
+			page,
+			perPage,
 			sort: 'desc'
 		});
-		const crashes = parseCrashes(result.crashes);
-		if (sortByDate) {
-			crashes.sort((a, b) => b.date.getTime() - a.date.getTime());
-		}
-		return { crashes, total: result.total };
+		return { crashes: parseCrashes(result.crashes), total: result.total };
 	}
 
 	function goToPrev() {
-		if (hasPrev) currentPage--;
+		if (hasPrev) {
+			currentPage--;
+			loadPage(currentPage);
+		}
 	}
 
 	function goToNext() {
-		if (hasNext) currentPage++;
+		if (hasNext) {
+			currentPage++;
+			loadPage(currentPage);
+		}
+	}
+
+	function goToPage(page: number) {
+		currentPage = page;
+		loadPage(page);
+	}
+
+	async function loadPage(page: number) {
+		const requestId = loadRequestId;
+		try {
+			const result = await fetchPage(location.id, page);
+			if (requestId !== loadRequestId) return;
+			pagedCrashes = result.crashes;
+			totalCrashes = result.total;
+		} catch {
+			if (requestId !== loadRequestId) return;
+			pagedCrashes = [];
+		}
 	}
 
 	function showCrashOnMap(crashId: string) {
@@ -75,7 +99,8 @@
 		const locationSnapshot = location;
 
 		loading = true;
-		allCrashes = [];
+		mapCrashes = [];
+		pagedCrashes = [];
 		totalCrashes = 0;
 		currentPage = 0;
 		allTimeSummary = null;
@@ -83,16 +108,18 @@
 
 		(async () => {
 			try {
-				const [crashData, summary, nearby] = await Promise.all([
-					fetchAllCrashes(locationId, locationSnapshot.category === 'intersection'),
+				const [denseResult, pageResult, summary, nearby] = await Promise.all([
+					getCrashesDense({ locationId }),
+					fetchPage(locationId, 0),
 					getCrashSummary({ locationId }),
 					getNearbyLocations(locationId)
 				]);
 
 				if (requestId !== loadRequestId) return;
 
-				allCrashes = crashData.crashes;
-				totalCrashes = crashData.total;
+				mapCrashes = denseResult.crashes;
+				pagedCrashes = pageResult.crashes;
+				totalCrashes = pageResult.total;
 				currentPage = 0;
 				allTimeSummary = summary;
 				nearbyLocations = nearby;
@@ -100,11 +127,12 @@
 				requestAnimationFrame(() => {
 					if (requestId !== loadRequestId || !mapRef) return;
 					mapRef.updateMapWithLocation(locationSnapshot);
-					mapRef.updateNearbyMarkers(crashData.crashes);
+					mapRef.updateNearbyMarkers(denseResult.crashes);
 				});
 			} catch {
 				if (requestId !== loadRequestId) return;
-				allCrashes = [];
+				mapCrashes = [];
+				pagedCrashes = [];
 				totalCrashes = 0;
 				currentPage = 0;
 			} finally {
@@ -125,14 +153,14 @@
 	<!-- Top section: stats left, map right -->
 	<div class="top-grid">
 		<div class="stats-col">
-			<LocationSummary crashes={allCrashes} {location} summary={allTimeSummary} compact={true} />
+			<LocationSummary crashes={pagedCrashes} {location} summary={allTimeSummary} compact={true} />
 		</div>
 		<div class="map-col">
 			<div class="map-card">
 				<MapContainer
 					bind:this={mapRef}
 					selectedLocation={location}
-					crashes={allCrashes}
+					crashes={mapCrashes}
 					defaultGeoCenter={[location.latitude, location.longitude]}
 					maxDistance={mapRadiusFeet}
 				/>
@@ -186,9 +214,7 @@
 								class="pager-button pager-page"
 								class:active-page={pg === currentPage}
 								class:inactive-page={pg !== currentPage}
-								onclick={() => {
-									currentPage = pg;
-								}}
+								onclick={() => goToPage(pg)}
 							>
 								{pg + 1}
 							</button>
@@ -225,12 +251,7 @@
 				<p class="empty-text">No crashes found for this location.</p>
 			</div>
 		{:else}
-			<CrashList
-				crashes={pagedCrashes}
-				selectedLocation={location}
-				distanceUnits="feet"
-				{showCrashOnMap}
-			/>
+			<CrashList crashes={pagedCrashes} selectedLocation={location} {showCrashOnMap} />
 		{/if}
 	{/if}
 
@@ -246,9 +267,7 @@
 						class="pager-button pager-page"
 						class:active-page={pg === currentPage}
 						class:inactive-page={pg !== currentPage}
-						onclick={() => {
-							currentPage = pg;
-						}}
+						onclick={() => goToPage(pg)}
 					>
 						{pg + 1}
 					</button>

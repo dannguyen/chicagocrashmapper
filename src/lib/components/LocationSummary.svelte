@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Crash } from '$lib/models/crash';
 	import type { Location } from '$lib/location';
-	import type { CrashSummary } from '$lib/db/types';
+	import type { CrashSummary } from '$lib/models/types';
 	let {
 		crashes,
 		location,
@@ -47,7 +47,7 @@
 
 		const total = crashes.length;
 		const fatalCount = crashes.filter((i: Crash) => i.isFatal).length;
-		const incapCount = total - fatalCount;
+		const incapCount = crashes.filter((i: Crash) => i.injuries_incapacitating > 0).length;
 
 		const dates = crashes
 			.map((i: Crash) => i.date)

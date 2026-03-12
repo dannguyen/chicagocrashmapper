@@ -1,5 +1,4 @@
-import type { LocationRecord } from '$lib/db';
-import type { LocationCategory } from '$lib/db/types';
+import type { LocationRecord, LocationCategory } from '$lib/models/types';
 
 export class Location {
 	name: string;

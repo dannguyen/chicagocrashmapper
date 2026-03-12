@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getDateCount, getYearToDateComparison } from '$lib/api/client';
-	import type { DateCountPeriod } from '$lib/db/types';
+	import type { DateCountPeriod } from '$lib/models/types';
 	import { toDateStr, addDays, pctChange, formatPct } from '$lib/transformHelpers';
 
 	interface WindowTotals {

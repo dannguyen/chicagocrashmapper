@@ -1,43 +1,14 @@
 import { prettifyDate } from '$lib/transformHelpers';
 
 import { Person, People } from '$lib/models/person';
-import type { PersonRecord } from '$lib/models/person';
 import { Vehicle } from '$lib/models/vehicle';
-import type { VehicleRecord } from '$lib/models/vehicle';
+import type { CrashRecord, PersonRecord, VehicleRecord } from '$lib/models/types';
 
 const UNKNOWN_CAUSE_LABEL: string = 'UNKNOWN CAUSE';
 
 function isUnknownCause(cause: string | null | undefined): boolean {
 	if (cause == null || cause.trim() === '') return true;
 	return ['UNABLE TO DETERMINE', 'NOT APPLICABLE', UNKNOWN_CAUSE_LABEL].includes(cause);
-}
-
-export interface CrashRecord {
-	crash_record_id: string;
-	crash_date: string;
-	crash_type?: string;
-	distance?: number;
-	first_crash_type: string;
-	hit_and_run_i?: boolean | null;
-	injuries_fatal: number;
-	injuries_incapacitating: number;
-	injuries_no_indication: number;
-	injuries_non_incapacitating: number;
-	injuries_reported_not_evident: number;
-	injuries_total: number;
-	injuries_unknown: number;
-	latitude: number;
-	longitude: number;
-	non_passengers?: PersonRecord[] | string | null;
-	posted_speed_limit?: number | null;
-	prim_contributory_cause?: string;
-	sec_contributory_cause?: string;
-	street_direction: string;
-	street_name: string;
-	street_no?: string | null;
-	trafficway_type?: string | null;
-	vehicles?: VehicleRecord[] | string | null;
-	weather_condition?: string | null;
 }
 
 export class Crash {

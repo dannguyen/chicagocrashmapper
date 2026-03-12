@@ -3,7 +3,7 @@
 	import { base } from '$app/paths';
 
 	import { getDateCount } from '$lib/api/client';
-	import type { DateCountPeriod } from '$lib/db/types';
+	import type { DateCountPeriod } from '$lib/models/types';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 
 	interface WindowSums {
