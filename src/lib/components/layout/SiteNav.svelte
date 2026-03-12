@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import LocationSearch from '$lib/components/LocationSearch.svelte';
-	import { appState } from '$lib/components/AppState.svelte';
 	import type { Location } from '$lib/location';
 
-	function onLocationSelectGlobal(location: Location) {
-		appState.selectLocation(location);
+	function onLocationSelect(_location: Location) {
+		// LocationSearch handles navigation directly; the nav does not own shared app state.
 	}
 </script>
 
@@ -18,12 +17,9 @@
 
 	<div class="nav-row">
 		<div class="nav-search">
-			<LocationSearch onSelect={onLocationSelectGlobal} />
+			<LocationSearch onSelect={onLocationSelect} />
 		</div>
 	</div>
-	{#if appState.geoError}
-		<p class="nav-error">{appState.geoError}</p>
-	{/if}
 </nav>
 
 <style>
@@ -59,9 +55,4 @@
 		color: #1d4ed8;
 	}
 
-	.nav-error {
-		margin-top: 0.375rem;
-		font-size: 0.75rem;
-		color: #dc2626;
-	}
 </style>

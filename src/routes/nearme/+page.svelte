@@ -1,10 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	import { appState } from '$lib/components/AppState.svelte';
-	import { SEARCH_DEBOUNCE_MS, SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
-	import type { Location } from '$lib/location';
-	import type { Crash } from '$lib/models/crash';
+	import {
+		SEARCH_DEBOUNCE_MS,
+		SITE_NAME,
+		CHICAGO_CENTER,
+		DEFAULT_MAX_DISTANCE_FT,
+		DEFAULT_MAX_DAYS
+	} from '$lib/constants';
+	import { Location } from '$lib/location';
+	import type { LocationRecord } from '$lib/db/types';
+	import { parseCrashes, type Crash } from '$lib/models/crash';
+	import { getCrashesNearPoint, getCrashesWithin } from '$lib/api/client';
+	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import CrashList from '$lib/components/CrashList.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
@@ -14,25 +22,108 @@
 	const searchDelayMs = SEARCH_DEBOUNCE_MS;
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let lastSearchedLocation: Location | null = null;
+	let selectedLocation: Location | null = $state(null);
+	let crashes: Crash[] = $state([]);
+	let maxDaysAgo = $state(DEFAULT_MAX_DAYS);
+	let selectedDate = $state(new Date());
+	let maxDistance = $state(DEFAULT_MAX_DISTANCE_FT);
+	let loading = $state(false);
+	let causeFilter: string | null = $state(null);
+	let geoLoading = $state(false);
+	let geoError: string | null = $state(null);
+	let searchRequestId = 0;
+	let mapRef: MapContainer | undefined = $state(undefined);
 
-	function setCrashDetail(item: Crash | null) {
-		appState.selectCrash(item);
+	const filteredCrashes = $derived(
+		causeFilter ? crashes.filter((crash) => crash.primary_cause === causeFilter) : crashes
+	);
+
+	function invalidateSearch() {
+		searchRequestId++;
+	}
+
+	async function searchCrashesByLocation(location: Location) {
+		const requestId = ++searchRequestId;
+		loading = true;
+		causeFilter = null;
+		try {
+			const since = toDateStr(addDays(selectedDate, -maxDaysAgo));
+			const until = toDateStr(addDays(selectedDate, maxDaysAgo));
+
+			const records = location.isShape
+				? await getCrashesWithin(location.id, since, until)
+				: await getCrashesNearPoint(
+						location.latitude,
+						location.longitude,
+						since,
+						until,
+						maxDistance
+					);
+
+			if (requestId !== searchRequestId) return;
+			crashes = Array.from(parseCrashes(records));
+		} catch {
+			if (requestId !== searchRequestId) return;
+			crashes = [];
+		} finally {
+			if (requestId !== searchRequestId) return;
+			loading = false;
+		}
+	}
+
+	async function useMyLocation() {
+		if (typeof navigator === 'undefined' || !navigator.geolocation) {
+			geoError = 'Geolocation is not supported by your browser';
+			return;
+		}
+
+		geoLoading = true;
+		geoError = null;
+
+		try {
+			const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+				navigator.geolocation.getCurrentPosition(resolve, reject, {
+					timeout: 10000,
+					maximumAge: 60000
+				})
+			);
+			const { latitude, longitude } = pos.coords;
+			const record: LocationRecord = {
+				id: '',
+				name: 'My Location',
+				category: 'intersection',
+				latitude,
+				longitude,
+				the_geom: `POINT(${longitude} ${latitude})`
+			};
+			selectedLocation = new Location(record);
+		} catch (e: unknown) {
+			const err = e as GeolocationPositionError;
+			if (err?.code === 1) {
+				geoError = 'Location access denied. Please allow location access.';
+			} else {
+				geoError = 'Could not get your location. Try searching by name instead.';
+			}
+		} finally {
+			geoLoading = false;
+		}
 	}
 
 	function scheduleCrashSearch() {
-		if (!appState.selectedLocation) return;
+		const location = selectedLocation;
+		if (!location) return;
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
 		}
 		searchTimeout = setTimeout(() => {
-			appState.refreshSearch();
+			searchCrashesByLocation(location);
 		}, searchDelayMs);
 	}
 
 	function handleMaxDistanceChange(event: Event) {
 		const value = parseFloat((event.target as HTMLInputElement).value);
 		if (!isNaN(value) && value >= 1) {
-			appState.setMaxDistance(value);
+			maxDistance = value;
 			scheduleCrashSearch();
 		}
 	}
@@ -40,7 +131,7 @@
 	function handleMaxDaysAgoChange(event: Event) {
 		const value = parseInt((event.target as HTMLInputElement).value, 10);
 		if (!isNaN(value) && value >= 1) {
-			appState.setMaxDaysAgo(value);
+			maxDaysAgo = value;
 			scheduleCrashSearch();
 		}
 	}
@@ -48,7 +139,10 @@
 	function handleSelectedDateChange(event: Event) {
 		const value = (event.target as HTMLInputElement).value;
 		if (value) {
-			appState.setSelectedDate(new Date(value));
+			const nextDate = new Date(value);
+			if (!isNaN(nextDate.getTime())) {
+				selectedDate = nextDate;
+			}
 			scheduleCrashSearch();
 		}
 	}
@@ -58,9 +152,12 @@
 	}
 
 	function showCrashOnMap(crashId: string) {
-		const filtered = appState.filteredCrashes;
-		const item = filtered.find((c) => c.crash_record_id === crashId);
-		if (item) setCrashDetail(item);
+		if (!mapRef) return;
+		mapRef.openCrashPopup(crashId);
+		const mapEl = document.getElementById('map');
+		if (mapEl) {
+			mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
 	}
 
 	function isToday(date: Date): boolean {
@@ -73,17 +170,28 @@
 	}
 
 	$effect(() => {
-		const loc = appState.selectedLocation;
+		const loc = selectedLocation;
 		if (loc && loc !== lastSearchedLocation) {
 			lastSearchedLocation = loc;
-			appState.searchCrashesByLocation(loc);
+			searchCrashesByLocation(loc);
 		} else if (!loc) {
 			lastSearchedLocation = null;
+			invalidateSearch();
+			crashes = [];
+			causeFilter = null;
+			loading = false;
 		}
 	});
 
 	onMount(() => {
-		appState.useMyLocation();
+		useMyLocation();
+
+		return () => {
+			if (searchTimeout) {
+				clearTimeout(searchTimeout);
+			}
+			invalidateSearch();
+		};
 	});
 </script>
 
@@ -96,7 +204,7 @@
 	<div class="dashboard-panel">
 		<!-- Geolocating / error / filters -->
 		<div class="panel-section">
-			{#if appState.geoLoading && !appState.selectedLocation}
+			{#if geoLoading && !selectedLocation}
 				<div class="geo-status">
 					<svg
 						class="loading-icon"
@@ -115,29 +223,29 @@
 					</svg>
 					<span>Finding your location...</span>
 				</div>
-			{:else if appState.geoError}
+			{:else if geoError}
 				<div class="geo-error">
-					<p>{appState.geoError}</p>
-					<button class="retry-button" onclick={() => appState.useMyLocation()}>Try again</button>
+					<p>{geoError}</p>
+					<button class="retry-button" onclick={() => useMyLocation()}>Try again</button>
 				</div>
-			{:else if appState.selectedLocation}
+			{:else if selectedLocation}
 				<div class="filter-chips">
-					{#if appState.selectedLocation.isPoint}
+					{#if selectedLocation.isPoint}
 						<span class="filter-chip">
-							Within {appState.maxDistance.toLocaleString()}
+							Within {maxDistance.toLocaleString()}
 							feet
 						</span>
 					{:else}
 						<span class="filter-chip">
-							Within {appState.selectedLocation.name}
+							Within {selectedLocation.name}
 						</span>
 					{/if}
 					<span class="filter-chip">
-						Last {appState.maxDaysAgo} days
+						Last {maxDaysAgo} days
 					</span>
-					{#if !isToday(appState.selectedDate)}
+					{#if !isToday(selectedDate)}
 						<span class="filter-chip">
-							As of {formatDateInput(appState.selectedDate)}
+							As of {formatDateInput(selectedDate)}
 						</span>
 					{/if}
 				</div>
@@ -161,14 +269,14 @@
 						Filters
 					</summary>
 					<div class="filter-body">
-						{#if appState.selectedLocation.isPoint}
+						{#if selectedLocation.isPoint}
 							<div>
 								<label for="max-distance-input" class="filter-label"> Search radius (feet) </label>
 								<input
 									id="max-distance-input"
 									type="number"
 									min="1"
-									value={appState.maxDistance}
+									value={maxDistance}
 									oninput={handleMaxDistanceChange}
 									class="filter-input"
 								/>
@@ -180,7 +288,7 @@
 								id="max-days-ago-input"
 								type="number"
 								min="1"
-								value={appState.maxDaysAgo}
+								value={maxDaysAgo}
 								oninput={handleMaxDaysAgoChange}
 								class="filter-input"
 							/>
@@ -190,7 +298,7 @@
 							<input
 								id="selected-date-input"
 								type="date"
-								value={formatDateInput(appState.selectedDate)}
+								value={formatDateInput(selectedDate)}
 								oninput={handleSelectedDateChange}
 								class="filter-input"
 							/>
@@ -202,7 +310,7 @@
 
 		<!-- Results header -->
 		<div class="results-header">
-			{#if appState.loading}
+			{#if loading}
 				<svg
 					class="loading-icon"
 					xmlns="http://www.w3.org/2000/svg"
@@ -219,41 +327,42 @@
 					></path>
 				</svg>
 				<span class="loading-label">Loading...</span>
-			{:else if appState.selectedLocation}
-				<span class="results-location">{appState.selectedLocation.name}</span>
+			{:else if selectedLocation}
+				<span class="results-location">{selectedLocation.name}</span>
 				<span class="results-divider">&middot;</span>
 				<span class="results-count">
-					<span class="results-count-strong"
-						>{appState.filteredCrashes.length.toLocaleString()}</span
-					> crashes
+					<span class="results-count-strong">{filteredCrashes.length.toLocaleString()}</span>
+					crashes
 				</span>
 			{/if}
 		</div>
 
 		<!-- LocationSummary -->
-		{#if appState.selectedLocation && !appState.loading && appState.crashes.length > 0}
+		{#if selectedLocation && !loading && crashes.length > 0}
 			<div class="panel-block">
-				<LocationSummary crashes={appState.crashes} location={appState.selectedLocation} />
+				<LocationSummary {crashes} location={selectedLocation} />
 			</div>
 		{/if}
 
 		<!-- CauseFilter -->
-		{#if appState.selectedLocation && appState.crashes.length > 1}
+		{#if selectedLocation && crashes.length > 1}
 			<div class="panel-block">
 				<CauseFilter
-					crashes={appState.crashes}
-					activeCause={appState.causeFilter}
-					onSelectCause={(cause) => appState.setCauseFilter(cause)}
+					{crashes}
+					activeCause={causeFilter}
+					onSelectCause={(cause) => {
+						causeFilter = cause;
+					}}
 				/>
 			</div>
 		{/if}
 
 		<!-- Crash list -->
-		{#if appState.selectedLocation && appState.filteredCrashes.length > 0}
+		{#if selectedLocation && filteredCrashes.length > 0}
 			<div class="panel-list">
 				<CrashList
-					crashes={appState.filteredCrashes}
-					selectedLocation={appState.selectedLocation}
+					crashes={filteredCrashes}
+					{selectedLocation}
 					distanceUnits="feet"
 					{showCrashOnMap}
 				/>
@@ -265,11 +374,11 @@
 	<div class="map-panel">
 		<div class="map-shell">
 			<MapContainer
-				selectedLocation={appState.selectedLocation}
-				crashes={appState.crashes}
-				{setCrashDetail}
+				bind:this={mapRef}
+				{selectedLocation}
+				{crashes}
 				{defaultGeoCenter}
-				maxDistance={appState.maxDistance}
+				{maxDistance}
 			/>
 		</div>
 	</div>

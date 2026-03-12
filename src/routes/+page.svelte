@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 
-	import { appState } from '$lib/components/AppState.svelte';
 	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { Crash } from '$lib/models/crash';
 	import { parseCrashes } from '$lib/models/crash';
@@ -14,14 +13,12 @@
 	import KpiCards from '$lib/components/KpiCards.svelte';
 
 	const defaultGeoCenter = CHICAGO_CENTER;
-
-	function setCrashDetail(item: Crash | null) {
-		appState.selectCrash(item);
-	}
+	let crashes: Crash[] = $state([]);
+	let loading = $state(true);
 
 	// Latest 2 fatal crashes from loaded data
 	const latestFatals = $derived(
-		appState.crashes
+		crashes
 			.filter((c) => c.isFatal)
 			.sort((a, b) => b.date.getTime() - a.date.getTime())
 			.slice(0, 2)
@@ -72,7 +69,7 @@
 	}
 
 	onMount(async () => {
-		appState.setLoading(true);
+		loading = true;
 		loadYearTable();
 		try {
 			const today = new Date();
@@ -90,11 +87,11 @@
 				perPage: 1000,
 				sort: 'desc'
 			});
-			appState.setCrashes(parseCrashes(result.crashes));
+			crashes = Array.from(parseCrashes(result.crashes));
 		} catch {
-			appState.setCrashes([]);
+			crashes = [];
 		} finally {
-			appState.setLoading(false);
+			loading = false;
 		}
 	});
 </script>
@@ -103,21 +100,17 @@
 	<title>{SITE_NAME}</title>
 </svelte:head>
 
-{#if !appState.loading}
+{#if !loading}
 	<div class="narrative-summary">
 		<NarrativeSummary />
 	</div>
 {/if}
 
-<!-- Two-column layout: left (KPIs + map) | right (trend + year table) -->
+<!-- Two-column layout: left (fatalities + map) | right (YTD + trend + year table) -->
 <div class="dashboard-layout" id="main-results-section">
-	<!-- LEFT COLUMN: KPIs + Map -->
+	<!-- LEFT COLUMN: Latest fatalities + Map -->
 	<div class="left-column">
-		{#if !appState.loading}
-			<div class="panel-block">
-				<KpiCards />
-			</div>
-
+		{#if !loading}
 			<!-- Latest fatalities -->
 			{#if latestFatals.length > 0}
 				<div class="fatalities-section">
@@ -136,6 +129,19 @@
 					</div>
 				</div>
 			{/if}
+		{/if}
+
+		<div class="map-container">
+			<MapContainer {crashes} {defaultGeoCenter} />
+		</div>
+	</div>
+
+	<!-- RIGHT COLUMN: YTD + Trend chart + Year table -->
+	<div class="right-column">
+		{#if !loading}
+			<div class="panel-block">
+				<KpiCards />
+			</div>
 		{:else}
 			<div class="loading-placeholder">
 				<svg
@@ -157,13 +163,6 @@
 			</div>
 		{/if}
 
-		<div class="map-container">
-			<MapContainer crashes={appState.crashes} {setCrashDetail} {defaultGeoCenter} />
-		</div>
-	</div>
-
-	<!-- RIGHT COLUMN: Trend chart + Year table -->
-	<div class="right-column">
 		<div class="panel-block">
 			<TrendChart months={24} />
 		</div>

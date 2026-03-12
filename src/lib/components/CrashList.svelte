@@ -22,41 +22,47 @@
 		{#each crashes as item}
 			{@const severity = crashSeverity(item)}
 			{@const people = peopleSummary(item)}
-			<button type="button" class="crash-row" onclick={() => showCrashOnMap(item.crash_record_id)}>
-				<span
-					class="sev-dot"
-					class:sev-fatal={severity === 'fatal'}
-					class:sev-serious={severity === 'serious'}
-					class:sev-minor={severity === 'minor'}
-					class:sev-none={severity === 'none'}
-					title={severityLabel(severity)}
-				></span>
+			<div class="crash-row">
+				<button
+					type="button"
+					class="crash-map-button"
+					onclick={() => showCrashOnMap(item.crash_record_id)}
+					aria-label="Show crash on map"
+				>
+					<span
+						class="sev-dot"
+						class:sev-fatal={severity === 'fatal'}
+						class:sev-serious={severity === 'serious'}
+						class:sev-minor={severity === 'minor'}
+						class:sev-none={severity === 'none'}
+						title={severityLabel(severity)}
+					></span>
 
-				<span class="row-body">
-					<span class="row-main">
-						<span class="crash-cause">{fmtCause(item.main_cause)}</span>
-						{#if people}
-							<span class="crash-people">{people}</span>
-						{/if}
-					</span>
-					<span class="row-meta">
-						<span class="crash-date">{shortDate(item.date)}</span>
-						<span class="meta-sep">·</span>
-						<span class="crash-time">{item.prettyTime}</span>
-						{#if item.street_address.trim()}
+					<span class="row-body">
+						<span class="row-main">
+							<span class="crash-cause">{fmtCause(item.main_cause)}</span>
+							{#if people}
+								<span class="crash-people">{people}</span>
+							{/if}
+						</span>
+						<span class="row-meta">
+							<span class="crash-date">{shortDate(item.date)}</span>
 							<span class="meta-sep">·</span>
-							<span class="crash-addr">{item.street_address}</span>
-						{/if}
+							<span class="crash-time">{item.prettyTime}</span>
+							{#if item.street_address.trim()}
+								<span class="meta-sep">·</span>
+								<span class="crash-addr">{item.street_address}</span>
+							{/if}
+						</span>
 					</span>
-				</span>
+				</button>
 
 				<a
 					href={`${base}/crashes/${item.crash_record_id}`}
 					class="detail-link"
-					onclick={(e) => e.stopPropagation()}
 					aria-label="View crash details">→</a
 				>
-			</button>
+			</div>
 		{/each}
 	</div>
 {/if}
@@ -71,12 +77,22 @@
 
 	.crash-row {
 		display: flex;
+		align-items: stretch;
+		gap: 0;
+		border-bottom: 1px solid #f3f4f6;
+	}
+
+	.crash-row:last-child {
+		border-bottom: none;
+	}
+
+	.crash-map-button {
+		display: flex;
 		align-items: flex-start;
 		gap: 0.625rem;
-		width: 100%;
+		flex: 1;
 		padding: 0.5rem 0.75rem;
 		border: none;
-		border-bottom: 1px solid #f3f4f6;
 		background: none;
 		cursor: pointer;
 		text-align: left;
@@ -85,12 +101,10 @@
 		transition: background-color 100ms ease;
 	}
 
-	.crash-row:last-child {
-		border-bottom: none;
-	}
-
-	.crash-row:hover {
+	.crash-map-button:hover,
+	.crash-map-button:focus-visible {
 		background-color: #f0f4ff;
+		outline: none;
 	}
 
 	.sev-dot {
@@ -167,16 +181,22 @@
 	}
 
 	.detail-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
 		color: #2563eb;
 		text-decoration: none;
 		font-weight: 600;
 		font-size: 0.875rem;
-		padding: 0.25rem;
-		align-self: center;
+		padding: 0.5rem 0.75rem;
+		border-left: 1px solid #f3f4f6;
 	}
 
-	.detail-link:hover {
+	.detail-link:hover,
+	.detail-link:focus-visible {
+		background-color: #eff6ff;
 		text-decoration: underline;
+		outline: none;
 	}
 </style>
