@@ -144,8 +144,8 @@ describe('transformHelpers', () => {
 			expect(pctChange(5, 10)).toBe(-50);
 		});
 
-		it('returns Infinity when previous is 0 and current > 0', () => {
-			expect(pctChange(5, 0)).toBe(Infinity);
+		it('returns null when previous is 0 and current > 0', () => {
+			expect(pctChange(5, 0)).toBeNull();
 		});
 
 		it('returns null when both are 0', () => {

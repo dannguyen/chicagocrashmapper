@@ -4,6 +4,7 @@
 	import { Crash } from '$lib/models/crash';
 	import { Location } from '$lib/location';
 	import { popupHtml } from '$lib/models/crashFormat';
+	import { SEVERITY_COLORS } from '$lib/constants';
 
 	let {
 		selectedLocation = null,
@@ -28,7 +29,7 @@
 	let markerMap = new Map<string, import('leaflet').Marker>();
 
 	function dotIconHtml(isFatal: boolean) {
-		const color = isFatal ? '#dc2626' : '#eab308';
+		const color = isFatal ? SEVERITY_COLORS.fatal : SEVERITY_COLORS.minor;
 		return `<div class="marker-dot" style="background:${color}"></div>`;
 	}
 

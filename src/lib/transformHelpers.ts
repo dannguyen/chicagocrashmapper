@@ -99,7 +99,7 @@ export function addDays(d: Date, days: number): Date {
 }
 
 export function pctChange(current: number, previous: number): number | null {
-	if (previous === 0) return current > 0 ? Infinity : null;
+	if (previous === 0) return null;
 	return ((current - previous) / previous) * 100;
 }
 

@@ -3,6 +3,10 @@
 
 @theme {
 	--font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+	--color-fatal: #dc2626;
+	--color-serious: #d97706;
+	--color-minor: #eab308;
+	--color-none: #9ca3af;
 }
 
 /* ── Severity (crash-level) ─────────────────────────────────────────────── */

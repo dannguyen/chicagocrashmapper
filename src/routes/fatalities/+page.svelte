@@ -258,10 +258,6 @@
 		overflow: hidden;
 	}
 
-	.fatality-list {
-		/* inherits .card */
-	}
-
 	.fatality-row {
 		display: flex;
 		align-items: flex-start;

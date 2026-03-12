@@ -103,19 +103,19 @@
 	}
 
 	.sev-fatal {
-		background: #dc2626;
+		background: var(--color-fatal);
 	}
 
 	.sev-serious {
-		background: #eab308;
+		background: var(--color-minor);
 	}
 
 	.sev-minor {
-		background: #eab308;
+		background: var(--color-minor);
 	}
 
 	.sev-none {
-		background: #eab308;
+		background: var(--color-minor);
 	}
 
 	.row-body {
