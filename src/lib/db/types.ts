@@ -57,7 +57,6 @@ export interface IntersectionStat {
 	name: string;
 	latitude: number;
 	longitude: number;
-	boundary_wkt?: string | null;
 	count: number;
 	fatal_injuries: number;
 	serious_injuries: number;

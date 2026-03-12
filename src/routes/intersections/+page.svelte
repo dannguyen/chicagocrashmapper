@@ -4,7 +4,6 @@
 	import { getTopIntersections } from '$lib/api/client';
 	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
 	import type { IntersectionStat } from '$lib/db';
-	import { parse as parseWkt, type GeoJSONGeometry } from 'wellknown';
 	import { escapeHtml } from '$lib/inputHelpers';
 
 	const defaultCenter = CHICAGO_CENTER;
@@ -18,7 +17,6 @@
 	let recentMapHost: HTMLDivElement | null = $state(null);
 	let countMap: import('leaflet').Map | null = null;
 	let recentMap: import('leaflet').Map | null = null;
-	const MIN_POLYGON_DIMENSION_PX = 28;
 
 	function formatStats(item: IntersectionStat): string {
 		return `${item.count.toLocaleString()} crashes · ${item.fatal_injuries.toLocaleString()} fatalities · ${item.serious_injuries.toLocaleString()} serious injuries`;
@@ -29,18 +27,6 @@
 			map.remove();
 		}
 		return null;
-	}
-
-	function parseBoundaryWkt(boundaryWkt: string | null | undefined): GeoJSONGeometry | null {
-		if (!boundaryWkt) return null;
-		try {
-			const geometry = parseWkt(boundaryWkt);
-			if (!geometry) return null;
-			if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return null;
-			return geometry;
-		} catch {
-			return null;
-		}
 	}
 
 	async function buildMap(
@@ -62,82 +48,25 @@
 			maxZoom: 19
 		}).addTo(map);
 
-		type RenderedFeature = {
-			bubble: import('leaflet').CircleMarker;
-			boundary: import('leaflet').GeoJSON | null;
-		};
-		const rendered: RenderedFeature[] = [];
 		const bounds = L.latLngBounds([]);
-
-		const setFeatureVisibility = () => {
-			rendered.forEach((feature) => {
-				if (!feature.boundary) {
-					if (!map.hasLayer(feature.bubble)) feature.bubble.addTo(map);
-					return;
-				}
-
-				const boundaryBounds = feature.boundary.getBounds();
-				if (!boundaryBounds.isValid()) {
-					if (!map.hasLayer(feature.bubble)) feature.bubble.addTo(map);
-					if (map.hasLayer(feature.boundary)) map.removeLayer(feature.boundary);
-					return;
-				}
-
-				const northWest = map.latLngToContainerPoint(boundaryBounds.getNorthWest());
-				const southEast = map.latLngToContainerPoint(boundaryBounds.getSouthEast());
-				const widthPx = Math.abs(southEast.x - northWest.x);
-				const heightPx = Math.abs(southEast.y - northWest.y);
-				const showBubble =
-					widthPx < MIN_POLYGON_DIMENSION_PX || heightPx < MIN_POLYGON_DIMENSION_PX;
-
-				if (showBubble) {
-					if (!map.hasLayer(feature.bubble)) feature.bubble.addTo(map);
-					if (map.hasLayer(feature.boundary)) map.removeLayer(feature.boundary);
-				} else {
-					if (!map.hasLayer(feature.boundary)) feature.boundary.addTo(map);
-					if (map.hasLayer(feature.bubble)) map.removeLayer(feature.bubble);
-				}
-			});
-		};
 
 		items.forEach((item, index) => {
 			const popupHtml = `${index + 1}. ${escapeHtml(item.name)}<br>${escapeHtml(formatStats(item))}`;
-			const bubble = L.circleMarker([item.latitude, item.longitude], {
+			const marker = L.circleMarker([item.latitude, item.longitude], {
 				radius: 8,
 				color,
 				weight: 2,
 				fillColor: color,
 				fillOpacity: 0.55
 			});
-			bubble.bindTooltip(`${index + 1}`, {
+			marker.bindTooltip(`${index + 1}`, {
 				permanent: true,
 				direction: 'center',
 				className: 'intersection-rank-marker'
 			});
-			bubble.bindPopup(popupHtml);
+			marker.bindPopup(popupHtml);
+			marker.addTo(map);
 			bounds.extend([item.latitude, item.longitude]);
-
-			let boundary: import('leaflet').GeoJSON | null = null;
-			const geometry = parseBoundaryWkt(item.boundary_wkt);
-			if (geometry) {
-				boundary = L.geoJSON(geometry, {
-					style: {
-						color,
-						weight: 2,
-						fillColor: color,
-						fillOpacity: 0.16
-					}
-				});
-				boundary.bindTooltip(`${index + 1}`, {
-					permanent: true,
-					direction: 'center',
-					className: 'intersection-rank-marker'
-				});
-				boundary.bindPopup(popupHtml);
-				bounds.extend(boundary.getBounds());
-			}
-
-			rendered.push({ bubble, boundary });
 		});
 
 		if (bounds.isValid()) {
@@ -146,8 +75,6 @@
 			map.setView(defaultCenter, 11);
 		}
 
-		setFeatureVisibility();
-		map.on('zoomend moveend', setFeatureVisibility);
 		requestAnimationFrame(() => map.invalidateSize());
 		return map;
 	}
@@ -196,10 +123,7 @@
 <div class="mx-auto max-w-7xl px-4 py-8">
 	<div class="mb-8">
 		<h1 class="text-2xl font-bold text-gray-900">Dangerous Intersections</h1>
-		<p class="mt-1 text-sm text-gray-500">
-			Top 20 intersections by severe-crash volume, counting crashes inside each intersection
-			polygon.
-		</p>
+		<p class="mt-1 text-sm text-gray-500">Top 20 intersections by severe-crash volume.</p>
 	</div>
 
 	{#if loading}
@@ -230,7 +154,7 @@
 			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
 				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
 					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-						All-Time Most Crashes (inside polygon)
+						All-Time Most Crashes
 					</h2>
 				</div>
 				<div class="intersection-map" bind:this={countMapHost}></div>
@@ -259,7 +183,7 @@
 			<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
 				<div class="bg-gray-50 border-b border-gray-200 px-5 py-4">
 					<h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-						Most Crashes Past 90 days (inside polygon)
+						Most Crashes Past 90 days
 					</h2>
 				</div>
 				<div class="intersection-map" bind:this={recentMapHost}></div>

@@ -19,26 +19,26 @@ describe('Location', () => {
 			expect(loc.isShape).toBe(false);
 		});
 
-		it('treats POLYGON intersections as shapes', () => {
+		it('treats POLYGON intersections as points (no voronoi rendering)', () => {
 			const loc = new Location(
 				makeLocationRecord({
 					category: 'intersection',
 					the_geom: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
 				})
 			);
-			expect(loc.isShape).toBe(true);
-			expect(loc.isPoint).toBe(false);
+			expect(loc.isShape).toBe(false);
+			expect(loc.isPoint).toBe(true);
 		});
 
-		it('treats MULTIPOLYGON intersections as shapes', () => {
+		it('treats MULTIPOLYGON intersections as points (no voronoi rendering)', () => {
 			const loc = new Location(
 				makeLocationRecord({
 					category: 'intersection',
 					the_geom: 'MULTIPOLYGON (((0 0, 1 0, 1 1, 0 0)))'
 				})
 			);
-			expect(loc.isShape).toBe(true);
-			expect(loc.isPoint).toBe(false);
+			expect(loc.isShape).toBe(false);
+			expect(loc.isPoint).toBe(true);
 		});
 
 		it('treats non-intersection categories as shapes regardless of geom type', () => {
