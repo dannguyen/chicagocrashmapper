@@ -204,6 +204,7 @@ export async function getCrashesList(params: {
 	page?: number;
 	perPage?: number;
 	sort?: 'asc' | 'desc';
+	fatalOnly?: boolean;
 }): Promise<CrashListResult> {
 	return apiGet<CrashListResult>('/api/crashes/list', {
 		location_id: params.locationId,
@@ -214,7 +215,8 @@ export async function getCrashesList(params: {
 		until: params.until,
 		page: params.page,
 		per_page: params.perPage,
-		sort: params.sort
+		sort: params.sort,
+		fatal_only: params.fatalOnly ? 'true' : undefined
 	});
 }
 

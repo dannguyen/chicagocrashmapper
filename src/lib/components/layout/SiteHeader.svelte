@@ -27,6 +27,7 @@
 			<a href="{base}/neighborhoods" class="nav-link">Neighborhoods</a>
 			<a href="{base}/wards" class="nav-link">Wards</a>
 			<a href="{base}/intersections" class="nav-link">Intersections</a>
+			<a href="{base}/fatalities" class="nav-link">Fatalities</a>
 			<a href="{base}/periods" class="nav-link">Periods</a>
 		</nav>
 
@@ -74,6 +75,9 @@
 			<a href="{base}/wards" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Wards</a>
 			<a href="{base}/intersections" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
 				>Intersections</a
+			>
+			<a href="{base}/fatalities" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
+				>Fatalities</a
 			>
 			<a href="{base}/periods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
 				>Periods</a
