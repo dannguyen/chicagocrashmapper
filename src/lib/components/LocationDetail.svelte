@@ -19,7 +19,7 @@
 	let allTimeSummary: CrashSummary | null = $state(null);
 	let nearbyLocations: NearbyLocation[] = $state([]);
 	let mapRef: MapContainer | undefined = $state(undefined);
-	const isIntersection = $derived(location.category === 'intersection');
+	let loadRequestId = 0;
 	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
 
 	// Client-side pagination derived from allCrashes
@@ -37,24 +37,17 @@
 			: [0, 1, 2, null, totalPages - 3, totalPages - 2, totalPages - 1]
 	);
 
-	async function fetchAllCrashes() {
-		loading = true;
-		try {
-			const result: CrashListResult = await getCrashesList({
-				locationId: location.id,
-				perPage: 1000,
-				sort: 'desc'
-			});
-			const hydrated = parseCrashes(result.crashes);
-			if (location.category === 'intersection') {
-				hydrated.sort((a, b) => b.date.getTime() - a.date.getTime());
-			}
-			allCrashes = hydrated;
-			totalCrashes = result.total;
-			currentPage = 0;
-		} finally {
-			loading = false;
+	async function fetchAllCrashes(locationId: string, sortByDate: boolean) {
+		const result: CrashListResult = await getCrashesList({
+			locationId,
+			perPage: 1000,
+			sort: 'desc'
+		});
+		const crashes = parseCrashes(result.crashes);
+		if (sortByDate) {
+			crashes.sort((a, b) => b.date.getTime() - a.date.getTime());
 		}
+		return { crashes, total: result.total };
 	}
 
 	function goToPrev() {
@@ -76,28 +69,55 @@
 	}
 
 	$effect(() => {
+		const requestId = ++loadRequestId;
 		// Track location.id so this re-runs on navigation
 		const locationId = location.id;
+		const locationSnapshot = location;
 
 		loading = true;
+		allCrashes = [];
+		totalCrashes = 0;
+		currentPage = 0;
 		allTimeSummary = null;
 		nearbyLocations = [];
 
-		Promise.all([
-			fetchAllCrashes(),
-			getCrashSummary({ locationId }),
-			getNearbyLocations(locationId)
-		]).then(([, summary, nearby]) => {
-			allTimeSummary = summary;
-			nearbyLocations = nearby;
+		(async () => {
+			try {
+				const [crashData, summary, nearby] = await Promise.all([
+					fetchAllCrashes(locationId, locationSnapshot.category === 'intersection'),
+					getCrashSummary({ locationId }),
+					getNearbyLocations(locationId)
+				]);
 
-			requestAnimationFrame(() => {
-				if (mapRef) {
-					mapRef.updateMapWithLocation(location);
-					mapRef.updateNearbyMarkers(allCrashes);
-				}
-			});
-		});
+				if (requestId !== loadRequestId) return;
+
+				allCrashes = crashData.crashes;
+				totalCrashes = crashData.total;
+				currentPage = 0;
+				allTimeSummary = summary;
+				nearbyLocations = nearby;
+
+				requestAnimationFrame(() => {
+					if (requestId !== loadRequestId || !mapRef) return;
+					mapRef.updateMapWithLocation(locationSnapshot);
+					mapRef.updateNearbyMarkers(crashData.crashes);
+				});
+			} catch {
+				if (requestId !== loadRequestId) return;
+				allCrashes = [];
+				totalCrashes = 0;
+				currentPage = 0;
+			} finally {
+				if (requestId !== loadRequestId) return;
+				loading = false;
+			}
+		})();
+
+		return () => {
+			if (requestId === loadRequestId) {
+				loadRequestId++;
+			}
+		};
 	});
 </script>
 

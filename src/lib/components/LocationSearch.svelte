@@ -18,20 +18,35 @@
 	let showAutocomplete = $state<boolean>(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
 	let selectedIndex = $state<number>(-1);
+	let searchRequestId = 0;
 
 	let locationResults = $state<Location[]>([]);
 
 	$effect(() => {
+		const requestId = ++searchRequestId;
 		const q = searchQuery.trim();
 		if (q.length >= 1) {
-			searchLocations(q).then((results: LocationRecord[]) => {
-				locationResults = results.map((r) => new Location(r));
-				selectedIndex = -1;
-			});
+			searchLocations(q)
+				.then((results: LocationRecord[]) => {
+					if (requestId !== searchRequestId || searchQuery.trim() !== q) return;
+					locationResults = results.map((r) => new Location(r));
+					selectedIndex = -1;
+				})
+				.catch(() => {
+					if (requestId !== searchRequestId || searchQuery.trim() !== q) return;
+					locationResults = [];
+					selectedIndex = -1;
+				});
 		} else {
 			locationResults = [];
 			selectedIndex = -1;
 		}
+
+		return () => {
+			if (requestId === searchRequestId) {
+				searchRequestId++;
+			}
+		};
 	});
 
 	function handleInput() {

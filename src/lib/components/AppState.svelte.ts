@@ -7,6 +7,7 @@ import { DEFAULT_MAX_DISTANCE_FT, DEFAULT_MAX_DAYS } from '$lib/constants';
 import { toDateStr, addDays } from '$lib/transformHelpers';
 
 class AppStateManager {
+	#requestId = 0;
 	#state = $state({
 		selectedLocation: null as Location | null,
 		crashes: [] as Crash[],
@@ -77,10 +78,12 @@ class AppStateManager {
 	}
 
 	clearLocation() {
+		this.#requestId++;
 		this.#state.selectedLocation = null;
 		this.#state.crashes = [];
 		this.#state.selectedCrash = null;
 		this.#state.causeFilter = null;
+		this.#state.loading = false;
 	}
 
 	setCauseFilter(cause: string | null) {
@@ -159,6 +162,7 @@ class AppStateManager {
 
 	// Business logic
 	async searchCrashesByLocation(location: Location) {
+		const requestId = ++this.#requestId;
 		this.#state.loading = true;
 		this.#state.selectedCrash = null;
 		this.#state.causeFilter = null;
@@ -178,24 +182,31 @@ class AppStateManager {
 					this.#state.maxDistance
 				);
 			}
+			if (requestId !== this.#requestId) return;
 			this.#state.crashes = parseCrashes(records);
-		} catch (e) {
+		} catch {
+			if (requestId !== this.#requestId) return;
 			this.#state.crashes = [];
 		} finally {
+			if (requestId !== this.#requestId) return;
 			this.#state.loading = false;
 		}
 	}
 
 	async loadRecentCrashes(limit: number = 10) {
+		const requestId = ++this.#requestId;
 		this.#state.loading = true;
 		this.#state.selectedLocation = null;
 		this.#state.selectedCrash = null;
 		try {
 			const records = await getRecentCrashes(limit);
+			if (requestId !== this.#requestId) return;
 			this.#state.crashes = parseCrashes(records);
-		} catch (e) {
+		} catch {
+			if (requestId !== this.#requestId) return;
 			this.#state.crashes = [];
 		} finally {
+			if (requestId !== this.#requestId) return;
 			this.#state.loading = false;
 		}
 	}
@@ -212,6 +223,7 @@ class AppStateManager {
 	}
 
 	reset() {
+		this.#requestId++;
 		this.#state.selectedLocation = null;
 		this.#state.crashes = [];
 		this.#state.selectedCrash = null;
@@ -220,6 +232,7 @@ class AppStateManager {
 		this.#state.maxDistance = DEFAULT_MAX_DISTANCE_FT;
 		this.#state.causeFilter = null;
 		this.#state.geoError = null;
+		this.#state.loading = false;
 	}
 }
 

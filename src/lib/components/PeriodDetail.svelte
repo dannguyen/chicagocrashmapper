@@ -120,6 +120,7 @@
 	let crashesError = $state(false);
 
 	let mapRef: MapContainer | undefined = $state(undefined);
+	let loadRequestId = 0;
 
 	// ── Client-side pagination ──────────────────────────────────────────────────
 
@@ -179,7 +180,7 @@
 
 	// ── Fetch functions ──────────────────────────────────────────────────────────
 
-	async function fetchStats() {
+	async function fetchStats(requestId: number) {
 		statsLoading = true;
 		statsError = false;
 		try {
@@ -191,17 +192,20 @@
 				queries.push(getCrashSummary({ since: yearAgoRange.since, until: yearAgoRange.until }));
 			}
 			const results = await Promise.all(queries);
+			if (requestId !== loadRequestId) return;
 			summary = results[0];
 			prevSummary = results[1];
 			yearAgoSummary = results[2] ?? null;
 		} catch {
+			if (requestId !== loadRequestId) return;
 			statsError = true;
 		} finally {
+			if (requestId !== loadRequestId) return;
 			statsLoading = false;
 		}
 	}
 
-	async function fetchAllCrashes() {
+	async function fetchAllCrashes(requestId: number) {
 		crashesLoading = true;
 		crashesError = false;
 		try {
@@ -211,17 +215,20 @@
 				perPage: 1000,
 				sort: 'desc'
 			});
+			if (requestId !== loadRequestId) return;
 			allCrashes = parseCrashes(result.crashes);
 			totalCrashes = result.total;
 			currentPage = 0;
 		} catch {
+			if (requestId !== loadRequestId) return;
 			crashesError = true;
 		} finally {
+			if (requestId !== loadRequestId) return;
 			crashesLoading = false;
 		}
 	}
 
-	async function fetchChart() {
+	async function fetchChart(requestId: number) {
 		chartLoading = true;
 		try {
 			if (month != null) {
@@ -229,6 +236,7 @@
 				const firstDay = new Date(year, month - 1, 1);
 				const daysBack = Math.ceil((now.getTime() - firstDay.getTime()) / 86400000) + 5;
 				const data = await getDateCount('day', Math.max(daysBack, 35));
+				if (requestId !== loadRequestId) return;
 				const prefix = `${year}-${pad(month)}-`;
 				chartBars = Object.entries(data)
 					.filter(([p]) => p.startsWith(prefix))
@@ -243,6 +251,7 @@
 				const now = new Date();
 				const last = Math.max((now.getFullYear() - year) * 12 + now.getMonth() + 2, 13);
 				const data = await getDateCount('month', last);
+				if (requestId !== loadRequestId) return;
 				chartBars = Object.entries(data)
 					.filter(([p]) => p.startsWith(`${year}-`))
 					.sort(([a], [b]) => a.localeCompare(b))
@@ -253,7 +262,11 @@
 						injuries_incapacitating: v.injuries_incapacitating ?? 0
 					}));
 			}
+		} catch {
+			if (requestId !== loadRequestId) return;
+			chartBars = [];
 		} finally {
+			if (requestId !== loadRequestId) return;
 			chartLoading = false;
 		}
 	}
@@ -276,7 +289,7 @@
 		}
 	}
 
-	async function loadAll() {
+	async function loadAll(requestId: number) {
 		summary = null;
 		prevSummary = null;
 		yearAgoSummary = null;
@@ -285,19 +298,26 @@
 		totalCrashes = 0;
 		currentPage = 0;
 
-		await Promise.all([fetchStats(), fetchAllCrashes(), fetchChart()]);
+		await Promise.all([fetchStats(requestId), fetchAllCrashes(requestId), fetchChart(requestId)]);
+		if (requestId !== loadRequestId) return;
 		requestAnimationFrame(() => {
-			if (mapRef) {
-				mapRef.updateNearbyMarkers(allCrashes);
-				if (allCrashes.length > 0) mapRef.fitToCrashes(allCrashes);
-			}
+			if (requestId !== loadRequestId || !mapRef) return;
+			mapRef.updateNearbyMarkers(allCrashes);
+			if (allCrashes.length > 0) mapRef.fitToCrashes(allCrashes);
 		});
 	}
 
 	$effect(() => {
 		year;
 		month;
-		loadAll();
+		const requestId = ++loadRequestId;
+		loadAll(requestId);
+
+		return () => {
+			if (requestId === loadRequestId) {
+				loadRequestId++;
+			}
+		};
 	});
 </script>
 
