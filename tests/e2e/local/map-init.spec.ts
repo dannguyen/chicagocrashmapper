@@ -8,12 +8,9 @@ test('location page initializes map layers on first visit', async ({ page }) => 
 	await firstLocationLink.click();
 
 	await page.waitForURL(/\/neighborhoods\/.+/);
-	await expect(page.locator('#map.leaflet-container')).toBeVisible();
-
-	const overlayPath = page
-		.locator('#map .leaflet-overlay-pane svg path.leaflet-interactive')
-		.first();
-	await expect(overlayPath).toBeVisible();
+	await expect(page.locator('#map[data-map-ready="true"]')).toBeVisible();
+	await expect(page.locator('#map[data-active-location-kind="shape"]')).toBeVisible();
+	await expect(page.locator('#map canvas.maplibregl-canvas')).toBeVisible();
 });
 
 test('deep link initializes database and map', async ({ page, context }) => {
@@ -25,6 +22,6 @@ test('deep link initializes database and map', async ({ page, context }) => {
 	const newPage = await context.newPage();
 	await newPage.goto(href as string);
 
-	await expect(newPage.locator('#map.leaflet-container')).toBeVisible();
+	await expect(newPage.locator('#map[data-map-ready="true"]')).toBeVisible();
 	await expect(newPage.getByText(/Database not initialized/i)).toHaveCount(0);
 });

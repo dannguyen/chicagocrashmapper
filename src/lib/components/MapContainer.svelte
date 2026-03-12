@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Mapper } from '$lib/mapping';
+	import { Mapper, type MapLibreMarker, type MapLibrePopup } from '$lib/mapping';
 	import { Location } from '$lib/location';
 	import type { DenseCrash } from '$lib/models/types';
 	import { densePopupHtml } from '$lib/models/crashFormat';
@@ -19,240 +19,379 @@
 	}>();
 
 	const MapperInstance = new Mapper();
+	const SELECTED_SOURCE_ID = 'selected-location';
+	const SEARCH_RADIUS_SOURCE_ID = 'search-radius';
+	const CRASH_HEAT_SOURCE_ID = 'crash-heat';
+	const CRASH_HEAT_LAYER_ID = 'crash-heat-layer';
 
-	let activeMarker: import('leaflet').Layer | null = null;
-	let mapCircleLayer: any = null;
-	let markerLayerGroup: any = null;
-	let heatLayer: any = null;
-	let markerMap = new Map<string, import('leaflet').Marker>();
+	type Bounds = [[number, number], [number, number]];
+	type CrashMarkerEntry = {
+		marker: MapLibreMarker;
+		popup: MapLibrePopup | null;
+		coordinates: [number, number];
+	};
+
+	let mapHost: HTMLDivElement | null = $state(null);
+	let activeLocationMarker: MapLibreMarker | null = null;
+	let activeLocationPopup: MapLibrePopup | null = null;
+	let activeLocationBounds: Bounds | null = null;
+	let crashMarkers = new Map<string, CrashMarkerEntry>();
+
+	function emptyFeatureCollection() {
+		return {
+			type: 'FeatureCollection',
+			features: []
+		} as import('geojson').FeatureCollection;
+	}
+
+	function setMapDataset(name: string, value: string) {
+		if (mapHost) {
+			mapHost.dataset[name] = value;
+		}
+	}
+
+	function setGeoJSONSourceData(sourceId: string, data: import('geojson').FeatureCollection) {
+		const source = MapperInstance.map?.getSource(sourceId) as
+			| {
+					setData(nextData: import('geojson').FeatureCollection): void;
+			  }
+			| undefined;
+		source?.setData(data);
+	}
 
 	function dotIconHtml(isFatal: boolean) {
 		const color = isFatal ? SEVERITY_COLORS.fatal : SEVERITY_COLORS.minor;
 		return `<div class="marker-dot" style="background:${color}"></div>`;
 	}
 
+	function createCrashMarkerElement(isFatal: boolean) {
+		const element = document.createElement('div');
+		element.innerHTML = dotIconHtml(isFatal);
+		const marker = element.firstElementChild as HTMLDivElement;
+		marker.style.cursor = 'pointer';
+		return marker;
+	}
+
 	async function initMap() {
-		await MapperInstance.init('map', defaultGeoCenter, 11);
+		if (!mapHost) return;
 
-		if (MapperInstance.L && MapperInstance.map) {
-			// Import heat plugin (adds L.heatLayer)
-			await import('leaflet.heat');
-			markerLayerGroup = MapperInstance.L.layerGroup().addTo(MapperInstance.map);
+		await MapperInstance.init(mapHost, defaultGeoCenter, 11);
+		if (!MapperInstance.map) return;
 
-			// Scale dots based on zoom: small/borderless when zoomed out, full when zoomed in
-			MapperInstance.map.on('zoomend', updateDotScale);
-			updateDotScale();
-		}
+		MapperInstance.map.addSource(SELECTED_SOURCE_ID, {
+			type: 'geojson',
+			data: emptyFeatureCollection()
+		});
+		MapperInstance.map.addLayer({
+			id: `${SELECTED_SOURCE_ID}-fill`,
+			type: 'fill',
+			source: SELECTED_SOURCE_ID,
+			filter: ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
+			paint: {
+				'fill-color': ['coalesce', ['get', 'fillColor'], '#4455bb'],
+				'fill-opacity': ['coalesce', ['get', 'fillOpacity'], 0.4]
+			}
+		});
+		MapperInstance.map.addLayer({
+			id: `${SELECTED_SOURCE_ID}-line`,
+			type: 'line',
+			source: SELECTED_SOURCE_ID,
+			paint: {
+				'line-color': ['coalesce', ['get', 'lineColor'], '#4455bb'],
+				'line-width': ['coalesce', ['get', 'lineWidth'], 1],
+				'line-opacity': ['coalesce', ['get', 'lineOpacity'], 0.8]
+			}
+		});
+
+		MapperInstance.map.addSource(SEARCH_RADIUS_SOURCE_ID, {
+			type: 'geojson',
+			data: emptyFeatureCollection()
+		});
+		MapperInstance.map.addLayer({
+			id: `${SEARCH_RADIUS_SOURCE_ID}-fill`,
+			type: 'fill',
+			source: SEARCH_RADIUS_SOURCE_ID,
+			paint: {
+				'fill-color': ['coalesce', ['get', 'color'], '#3c80ff'],
+				'fill-opacity': ['coalesce', ['get', 'opacity'], 0.1]
+			}
+		});
+		MapperInstance.map.addLayer({
+			id: `${SEARCH_RADIUS_SOURCE_ID}-line`,
+			type: 'line',
+			source: SEARCH_RADIUS_SOURCE_ID,
+			paint: {
+				'line-color': ['coalesce', ['get', 'color'], '#3c80ff'],
+				'line-width': 1,
+				'line-opacity': 0.75
+			}
+		});
+
+		MapperInstance.map.addSource(CRASH_HEAT_SOURCE_ID, {
+			type: 'geojson',
+			data: emptyFeatureCollection()
+		});
+		MapperInstance.map.addLayer({
+			id: CRASH_HEAT_LAYER_ID,
+			type: 'heatmap',
+			source: CRASH_HEAT_SOURCE_ID,
+			maxzoom: 15,
+			paint: {
+				'heatmap-weight': ['coalesce', ['get', 'weight'], 0.4],
+				'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 0.45, 13, 1.2],
+				'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 10, 13, 25, 15, 32],
+				'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.25, 13, 0.55, 15, 0.2],
+				'heatmap-color': [
+					'interpolate',
+					['linear'],
+					['heatmap-density'],
+					0,
+					'rgba(254, 249, 195, 0)',
+					0.2,
+					'rgba(253, 224, 71, 0.6)',
+					0.4,
+					'#facc15',
+					0.6,
+					'#eab308',
+					0.8,
+					'#ca8a04',
+					1,
+					'#a16207'
+				]
+			}
+		});
+
+		MapperInstance.map.on('zoomend', updateDotScale);
+		updateDotScale();
+		setMapDataset('mapReady', 'true');
 	}
 
 	function updateDotScale() {
-		if (!MapperInstance.map) return;
-		const mapEl = document.getElementById('map');
-		if (!mapEl) return;
+		if (!MapperInstance.map || !mapHost) return;
 		const zoom = MapperInstance.map.getZoom();
-		mapEl.classList.toggle('zoom-far', zoom < 14);
-		mapEl.classList.toggle('zoom-mid', zoom >= 14 && zoom < 16);
+		mapHost.classList.toggle('zoom-far', zoom < 14);
+		mapHost.classList.toggle('zoom-mid', zoom >= 14 && zoom < 16);
+		MapperInstance.map.setLayoutProperty(
+			CRASH_HEAT_LAYER_ID,
+			'visibility',
+			zoom >= 14 ? 'none' : 'visible'
+		);
+	}
 
-		// Hide heatmap when zoomed in enough to see individual dots
-		if (heatLayer) {
-			if (zoom >= 14) {
-				MapperInstance.map.removeLayer(heatLayer);
-			} else if (!MapperInstance.map.hasLayer(heatLayer)) {
-				MapperInstance.map.addLayer(heatLayer);
-			}
+	function clearCrashMarkers() {
+		for (const entry of crashMarkers.values()) {
+			entry.popup?.remove();
+			entry.marker.remove();
 		}
+		crashMarkers.clear();
+		setMapDataset('crashCount', '0');
 	}
 
 	function clearActiveLayer() {
-		if (activeMarker && MapperInstance.map) {
-			MapperInstance.map.removeLayer(activeMarker);
-			activeMarker = null;
-		}
+		activeLocationPopup?.remove();
+		activeLocationMarker?.remove();
+		activeLocationPopup = null;
+		activeLocationMarker = null;
+		activeLocationBounds = null;
+		setGeoJSONSourceData(SELECTED_SOURCE_ID, emptyFeatureCollection());
+		setMapDataset('activeLocationKind', 'none');
 	}
 
 	function updateSearchRadius() {
-		if (mapCircleLayer && MapperInstance.map) {
-			MapperInstance.map.removeLayer(mapCircleLayer);
-			mapCircleLayer = null;
+		if (!selectedLocation || !selectedLocation.isPoint) {
+			setGeoJSONSourceData(SEARCH_RADIUS_SOURCE_ID, emptyFeatureCollection());
+			return;
 		}
 
-		if (selectedLocation && MapperInstance.map && MapperInstance.L) {
-			const radiusInMeters = maxDistance * 0.3048;
-			mapCircleLayer = MapperInstance.makeMapCircle(
-				selectedLocation.longitude,
-				selectedLocation.latitude,
-				radiusInMeters
-			);
-
-			if (mapCircleLayer) {
-				mapCircleLayer.addTo(MapperInstance.map);
-			}
-		}
+		const radiusInMeters = maxDistance * 0.3048;
+		const feature = MapperInstance.makeMapCircleFeature(
+			selectedLocation.longitude,
+			selectedLocation.latitude,
+			radiusInMeters
+		);
+		setGeoJSONSourceData(SEARCH_RADIUS_SOURCE_ID, MapperInstance.makeFeatureCollection([feature]));
 	}
 
 	export function updateMapWithLocation(location: Location) {
-		if (!MapperInstance.map) return;
+		if (!MapperInstance.map || !MapperInstance.maplibre) return;
 
 		clearActiveLayer();
-		MapperInstance.map.setView([location.latitude, location.longitude], 16);
+		MapperInstance.setView([location.latitude, location.longitude], 16, { animate: false });
 
-		const renderAsShape = location.isShape;
-		if (renderAsShape) {
-			if (mapCircleLayer && MapperInstance.map) {
-				MapperInstance.map.removeLayer(mapCircleLayer);
-				mapCircleLayer = null;
-			}
-			activeMarker = MapperInstance.makeShapeMarker(location);
+		if (location.isShape) {
+			const feature = MapperInstance.makeShapeFeature(location);
+			const paint = MapperInstance.getLocationPaint(location.category);
+			const styledFeature = {
+				...feature,
+				properties: {
+					...feature.properties,
+					...paint
+				}
+			};
+
+			activeLocationBounds = MapperInstance.getFeatureBounds(styledFeature);
+			setGeoJSONSourceData(
+				SELECTED_SOURCE_ID,
+				MapperInstance.makeFeatureCollection([styledFeature])
+			);
+			setMapDataset('activeLocationKind', 'shape');
 		} else {
-			activeMarker = MapperInstance.makePointMarker(location);
-			updateSearchRadius();
+			const popup = MapperInstance.createPopup(location.name, '220px');
+			const selectedPointElement = document.createElement('div');
+			selectedPointElement.style.width = '20px';
+			selectedPointElement.style.height = '20px';
+			selectedPointElement.style.borderRadius = '9999px';
+			selectedPointElement.style.background = '#2563eb';
+			selectedPointElement.style.border = '3px solid rgba(255, 255, 255, 0.92)';
+			selectedPointElement.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.25)';
+			selectedPointElement.style.cursor = 'pointer';
+			const marker = new MapperInstance.maplibre.Marker({
+				element: selectedPointElement,
+				anchor: 'center'
+			})
+				.setLngLat([location.longitude, location.latitude])
+				.addTo(MapperInstance.map);
+
+			if (popup) {
+				marker.setPopup(popup);
+				popup.setLngLat([location.longitude, location.latitude]).addTo(MapperInstance.map);
+			}
+
+			activeLocationMarker = marker;
+			activeLocationPopup = popup;
+			activeLocationBounds = MapperInstance.getPointsBounds([
+				[location.latitude, location.longitude]
+			]);
+			setMapDataset('activeLocationKind', 'point');
 		}
-		if (activeMarker) {
-			activeMarker.addTo(MapperInstance.map);
-		}
+
+		updateSearchRadius();
 	}
 
-	// Jitter marker positions so overlapping dots spread out visually.
-	// ~0.0003 degrees ≈ 30 meters — enough to scatter at zoomed-out views
-	// but negligible at street level.
 	function jitter(coord: number): number {
 		return coord + (Math.random() - 0.5) * 0.0006;
 	}
 
 	export function updateNearbyMarkers(items: DenseCrash[]) {
-		if (!MapperInstance.map || !MapperInstance.L || !markerLayerGroup) return;
+		if (!MapperInstance.map || !MapperInstance.maplibre) return;
 
-		markerLayerGroup.clearLayers();
-		markerMap.clear();
+		clearCrashMarkers();
+		const heatFeatures: Array<import('geojson').Feature> = [];
 
-		// Remove old heat layer
-		if (heatLayer && MapperInstance.map) {
-			MapperInstance.map.removeLayer(heatLayer);
-			heatLayer = null;
-		}
-
-		// Build heatmap data using exact positions for accurate density
-		const heatData: [number, number, number][] = [];
-
-		items.forEach((item) => {
+		for (const item of items) {
 			const lat = item.latitude;
 			const lon = item.longitude;
 			const isFatal = item.injuries_fatal > 0;
 
-			if (lat != null && lon != null && !isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
-				// Heatmap uses exact coords
-				heatData.push([lat, lon, isFatal ? 1.0 : 0.4]);
-
-				// Dot marker uses jittered coords so overlapping crashes spread out
-				const popup = densePopupHtml(item);
-				const icon = MapperInstance.L!.divIcon({
-					html: dotIconHtml(isFatal),
-					className: '',
-					iconSize: [10, 10],
-					iconAnchor: [5, 5]
-				});
-				const crashMarker = MapperInstance.L!.marker([jitter(lat), jitter(lon)], {
-					icon
-				}).bindPopup(popup, {
-					maxWidth: 280
-				});
-
-				crashMarker.addTo(markerLayerGroup);
-				markerMap.set(item.crash_record_id, crashMarker);
+			if (
+				lat == null ||
+				lon == null ||
+				Number.isNaN(lat) ||
+				Number.isNaN(lon) ||
+				(lat === 0 && lon === 0)
+			) {
+				continue;
 			}
-		});
 
-		// Create heat layer
-		if (heatData.length > 0) {
-			// @ts-ignore - L.heatLayer added by leaflet.heat plugin
-			heatLayer = MapperInstance.L.heatLayer(heatData, {
-				radius: 25,
-				blur: 18,
-				maxZoom: 15,
-				max: 0.6,
-				minOpacity: 0.2,
-				gradient: {
-					0.0: 'rgba(254, 249, 195, 0.4)',
-					0.2: 'rgba(253, 224, 71, 0.6)',
-					0.4: '#facc15',
-					0.6: '#eab308',
-					0.8: '#ca8a04',
-					1.0: '#a16207'
+			heatFeatures.push({
+				type: 'Feature',
+				properties: {
+					weight: isFatal ? 1.0 : 0.4
+				},
+				geometry: {
+					type: 'Point',
+					coordinates: [lon, lat]
 				}
-			}).addTo(MapperInstance.map);
+			});
+
+			const popup = MapperInstance.createPopup(densePopupHtml(item));
+			const coordinates: [number, number] = [jitter(lon), jitter(lat)];
+			const marker = new MapperInstance.maplibre.Marker({
+				element: createCrashMarkerElement(isFatal),
+				anchor: 'center'
+			})
+				.setLngLat(coordinates)
+				.addTo(MapperInstance.map);
+
+			if (popup) {
+				marker.setPopup(popup);
+			}
+
+			crashMarkers.set(item.crash_record_id, {
+				marker,
+				popup,
+				coordinates
+			});
 		}
+
+		setGeoJSONSourceData(
+			CRASH_HEAT_SOURCE_ID,
+			MapperInstance.makeFeatureCollection(heatFeatures as import('geojson').Feature[])
+		);
+		setMapDataset('crashCount', String(crashMarkers.size));
 
 		fitToCrashes(items);
 	}
 
 	export function openCrashPopup(crashId: string) {
 		if (!MapperInstance.map) return;
-		const marker = markerMap.get(crashId);
+		const marker = crashMarkers.get(crashId);
 		if (!marker) return;
 
-		// Zoom in close enough to see the marker, then open popup
-		const latlng = marker.getLatLng();
+		const [lng, lat] = marker.coordinates;
 		const currentZoom = MapperInstance.map.getZoom();
 		if (currentZoom < 15) {
-			MapperInstance.map.setView(latlng, 16, { animate: true });
-			setTimeout(() => marker.openPopup(), 350);
+			MapperInstance.setView([lat, lng], 16);
+			setTimeout(() => marker.popup?.setLngLat(marker.coordinates).addTo(MapperInstance.map!), 350);
 		} else {
-			MapperInstance.map.panTo(latlng, { animate: true });
-			setTimeout(() => marker.openPopup(), 200);
+			MapperInstance.panTo([lat, lng]);
+			setTimeout(() => marker.popup?.setLngLat(marker.coordinates).addTo(MapperInstance.map!), 200);
 		}
 	}
 
 	export function fitToCrashes(items: DenseCrash[]) {
-		if (!MapperInstance.map || !MapperInstance.L) return;
+		if (!MapperInstance.map) return;
 
-		const validLatLngs: import('leaflet').LatLngExpression[] = items
+		const validLatLngs = items
 			.filter(
 				(item) =>
 					item.latitude != null &&
 					item.longitude != null &&
-					!isNaN(item.latitude) &&
-					!isNaN(item.longitude) &&
+					!Number.isNaN(item.latitude) &&
+					!Number.isNaN(item.longitude) &&
 					(item.latitude !== 0 || item.longitude !== 0)
 			)
-			.map((item) => [item.latitude, item.longitude]);
+			.map((item) => [item.latitude, item.longitude] as [number, number]);
 
 		if (validLatLngs.length > 0) {
-			if (selectedLocation?.isShape && activeMarker && 'getBounds' in activeMarker) {
-				try {
-					const shapeBounds = (activeMarker as import('leaflet').GeoJSON).getBounds();
-					const bounds = MapperInstance.L.latLngBounds(validLatLngs).extend(shapeBounds);
-					MapperInstance.map.fitBounds(bounds, { padding: [40, 40] });
-				} catch {
-					MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), {
-						padding: [50, 50]
-					});
-				}
+			let bounds = MapperInstance.getPointsBounds(validLatLngs);
+
+			if (selectedLocation?.isShape) {
+				bounds = MapperInstance.extendBounds(bounds, activeLocationBounds);
+			} else if (
+				selectedLocation &&
+				selectedLocation.latitude !== 0 &&
+				selectedLocation.longitude !== 0
+			) {
+				bounds = MapperInstance.extendBounds(
+					bounds,
+					MapperInstance.getPointsBounds([[selectedLocation.latitude, selectedLocation.longitude]])
+				);
+			}
+
+			if (bounds) {
+				MapperInstance.fitBounds(bounds, selectedLocation?.isShape ? 40 : 50);
+			}
+			MapperInstance.resize();
+		} else if (selectedLocation) {
+			if (selectedLocation.isShape && activeLocationBounds) {
+				MapperInstance.fitBounds(activeLocationBounds, 40);
 			} else {
-				if (
-					selectedLocation &&
-					selectedLocation.latitude !== 0 &&
-					selectedLocation.longitude !== 0
-				) {
-					validLatLngs.push([selectedLocation.latitude, selectedLocation.longitude]);
-				}
-				MapperInstance.map.fitBounds(MapperInstance.L.latLngBounds(validLatLngs), {
-					padding: [50, 50]
+				MapperInstance.setView([selectedLocation.latitude, selectedLocation.longitude], 16, {
+					animate: false
 				});
 			}
-			MapperInstance.map.invalidateSize();
-		} else if (selectedLocation) {
-			if (selectedLocation.isShape && activeMarker && 'getBounds' in activeMarker) {
-				try {
-					MapperInstance.map.fitBounds((activeMarker as import('leaflet').GeoJSON).getBounds(), {
-						padding: [40, 40]
-					});
-				} catch {
-					MapperInstance.map.setView([selectedLocation.latitude, selectedLocation.longitude], 13);
-				}
-			} else {
-				MapperInstance.map.setView([selectedLocation.latitude, selectedLocation.longitude], 16);
-			}
-			MapperInstance.map.invalidateSize();
+			MapperInstance.resize();
 		}
 	}
 
@@ -262,15 +401,16 @@
 			updateMapWithLocation(selectedLocation);
 		} else {
 			clearActiveLayer();
+			updateSearchRadius();
 		}
 		if (crashes.length > 0) {
 			updateNearbyMarkers(crashes);
-		} else if (markerLayerGroup) {
-			markerLayerGroup.clearLayers();
+		} else {
+			clearCrashMarkers();
+			setGeoJSONSourceData(CRASH_HEAT_SOURCE_ID, emptyFeatureCollection());
 		}
 	}
 
-	// React to location changes only
 	$effect(() => {
 		const loc = selectedLocation;
 		if (!MapperInstance.map) return;
@@ -278,33 +418,22 @@
 			updateMapWithLocation(loc);
 		} else {
 			clearActiveLayer();
-			if (mapCircleLayer && MapperInstance.map) {
-				MapperInstance.map.removeLayer(mapCircleLayer);
-				mapCircleLayer = null;
-			}
-		}
-	});
-
-	// React to distance filter changes without recentering
-	$effect(() => {
-		if (selectedLocation && selectedLocation.isPoint && maxDistance) {
 			updateSearchRadius();
-		} else if (mapCircleLayer && MapperInstance.map) {
-			MapperInstance.map.removeLayer(mapCircleLayer);
-			mapCircleLayer = null;
 		}
 	});
 
-	// React to crash result changes
 	$effect(() => {
+		if (!MapperInstance.map) return;
+		updateSearchRadius();
+	});
+
+	$effect(() => {
+		if (!MapperInstance.map) return;
 		if (crashes.length > 0) {
 			updateNearbyMarkers(crashes);
-		} else if (markerLayerGroup) {
-			markerLayerGroup.clearLayers();
-			if (heatLayer && MapperInstance.map) {
-				MapperInstance.map.removeLayer(heatLayer);
-				heatLayer = null;
-			}
+		} else {
+			clearCrashMarkers();
+			setGeoJSONSourceData(CRASH_HEAT_SOURCE_ID, emptyFeatureCollection());
 			fitToCrashes([]);
 		}
 	});
@@ -316,21 +445,28 @@
 			if (destroyed) return;
 			syncMapState();
 			requestAnimationFrame(() => {
-				MapperInstance.map?.invalidateSize();
+				MapperInstance.resize();
 			});
 		})();
 
 		return () => {
 			destroyed = true;
+			clearCrashMarkers();
+			clearActiveLayer();
 			MapperInstance.destroy();
 		};
 	});
 </script>
 
-<div id="map"></div>
+<div
+	id="map"
+	bind:this={mapHost}
+	data-map-ready="false"
+	data-active-location-kind="none"
+	data-crash-count="0"
+></div>
 
 <style>
-	/* Leaflet requires a height to be set explicitly */
 	:global(#map) {
 		height: 24rem;
 		width: 100%;
@@ -342,10 +478,9 @@
 		z-index: 0;
 	}
 
-	/* Dot markers — default (zoomed in, zoom 16+) */
 	:global(.marker-dot) {
-		width: 12px;
-		height: 12px;
+		width: 15px;
+		height: 15px;
 		border-radius: 50%;
 		border: 2px solid rgba(0, 0, 0, 0.6);
 		box-shadow:
@@ -358,7 +493,6 @@
 			box-shadow 150ms;
 	}
 
-	/* Zoomed out (< 14): tiny dots, no border, let heatmap dominate */
 	:global(.zoom-far .marker-dot) {
 		width: 5px;
 		height: 5px;
@@ -367,17 +501,15 @@
 		opacity: 0.7;
 	}
 
-	/* Mid zoom (14-15): medium dots with stroke */
 	:global(.zoom-mid .marker-dot) {
-		width: 9px;
-		height: 9px;
+		width: 11px;
+		height: 11px;
 		border: 1.5px solid rgba(0, 0, 0, 0.5);
 		box-shadow:
 			0 0 0 1.5px rgba(255, 255, 255, 0.6),
 			0 1px 3px rgba(0, 0, 0, 0.25);
 	}
 
-	/* Rich popup content — Leaflet injects popups outside Svelte scope */
 	:global(.popup-content) {
 		min-width: 200px;
 		line-height: 1.4;

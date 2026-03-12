@@ -2,7 +2,6 @@
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping';
-	import { SITE_TITLE } from '$lib/constants';
 	import CrashDetail from '$lib/components/CrashDetail.svelte';
 	import type { Crash } from '$lib/models/crash';
 	import type { PageData } from './$types';
@@ -17,25 +16,33 @@
 	let mapEl: HTMLDivElement | undefined = $state(undefined);
 	const MapperInstance = new Mapper();
 
+	function buildCircleElement(color: string, size: number, opacity: number, borderWidth: number) {
+		const element = document.createElement('div');
+		element.style.width = `${size}px`;
+		element.style.height = `${size}px`;
+		element.style.borderRadius = '9999px';
+		element.style.background = color;
+		element.style.opacity = String(opacity);
+		element.style.border = `${borderWidth}px solid rgba(255, 255, 255, 0.85)`;
+		element.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.25)';
+		return element;
+	}
+
 	onMount(() => {
 		let destroyed = false;
 		(async () => {
 			if (!mapEl) return;
-			const mapId = 'crash-map';
-			mapEl.id = mapId;
-			await MapperInstance.init(mapId, [crash.latitude, crash.longitude], 16);
-			if (destroyed || !MapperInstance.map || !MapperInstance.L) return;
+			await MapperInstance.init(mapEl, [crash.latitude, crash.longitude], 16);
+			if (destroyed || !MapperInstance.map || !MapperInstance.maplibre) return;
 
 			const markerColor = crash.isFatal ? '#dc2626' : '#d97706';
-			MapperInstance.L.circleMarker([crash.latitude, crash.longitude], {
-				radius: 10,
-				color: markerColor,
-				fillColor: markerColor,
-				fillOpacity: 0.8,
-				weight: 2
-			}).addTo(MapperInstance.map);
+			new MapperInstance.maplibre.Marker({
+				element: buildCircleElement(markerColor, 20, 0.9, 3),
+				anchor: 'center'
+			})
+				.setLngLat([crash.longitude, crash.latitude])
+				.addTo(MapperInstance.map);
 
-			// Add nearby crash markers
 			if (nearby_crashes?.length) {
 				for (const nc of nearby_crashes) {
 					const ncColor =
@@ -45,21 +52,24 @@
 								? '#d97706'
 								: '#6b7280';
 					const feetAway = Math.round(nc.distance_miles * 5280);
-					MapperInstance.L.circleMarker([nc.latitude, nc.longitude], {
-						radius: 5,
-						color: ncColor,
-						fillColor: ncColor,
-						fillOpacity: 0.5,
-						weight: 1
+					const popup = MapperInstance.createPopup(
+						`<a href="${base}/crashes/${nc.crash_record_id}">${nc.crash_date.slice(0, 10)}</a><br/>${feetAway} ft away`,
+						'220px'
+					);
+					const marker = new MapperInstance.maplibre.Marker({
+						element: buildCircleElement(ncColor, 10, 0.7, 1),
+						anchor: 'center'
 					})
-						.bindPopup(
-							`<a href="${base}/crashes/${nc.crash_record_id}">${nc.crash_date.slice(0, 10)}</a><br/>${feetAway} ft away`
-						)
+						.setLngLat([nc.longitude, nc.latitude])
 						.addTo(MapperInstance.map);
+
+					if (popup) {
+						marker.setPopup(popup);
+					}
 				}
 			}
 
-			MapperInstance.map.invalidateSize();
+			MapperInstance.resize();
 		})();
 
 		return () => {
@@ -74,7 +84,6 @@
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
-	<!-- Back link -->
 	<nav class="text-sm">
 		<button
 			type="button"
@@ -83,19 +92,15 @@
 		>
 	</nav>
 
-	<!-- Page title -->
 	<h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight break-words">
 		{crash.title}
 	</h1>
 
-	<!-- Map -->
 	<div class="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
 		<div bind:this={mapEl} class="w-full h-[240px] sm:h-[350px]"></div>
 	</div>
 
-	<!-- Main content delegated to CrashDetail -->
 	<CrashDetail {crash} {neighborhood} {ward} {intersections} {nearby_crashes} />
 
-	<!-- Footer -->
 	<p class="text-xs text-gray-400 text-center pt-2">Crash record: {crash.crash_record_id}</p>
 </div>

@@ -16,22 +16,37 @@ vi.mock('wellknown', () => ({
 	}
 }));
 
-const mockLeaflet = {
-	map: vi.fn().mockReturnThis(),
-	setView: vi.fn().mockReturnThis(),
-	tileLayer: vi.fn().mockReturnValue({ addTo: vi.fn() }),
-	marker: vi.fn().mockReturnValue({
-		bindPopup: vi.fn().mockReturnValue({ openPopup: vi.fn() })
-	}),
-	circle: vi.fn().mockReturnValue({ addTo: vi.fn() }),
-	geoJSON: vi.fn().mockReturnValue({ addTo: vi.fn() }),
-	latLngBounds: vi.fn(),
-	layerGroup: vi.fn().mockReturnValue({ addTo: vi.fn(), clearLayers: vi.fn() }),
-	divIcon: vi.fn()
+const mockMap = {
+	loaded: vi.fn(() => true),
+	scrollZoom: { disable: vi.fn() },
+	addControl: vi.fn(),
+	once: vi.fn(),
+	remove: vi.fn(),
+	easeTo: vi.fn(),
+	fitBounds: vi.fn(),
+	resize: vi.fn()
 };
 
-vi.mock('leaflet', () => ({
-	default: mockLeaflet
+const MockMap = vi.fn(() => mockMap);
+const MockNavigationControl = vi.fn();
+const MockPopup = vi.fn(() => ({
+	setHTML: vi.fn().mockReturnThis()
+}));
+
+vi.mock('maplibre-gl/dist/maplibre-gl-csp.js', () => ({
+	Map: MockMap,
+	NavigationControl: MockNavigationControl,
+	Popup: MockPopup,
+	setWorkerUrl: vi.fn(),
+	default: {
+		Map: MockMap,
+		NavigationControl: MockNavigationControl,
+		Popup: MockPopup
+	}
+}));
+
+vi.mock('maplibre-gl/dist/maplibre-gl-csp-worker.js?url', () => ({
+	default: '/mock-maplibre-worker.js'
 }));
 
 describe('Mapper', () => {
@@ -40,28 +55,43 @@ describe('Mapper', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mapper = new Mapper();
-		mapper.L = mockLeaflet as unknown as typeof import('leaflet');
-		mapper.map = { remove: vi.fn() } as unknown as import('leaflet').Map;
+		mapper.map = mockMap as unknown as import('maplibre-gl').Map;
+		mapper.maplibre = {
+			Map: MockMap,
+			NavigationControl: MockNavigationControl,
+			Popup: MockPopup
+		} as unknown as typeof import('maplibre-gl');
 	});
 
 	describe('init and destroy lifecycle', () => {
-		it('initializes the map with element, center, and zoom', async () => {
+		it('initializes the map with container, center, zoom, and base style', async () => {
 			mapper = new Mapper();
-			const map = await mapper.init('map-id', [41.88, -87.62], 12);
+			const map = await mapper.init('map-id', [41.88, -87.62], 12, { scrollZoom: false });
 
-			expect(mockLeaflet.map).toHaveBeenCalledWith('map-id');
-			expect(mockLeaflet.map().setView).toHaveBeenCalledWith([41.88, -87.62], 12);
-			expect(mockLeaflet.tileLayer).toHaveBeenCalled();
+			expect(MockMap).toHaveBeenCalledWith(
+				expect.objectContaining({
+					container: 'map-id',
+					center: [-87.62, 41.88],
+					zoom: 12,
+					style: expect.objectContaining({
+						version: 8,
+						sources: expect.objectContaining({
+							carto: expect.objectContaining({ type: 'raster' })
+						})
+					})
+				})
+			);
+			expect(mockMap.scrollZoom.disable).toHaveBeenCalled();
+			expect(mockMap.addControl).toHaveBeenCalled();
 			expect(map).toBeDefined();
-			expect(mapper.L).toBeDefined();
+			expect(mapper.maplibre).toBeDefined();
 		});
 
 		it('destroys the map and nulls references', () => {
-			const removeSpy = mapper.map!.remove;
 			mapper.destroy();
-			expect(removeSpy).toHaveBeenCalled();
+			expect(mockMap.remove).toHaveBeenCalled();
 			expect(mapper.map).toBeNull();
-			expect(mapper.L).toBeNull();
+			expect(mapper.maplibre).toBeNull();
 		});
 
 		it('does nothing when destroying without a map', () => {
@@ -71,45 +101,34 @@ describe('Mapper', () => {
 		});
 	});
 
-	describe('makePointMarker', () => {
-		it('creates a marker at the location coordinates', () => {
-			mapper.makePointMarker(
+	describe('geometry helpers', () => {
+		it('creates a point feature at the location coordinates', () => {
+			const point = mapper.makePointFeature(
 				new Location(makeLocationRecord({ latitude: 41.88, longitude: -87.62, name: 'Test' }))
 			);
-			expect(mockLeaflet.marker).toHaveBeenCalledWith([41.88, -87.62]);
+
+			expect(point.geometry).toEqual({
+				type: 'Point',
+				coordinates: [-87.62, 41.88]
+			});
+			expect(point.properties?.name).toBe('Test');
 		});
 
-		it('binds the location name as a popup', () => {
-			const marker = mapper.makePointMarker(
-				new Location(makeLocationRecord({ name: 'Test Location' }))
-			);
-			expect(marker.bindPopup).toHaveBeenCalledWith('Test Location');
-		});
-	});
+		it('creates a circle polygon feature with style properties', () => {
+			const circle = mapper.makeMapCircleFeature(-87.62, 41.88, 100, '#ff0000', 0.5);
 
-	describe('makeMapCircle', () => {
-		it('creates a circle with lat/lng swapped and given radius/color', () => {
-			mapper.makeMapCircle(-87.62, 41.88, 100);
-			expect(mockLeaflet.circle).toHaveBeenCalledWith(
-				[41.88, -87.62],
-				expect.objectContaining({ radius: 100, color: '#3c80ff' })
+			expect(circle.geometry.type).toBe('Polygon');
+			expect(circle.geometry.coordinates[0]).toHaveLength(65);
+			expect(circle.properties).toEqual(
+				expect.objectContaining({ color: '#ff0000', opacity: 0.5 })
 			);
 		});
 
-		it('accepts custom color and opacity', () => {
-			mapper.makeMapCircle(-87.62, 41.88, 200, '#ff0000', 0.5);
-			expect(mockLeaflet.circle).toHaveBeenCalledWith(
-				[41.88, -87.62],
-				expect.objectContaining({ color: '#ff0000', fillOpacity: 0.5 })
-			);
-		});
-	});
-
-	describe('makeShapeMarker', () => {
-		it('styles street shapes with thick stroke and no fill', () => {
-			mapper.makeShapeMarker(
+		it('creates a shape feature with location properties', () => {
+			const shape = mapper.makeShapeFeature(
 				new Location(
 					makeLocationRecord({
+						id: 'ward-1',
 						category: 'street',
 						name: 'S MICHIGAN AVE',
 						the_geom: 'LINESTRING (-87.62 41.88, -87.62 41.89)'
@@ -117,66 +136,52 @@ describe('Mapper', () => {
 				)
 			);
 
-			const options = mockLeaflet.geoJSON.mock.calls[0][1] as {
-				style: (feature?: import('geojson').Feature) => Record<string, unknown>;
-			};
-			const style = options.style({
-				type: 'Feature',
-				properties: { category: 'street' },
-				geometry: {
-					type: 'LineString',
-					coordinates: [
-						[-87.62, 41.88],
-						[-87.62, 41.89]
-					]
-				}
-			} as unknown as import('geojson').Feature);
-
-			expect(style.weight).toBe(2);
-			expect(style.fillOpacity).toBe(0);
-			expect(style.opacity).toBe(0.7);
+			expect(shape.properties).toEqual(
+				expect.objectContaining({
+					name: 'S MICHIGAN AVE',
+					id: 'ward-1',
+					category: 'street'
+				})
+			);
+			expect(shape.geometry.type).toBe('LineString');
 		});
 
-		it('styles area polygons with lighter stroke and fill', () => {
-			mapper.makeShapeMarker(
-				new Location(
-					makeLocationRecord({
-						category: 'neighborhood',
-						name: 'Loop',
-						the_geom: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
-					})
+		it('computes and extends bounds from features and points', () => {
+			const bounds = mapper.getFeatureBounds(
+				mapper.makeShapeFeature(
+					new Location(
+						makeLocationRecord({
+							the_geom: 'LINESTRING (-87.62 41.88, -87.61 41.89)'
+						})
+					)
 				)
 			);
+			const pointBounds = mapper.getPointsBounds([[41.87, -87.63]]);
+			const combined = mapper.extendBounds(bounds, pointBounds);
 
-			const options = mockLeaflet.geoJSON.mock.calls[0][1] as {
-				style: (feature?: import('geojson').Feature) => Record<string, unknown>;
-			};
-			const style = options.style({
-				type: 'Feature',
-				properties: { category: 'neighborhood' },
-				geometry: { type: 'Polygon', coordinates: [] }
-			} as unknown as import('geojson').Feature);
-
-			expect(style.weight).toBe(1);
-			expect(style.fillOpacity).toBe(0.4);
-			expect(style.opacity).toBe(0.8);
+			expect(combined).toEqual([
+				[-87.63, 41.87],
+				[-87.62, 41.89]
+			]);
 		});
 
-		it('passes a FeatureCollection with location properties to geoJSON', () => {
-			mapper.makeShapeMarker(
-				new Location(makeLocationRecord({ id: 'ward-1', category: 'ward', name: 'Ward 42' }))
-			);
-
-			expect(mockLeaflet.geoJSON).toHaveBeenCalledWith(
+		it('returns street paint with no fill and thicker line', () => {
+			expect(mapper.getLocationPaint('street')).toEqual(
 				expect.objectContaining({
-					type: 'FeatureCollection',
-					features: expect.arrayContaining([
-						expect.objectContaining({
-							properties: expect.objectContaining({ name: 'Ward 42', id: 'ward-1' })
-						})
-					])
-				}),
-				expect.any(Object)
+					lineWidth: 2,
+					fillOpacity: 0,
+					lineOpacity: 0.7
+				})
+			);
+		});
+
+		it('returns area paint with filled polygon styling', () => {
+			expect(mapper.getLocationPaint('neighborhood')).toEqual(
+				expect.objectContaining({
+					lineWidth: 1,
+					fillOpacity: 0.4,
+					lineOpacity: 0.8
+				})
 			);
 		});
 	});

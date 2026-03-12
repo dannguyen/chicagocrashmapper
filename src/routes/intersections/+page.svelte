@@ -3,10 +3,16 @@
 	import { base } from '$app/paths';
 	import { getTopIntersections } from '$lib/api/client';
 	import { SITE_TITLE, CHICAGO_CENTER } from '$lib/constants';
+	import { Mapper, type MapLibreMarker } from '$lib/mapping';
 	import type { IntersectionStat } from '$lib/models/types';
 	import { escapeHtml } from '$lib/inputHelpers';
 
 	const defaultCenter = CHICAGO_CENTER;
+
+	type BuiltMap = {
+		mapper: Mapper;
+		markers: MapLibreMarker[];
+	};
 
 	let topByCount: IntersectionStat[] = $state([]);
 	let topByRecent: IntersectionStat[] = $state([]);
@@ -15,16 +21,28 @@
 
 	let countMapHost: HTMLDivElement | null = $state(null);
 	let recentMapHost: HTMLDivElement | null = $state(null);
-	let countMap: import('leaflet').Map | null = null;
-	let recentMap: import('leaflet').Map | null = null;
+	let countMap: BuiltMap | null = $state(null);
+	let recentMap: BuiltMap | null = $state(null);
 
 	function formatStats(item: IntersectionStat): string {
 		return `${item.count.toLocaleString()} crashes · ${item.fatal_injuries.toLocaleString()} fatalities · ${item.serious_injuries.toLocaleString()} serious injuries`;
 	}
 
-	function destroyMap(map: import('leaflet').Map | null): null {
-		if (map) {
-			map.remove();
+	function createRankMarker(index: number, color: string) {
+		const marker = document.createElement('button');
+		marker.type = 'button';
+		marker.className = 'intersection-rank-marker';
+		marker.style.background = color;
+		marker.textContent = String(index + 1);
+		return marker;
+	}
+
+	function destroyMap(state: BuiltMap | null): null {
+		if (state) {
+			for (const marker of state.markers) {
+				marker.remove();
+			}
+			state.mapper.destroy();
 		}
 		return null;
 	}
@@ -33,50 +51,50 @@
 		host: HTMLDivElement | null,
 		items: IntersectionStat[],
 		color: string
-	): Promise<import('leaflet').Map | null> {
+	): Promise<BuiltMap | null> {
 		if (!host) return null;
-		const L = (await import('leaflet')).default;
-		const map = L.map(host, {
-			scrollWheelZoom: false,
-			zoomControl: true
+
+		const mapper = new Mapper();
+		await mapper.init(host, defaultCenter, 11, {
+			scrollZoom: false
 		});
 
-		L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-			attribution:
-				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-			subdomains: 'abcd',
-			maxZoom: 19
-		}).addTo(map);
-
-		const bounds = L.latLngBounds([]);
-
-		items.forEach((item, index) => {
-			const popupHtml = `${index + 1}. ${escapeHtml(item.name)}<br>${escapeHtml(formatStats(item))}`;
-			const marker = L.circleMarker([item.latitude, item.longitude], {
-				radius: 8,
-				color,
-				weight: 2,
-				fillColor: color,
-				fillOpacity: 0.55
-			});
-			marker.bindTooltip(`${index + 1}`, {
-				permanent: true,
-				direction: 'center',
-				className: 'intersection-rank-marker'
-			});
-			marker.bindPopup(popupHtml);
-			marker.addTo(map);
-			bounds.extend([item.latitude, item.longitude]);
-		});
-
-		if (bounds.isValid()) {
-			map.fitBounds(bounds.pad(0.18));
-		} else {
-			map.setView(defaultCenter, 11);
+		if (!mapper.map || !mapper.maplibre) {
+			return null;
 		}
 
-		requestAnimationFrame(() => map.invalidateSize());
-		return map;
+		const markers: MapLibreMarker[] = [];
+		let bounds = mapper.getPointsBounds([]);
+
+		for (const [index, item] of items.entries()) {
+			const popupHtml = `${index + 1}. ${escapeHtml(item.name)}<br>${escapeHtml(formatStats(item))}`;
+			const popup = mapper.createPopup(popupHtml, '260px');
+			const marker = new mapper.maplibre.Marker({
+				element: createRankMarker(index, color),
+				anchor: 'center'
+			})
+				.setLngLat([item.longitude, item.latitude])
+				.addTo(mapper.map);
+
+			if (popup) {
+				marker.setPopup(popup);
+			}
+
+			markers.push(marker);
+			bounds = mapper.extendBounds(
+				bounds,
+				mapper.getPointsBounds([[item.latitude, item.longitude]])
+			);
+		}
+
+		if (bounds) {
+			mapper.fitBounds(bounds, 40);
+		} else {
+			mapper.setView(defaultCenter, 11, { animate: false });
+		}
+
+		requestAnimationFrame(() => mapper.resize());
+		return { mapper, markers };
 	}
 
 	async function initMaps() {
@@ -220,13 +238,18 @@
 	}
 
 	:global(.intersection-rank-marker) {
-		border: 0;
-		background: transparent;
-		box-shadow: none;
-		color: #111827;
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 9999px;
+		border: 2px solid rgba(255, 255, 255, 0.9);
+		color: white;
 		font-size: 0.75rem;
 		font-weight: 700;
 		line-height: 1;
-		margin: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+		cursor: pointer;
 	}
 </style>
