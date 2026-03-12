@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { Crash, parseCrashes } from '$lib/models/crash';
 	import { Location } from '$lib/location';
-	import { getCrashSummary, getCrashesList } from '$lib/api/client';
-	import type { CrashListResult } from '$lib/api/client';
+	import { getCrashSummary, getCrashesList, getNearbyLocations } from '$lib/api/client';
+	import type { CrashListResult, NearbyLocation } from '$lib/api/client';
 	import type { CrashSummary } from '$lib/db/types';
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
@@ -16,6 +17,7 @@
 	const perPage = 25;
 	let loading: boolean = $state(true);
 	let allTimeSummary: CrashSummary | null = $state(null);
+	let nearbyLocations: NearbyLocation[] = $state([]);
 	let mapRef: MapContainer | undefined = $state(undefined);
 	const isIntersection = $derived(location.category === 'intersection');
 	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
@@ -79,9 +81,15 @@
 
 		loading = true;
 		allTimeSummary = null;
+		nearbyLocations = [];
 
-		Promise.all([fetchAllCrashes(), getCrashSummary({ locationId })]).then(([, summary]) => {
+		Promise.all([
+			fetchAllCrashes(),
+			getCrashSummary({ locationId }),
+			getNearbyLocations(locationId)
+		]).then(([, summary, nearby]) => {
 			allTimeSummary = summary;
+			nearbyLocations = nearby;
 
 			requestAnimationFrame(() => {
 				if (mapRef) {
@@ -111,6 +119,33 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Nearby locations of same type -->
+	{#if nearbyLocations.length > 0}
+		<div class="nearby-locations-card">
+			<p class="info-title">Nearby {location.pluralCategory}</p>
+			<table class="nearby-table">
+				<thead>
+					<tr>
+						<th class="nearby-th">Name</th>
+						<th class="nearby-th nearby-th-right">Crashes</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each nearbyLocations as loc}
+						<tr class="nearby-tr">
+							<td class="nearby-td">
+								<a href={`${base}/${location.pluralCategory}/${loc.id}`} class="nearby-link">
+									{loc.name}
+								</a>
+							</td>
+							<td class="nearby-td nearby-td-right">{loc.total_crashes.toLocaleString()}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/if}
 
 	<!-- Pagination + crash list -->
 	{#if totalCrashes > 0}
@@ -374,6 +409,59 @@
 	.inactive-page:hover {
 		border-color: rgb(59 130 246);
 		color: #1d4ed8;
+	}
+
+	.nearby-locations-card {
+		background: #fff;
+		border-radius: 0.75rem;
+		border: 1px solid #e5e7eb;
+		padding: 1rem;
+		box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+	}
+
+	.nearby-table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+
+	.nearby-th {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #9ca3af;
+		text-align: left;
+		padding: 0 0 0.5rem;
+		border-bottom: 1px solid #e5e7eb;
+	}
+
+	.nearby-th-right {
+		text-align: right;
+	}
+
+	.nearby-tr + .nearby-tr .nearby-td {
+		border-top: 1px solid #f3f4f6;
+	}
+
+	.nearby-td {
+		font-size: 0.875rem;
+		padding: 0.5rem 0;
+		color: #1f2937;
+	}
+
+	.nearby-td-right {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		color: #6b7280;
+	}
+
+	.nearby-link {
+		color: #2563eb;
+		text-decoration: none;
+	}
+
+	.nearby-link:hover {
+		text-decoration: underline;
 	}
 
 	@keyframes pulse {

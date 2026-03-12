@@ -47,6 +47,25 @@ export async function getLocationById(id: string): Promise<LocationRecord | null
 	}
 }
 
+export interface NearbyLocation {
+	id: string;
+	name: string;
+	latitude: number;
+	longitude: number;
+	total_crashes: number;
+}
+
+export async function getNearbyLocations(
+	locationId: string,
+	limit: number = 5
+): Promise<NearbyLocation[]> {
+	const data = await apiGet<{ locations: NearbyLocation[] }>(
+		`/api/locations/${encodeURIComponent(locationId)}/nearby`,
+		{ limit }
+	);
+	return data.locations;
+}
+
 export async function getCrashesNearPoint(
 	lat: number,
 	lng: number,
