@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_TITLE } from '$lib/constants';
 	import PeriodDetail from '$lib/components/PeriodDetail.svelte';
 	import type { PageData } from './$types';
 
@@ -13,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>{headline} — {SITE_NAME}</title>
+	<title>{headline} — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="period-header">

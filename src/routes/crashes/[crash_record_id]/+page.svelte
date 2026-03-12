@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { Mapper } from '$lib/mapping';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_TITLE } from '$lib/constants';
 	import CrashDetail from '$lib/components/CrashDetail.svelte';
 	import type { Crash } from '$lib/models/crash';
 	import type { PageData } from './$types';

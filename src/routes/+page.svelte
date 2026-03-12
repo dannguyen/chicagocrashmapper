@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 
-	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
+	import { SITE_TITLE, SITE_SUBTITLE, CHICAGO_CENTER } from '$lib/constants';
 	import type { Crash } from '$lib/models/crash';
 	import { parseCrashes } from '$lib/models/crash';
 	import type { DenseCrash } from '$lib/models/types';
@@ -93,7 +93,7 @@
 </script>
 
 <svelte:head>
-	<title>{SITE_NAME}</title>
+	<title>{SITE_TITLE} | {SITE_SUBTITLE}</title>
 </svelte:head>
 
 {#if !loading}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import LocationDetail from '$lib/components/LocationDetail.svelte';
 	import { base } from '$app/paths';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_TITLE } from '$lib/constants';
 	import type { PageData } from './$types';
 
 	let { data } = $props<{ data: PageData }>();
@@ -26,7 +26,7 @@
 </script>
 
 <svelte:head>
-	<title>{location?.name ?? 'Location'} — {SITE_NAME}</title>
+	<title>{location?.name ?? 'Location'} — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="mb-6">

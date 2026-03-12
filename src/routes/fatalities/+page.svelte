@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_TITLE, MAX_CRASH_RESULTS_PER_PAGE } from '$lib/constants';
 	import { getCrashesList } from '$lib/api/client';
 	import { Crash, parseCrashes } from '$lib/models/crash';
 	import type { Person } from '$lib/models/person';
@@ -16,7 +16,7 @@
 	let error = $state<string | null>(null);
 	let page = $state(0);
 	let totalCrashes = $state(0);
-	const perPage = 200;
+	const perPage = MAX_CRASH_RESULTS_PER_PAGE;
 
 	type PersonTypeFilter = 'all' | 'pedestrian' | 'cyclist' | 'driver' | 'passenger';
 	let typeFilter: PersonTypeFilter = $state('all');
@@ -103,7 +103,7 @@
 </script>
 
 <svelte:head>
-	<title>Fatalities — {SITE_NAME}</title>
+	<title>Fatalities — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="page-header">

@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { base } from '$app/paths';
 	import { getTopIntersections } from '$lib/api/client';
-	import { SITE_NAME, CHICAGO_CENTER } from '$lib/constants';
+	import { SITE_TITLE, CHICAGO_CENTER } from '$lib/constants';
 	import type { IntersectionStat } from '$lib/models/types';
 	import { escapeHtml } from '$lib/inputHelpers';
 
@@ -117,7 +117,7 @@
 </script>
 
 <svelte:head>
-	<title>Dangerous Intersections — {SITE_NAME}</title>
+	<title>Dangerous Intersections — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl px-4 py-8">

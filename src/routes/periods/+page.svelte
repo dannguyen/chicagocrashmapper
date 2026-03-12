@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { SITE_NAME, MONTH_SHORT, MONTH_NAMES } from '$lib/constants';
+	import { SITE_TITLE, MONTH_SHORT, MONTH_NAMES } from '$lib/constants';
 	import { getDateCount } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/models/types';
 
@@ -116,7 +116,7 @@
 </script>
 
 <svelte:head>
-	<title>Crash Trends — {SITE_NAME}</title>
+	<title>Crash Trends — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="periods-page">

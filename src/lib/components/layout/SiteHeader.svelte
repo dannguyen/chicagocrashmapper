@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_TITLE } from '$lib/constants';
 
 	let mobileMenuOpen = $state(false);
 
@@ -19,7 +19,7 @@
 					fill="currentColor"
 				/>
 			</svg>
-			<span class="brand-title">{SITE_NAME}</span>
+			<h1 class="brand-title" id="site-title">{SITE_TITLE}</h1>
 		</a>
 
 		<!-- Desktop nav links -->

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getNeighborhoodStats } from '$lib/api/client';
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_TITLE } from '$lib/constants';
 	import type { AreaStat } from '$lib/models/types';
 	import AreaList from '$lib/components/AreaList.svelte';
 
@@ -21,7 +21,7 @@
 </script>
 
 <svelte:head>
-	<title>Chicago Neighborhoods — {SITE_NAME}</title>
+	<title>Chicago Neighborhoods — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl px-4 py-8">

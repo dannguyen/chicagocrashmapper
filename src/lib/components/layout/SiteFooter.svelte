@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SITE_NAME } from '$lib/constants';
+	import { SITE_TITLE } from '$lib/constants';
 	const year = new Date().getFullYear();
 </script>
 
@@ -12,7 +12,7 @@
 					fill="currentColor"
 				/>
 			</svg>
-			<span class="footer-title">{SITE_NAME}</span>
+			<span class="footer-title">{SITE_TITLE}</span>
 		</div>
 		<div class="footer-meta">
 			<span

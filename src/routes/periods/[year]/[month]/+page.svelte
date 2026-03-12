@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { SITE_NAME, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
+	import { SITE_TITLE, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
 	import PeriodDetail from '$lib/components/PeriodDetail.svelte';
 	import type { PageData } from './$types';
 
@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>{monthName} {data.year} Serious Crashes — {SITE_NAME}</title>
+	<title>{monthName} {data.year} Serious Crashes — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="period-header">

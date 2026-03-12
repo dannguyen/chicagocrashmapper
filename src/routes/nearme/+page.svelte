@@ -3,7 +3,7 @@
 
 	import {
 		SEARCH_DEBOUNCE_MS,
-		SITE_NAME,
+		SITE_TITLE,
 		CHICAGO_CENTER,
 		DEFAULT_MAX_DISTANCE_FT,
 		DEFAULT_MAX_DAYS
@@ -199,7 +199,7 @@
 </script>
 
 <svelte:head>
-	<title>Near Me — {SITE_NAME}</title>
+	<title>Near Me — {SITE_TITLE}</title>
 </svelte:head>
 
 <div class="dashboard-layout" id="main-results-section">

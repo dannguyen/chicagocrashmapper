@@ -11,9 +11,12 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check .",
-		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run",
-		"test:e2e": "playwright test"
+		"test": "vitest --run",
+		"test:e2e:local": "playwright test -c playwright.local.config.ts",
+		"test:e2e:spec": "playwright test",
+		"test:e2e": "npm run test:e2e:local && npm run test:e2e:spec",
+		"test:unit": "npm run test:unit -- --run",
+		"test:all": "npm run test && npm run test:e2e"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.50.0",
