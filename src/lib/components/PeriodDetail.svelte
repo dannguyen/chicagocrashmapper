@@ -142,12 +142,12 @@
 	const crashesPrevDelta = $derived(summaryDelta(summary, prevSummary, (s) => s.total));
 	const fatalPrevDelta = $derived(summaryDelta(summary, prevSummary, (s) => s.fatal_injuries));
 	const seriousPrevDelta = $derived(
-		summaryDelta(summary, prevSummary, (s) => s.incapacitating_injuries)
+		summaryDelta(summary, prevSummary, (s) => s.injuries_incapacitating)
 	);
 	const crashesYoyDelta = $derived(summaryDelta(summary, yearAgoSummary, (s) => s.total));
 	const fatalYoyDelta = $derived(summaryDelta(summary, yearAgoSummary, (s) => s.fatal_injuries));
 	const seriousYoyDelta = $derived(
-		summaryDelta(summary, yearAgoSummary, (s) => s.incapacitating_injuries)
+		summaryDelta(summary, yearAgoSummary, (s) => s.injuries_incapacitating)
 	);
 
 	// ── Chart ────────────────────────────────────────────────────────────────────
@@ -323,7 +323,7 @@
 						</div>
 						<div class="kpi-col">
 							<div class="kpi-primary kpi-serious">
-								{summary.incapacitating_injuries.toLocaleString()}
+								{summary.injuries_incapacitating.toLocaleString()}
 							</div>
 							<div class="kpi-label">Serious Injuries</div>
 						</div>
@@ -349,7 +349,7 @@
 								</div>
 								<div class="kpi-col">
 									<span class="kpi-abs kpi-abs-serious"
-										>{prevSummary.incapacitating_injuries.toLocaleString()}</span
+										>{prevSummary.injuries_incapacitating.toLocaleString()}</span
 									>
 									<span
 										class="kpi-delta"
@@ -391,7 +391,7 @@
 								</div>
 								<div class="kpi-col">
 									<span class="kpi-abs kpi-abs-serious"
-										>{yearAgoSummary.incapacitating_injuries.toLocaleString()}</span
+										>{yearAgoSummary.injuries_incapacitating.toLocaleString()}</span
 									>
 									<span
 										class="kpi-delta"

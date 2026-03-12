@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type { StreetStat } from '$lib/db/types';
+	import type { AreaStat } from '$lib/db/types';
 	import { prettifyDate, currentAgeSimplified } from '$lib/transformHelpers';
 	import StreetShape from '$lib/components/StreetShape.svelte';
 
@@ -9,7 +9,7 @@
 	}
 
 	let { stats, loading, error, cityGeoJson } = $props<{
-		stats: StreetStat[];
+		stats: AreaStat[];
 		loading: boolean;
 		error: string | null;
 		cityGeoJson: GeoJSON.FeatureCollection | null;
@@ -27,8 +27,8 @@
 
 	let sortedStats = $derived.by(() => {
 		return [...stats].sort((a, b) => {
-			let valA: string | number | null = a[sortField as keyof StreetStat] as string | number | null;
-			let valB: string | number | null = b[sortField as keyof StreetStat] as string | number | null;
+			let valA: string | number | null = a[sortField as keyof AreaStat] as string | number | null;
+			let valB: string | number | null = b[sortField as keyof AreaStat] as string | number | null;
 
 			if (valA === null) valA = '';
 			if (valB === null) valB = '';
@@ -53,7 +53,7 @@
 		return '';
 	}
 
-	let hasGeom = $derived(stats.some((s: StreetStat) => s.the_geom));
+	let hasGeom = $derived(stats.some((s: AreaStat) => s.the_geom));
 </script>
 
 {#if loading}

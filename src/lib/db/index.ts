@@ -5,9 +5,7 @@
 
 export type {
 	LocationRecord,
-	NeighborhoodStat,
-	WardStat,
-	StreetStat,
+	AreaStat,
 	IntersectionStat,
 	CrashSummary,
 	DateCountPeriod

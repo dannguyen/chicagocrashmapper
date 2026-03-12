@@ -13,33 +13,7 @@ export interface LocationRecord {
 	the_geom: string;
 }
 
-export interface NeighborhoodStat {
-	id: string;
-	name: string;
-	the_geom?: string | null;
-	totalCrashes: number;
-	totalFatal: number;
-	totalSeriousInjuries: number;
-	mostRecent: string | null;
-	avgPerYear: number;
-	rank: number;
-	percentile: number;
-}
-
-export interface WardStat {
-	id: string;
-	name: string;
-	the_geom?: string | null;
-	totalCrashes: number;
-	totalFatal: number;
-	totalSeriousInjuries: number;
-	mostRecent: string | null;
-	avgPerYear: number;
-	rank: number;
-	percentile: number;
-}
-
-export interface StreetStat {
+export interface AreaStat {
 	id: string;
 	name: string;
 	the_geom?: string | null;
@@ -66,13 +40,21 @@ export interface IntersectionStat {
 export interface CrashSummary {
 	total: number;
 	fatal_injuries: number;
-	incapacitating_injuries: number;
+	injuries_incapacitating: number;
 	top_causes: { cause: string; count: number }[];
 	by_year: Record<string, number>;
 }
 
 export interface DateCountPeriod {
 	crash_count: number;
+	injuries_fatal: number;
+	injuries_incapacitating: number;
+}
+
+export interface DenseCrash {
+	latitude: number;
+	longitude: number;
+	crash_date: string;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
 }

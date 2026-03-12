@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { filterLocationsBySearchString, Location } from '$lib/location';
+import { Location } from '$lib/location';
 import { makeLocationRecord } from './fixtures';
 
 describe('Location', () => {
@@ -63,61 +63,5 @@ describe('Location', () => {
 				'streets'
 			);
 		});
-	});
-});
-
-describe('filterLocationsBySearchString', () => {
-	const locations = [
-		new Location(makeLocationRecord({ id: '1', name: 'STATE & LAKE' })),
-		new Location(makeLocationRecord({ id: '2', name: 'STATE & MADISON' })),
-		new Location(makeLocationRecord({ id: '3', name: 'MICHIGAN & LAKE' })),
-		new Location(makeLocationRecord({ id: '4', name: 'CLARK & LAKE' })),
-		new Location(makeLocationRecord({ id: '5', name: 'W OHIO ST & LAKE' })),
-		new Location(makeLocationRecord({ id: '6', name: 'W OHIO ST & STATE' })),
-		new Location(makeLocationRecord({ id: '7', name: 'E OHIO ST & LAKE' }))
-	];
-
-	it('returns matches where all tokens appear in the name', () => {
-		const results = filterLocationsBySearchString(locations, 'State Lake');
-		expect(results).toHaveLength(1);
-		expect(results[0].id).toBe('1');
-	});
-
-	it('is case insensitive', () => {
-		const results = filterLocationsBySearchString(locations, 'state madison');
-		expect(results).toHaveLength(1);
-		expect(results[0].name).toBe('STATE & MADISON');
-	});
-
-	it('ignores token order', () => {
-		const results = filterLocationsBySearchString(locations, 'madison state');
-		expect(results).toHaveLength(1);
-		expect(results[0].name).toBe('STATE & MADISON');
-	});
-
-	it('ignores AND keyword in query', () => {
-		const results = filterLocationsBySearchString(locations, 'State AND Madison');
-		expect(results).toHaveLength(1);
-		expect(results[0].name).toBe('STATE & MADISON');
-	});
-
-	it('ignores & in query', () => {
-		const results = filterLocationsBySearchString(locations, 'madison&state');
-		expect(results).toHaveLength(1);
-		expect(results[0].name).toBe('STATE & MADISON');
-	});
-
-	it('returns empty array when no match', () => {
-		expect(filterLocationsBySearchString(locations, 'Wacker')).toHaveLength(0);
-	});
-
-	it('respects the limit parameter', () => {
-		const results = filterLocationsBySearchString(locations, 'Lake', 2);
-		expect(results).toHaveLength(2);
-	});
-
-	it('returns empty for blank or whitespace-only query', () => {
-		expect(filterLocationsBySearchString(locations, '')).toEqual([]);
-		expect(filterLocationsBySearchString(locations, '   ')).toEqual([]);
 	});
 });

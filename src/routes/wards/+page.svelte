@@ -2,10 +2,10 @@
 	import { onMount } from 'svelte';
 	import { getWardStats } from '$lib/api/client';
 	import { SITE_NAME } from '$lib/constants';
-	import type { WardStat } from '$lib/db';
+	import type { AreaStat } from '$lib/db';
 	import AreaList from '$lib/components/AreaList.svelte';
 
-	let stats: WardStat[] = $state([]);
+	let stats: AreaStat[] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 

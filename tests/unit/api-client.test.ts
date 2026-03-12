@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
 	getCrashById,
+	getCrashesDense,
 	getCrashesList,
 	getCrashesNearPoint,
 	getCrashesWithin,
@@ -203,9 +204,7 @@ describe('api client', () => {
 		it('fetches /api/intersections/top with limit=20 and recent_days=90', async () => {
 			const mockResponse = {
 				by_count: [{ id: 'i-1', name: 'State & Lake', total_crashes: 80 }],
-				by_recent: [],
-				by_recent_90_days: [],
-				by_recency: []
+				by_recent: []
 			};
 			mockFetchOk(mockResponse);
 
@@ -247,6 +246,29 @@ describe('api client', () => {
 			expect(url.searchParams.has('location_id')).toBe(false);
 			expect(url.searchParams.get('latitude')).toBe('41.88');
 			expect(url.searchParams.get('longitude')).toBe('-87.62');
+		});
+	});
+
+	describe('getCrashesDense', () => {
+		it('fetches /api/crashes/dense and returns array of dense crashes', async () => {
+			const mockDense = [
+				{
+					latitude: 41.88,
+					longitude: -87.62,
+					crash_date: '2025-01-15',
+					injuries_fatal: 1,
+					injuries_incapacitating: 0
+				}
+			];
+			mockFetchOk({ crashes: mockDense });
+
+			const result = await getCrashesDense();
+			const url = lastFetchUrl();
+
+			expect(url.pathname).toBe('/api/crashes/dense');
+			expect(result).toHaveLength(1);
+			expect(result[0].latitude).toBe(41.88);
+			expect(result[0].injuries_fatal).toBe(1);
 		});
 	});
 

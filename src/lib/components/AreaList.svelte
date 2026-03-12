@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type { NeighborhoodStat, WardStat } from '$lib/db/types';
+	import type { AreaStat } from '$lib/db/types';
 	import { prettifyDate, currentAgeSimplified } from '$lib/transformHelpers';
 	import AreaShape from '$lib/components/AreaShape.svelte';
 
@@ -8,8 +8,6 @@
 		// Append time so JS treats it as local time, not UTC midnight
 		return new Date(s + 'T00:00:00');
 	}
-
-	type AreaStat = NeighborhoodStat | WardStat;
 
 	let { title, stats, loading, error, category } = $props<{
 		title: string;
@@ -64,7 +62,7 @@
 	);
 
 	// Show shape column when any item has geometry data
-	let hasGeom = $derived(stats.some((s: AreaStat) => 'the_geom' in s && (s as WardStat).the_geom));
+	let hasGeom = $derived(stats.some((s: AreaStat) => s.the_geom));
 </script>
 
 {#if loading}

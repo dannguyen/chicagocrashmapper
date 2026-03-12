@@ -34,7 +34,7 @@
 			return {
 				total: summary.total,
 				fatalCount: summary.fatal_injuries,
-				incapCount: summary.incapacitating_injuries,
+				incapCount: summary.injuries_incapacitating,
 				avgPerYear,
 				mostRecent,
 				byYear,

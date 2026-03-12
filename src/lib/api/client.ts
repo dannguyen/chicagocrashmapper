@@ -5,12 +5,11 @@
 import { PUBLIC_API_BASE_URL } from '$env/static/public';
 import type {
 	LocationRecord,
-	NeighborhoodStat,
-	WardStat,
-	StreetStat,
+	AreaStat,
 	IntersectionStat,
 	CrashSummary,
-	DateCountPeriod
+	DateCountPeriod,
+	DenseCrash
 } from '$lib/db/types';
 import type { CrashRecord } from '$lib/models/crash';
 
@@ -148,26 +147,24 @@ export async function getRecentCrashes(limit: number = 10): Promise<CrashRecord[
 	return data.crashes;
 }
 
-export async function getNeighborhoodStats(): Promise<NeighborhoodStat[]> {
-	const data = await apiGet<{ stats: NeighborhoodStat[] }>('/api/neighborhoods/stats');
+export async function getNeighborhoodStats(): Promise<AreaStat[]> {
+	const data = await apiGet<{ stats: AreaStat[] }>('/api/neighborhoods/stats');
 	return data.stats;
 }
 
-export async function getWardStats(): Promise<WardStat[]> {
-	const data = await apiGet<{ stats: WardStat[] }>('/api/wards/stats');
+export async function getWardStats(): Promise<AreaStat[]> {
+	const data = await apiGet<{ stats: AreaStat[] }>('/api/wards/stats');
 	return data.stats;
 }
 
-export async function getStreetStats(): Promise<StreetStat[]> {
-	const data = await apiGet<{ stats: StreetStat[] }>('/api/streets/stats');
+export async function getStreetStats(): Promise<AreaStat[]> {
+	const data = await apiGet<{ stats: AreaStat[] }>('/api/streets/stats');
 	return data.stats;
 }
 
 export async function getTopIntersections(): Promise<{
 	by_count: IntersectionStat[];
 	by_recent: IntersectionStat[];
-	by_recent_90_days: IntersectionStat[];
-	by_recency: IntersectionStat[];
 }> {
 	return apiGet('/api/intersections/top', { limit: 20, recent_days: 90 });
 }
@@ -219,6 +216,11 @@ export async function getCrashesList(params: {
 		per_page: params.perPage,
 		sort: params.sort
 	});
+}
+
+export async function getCrashesDense(): Promise<DenseCrash[]> {
+	const data = await apiGet<{ crashes: DenseCrash[] }>('/api/crashes/dense');
+	return data.crashes;
 }
 
 export async function getDateCount(

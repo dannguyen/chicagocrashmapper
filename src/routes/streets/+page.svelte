@@ -2,10 +2,10 @@
 	import { onMount } from 'svelte';
 	import { getStreetStats } from '$lib/api/client';
 	import { SITE_NAME } from '$lib/constants';
-	import type { StreetStat } from '$lib/db';
+	import type { AreaStat } from '$lib/db';
 	import StreetList from '$lib/components/StreetList.svelte';
 
-	let stats: StreetStat[] = $state([]);
+	let stats: AreaStat[] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let cityGeoJson: GeoJSON.FeatureCollection | null = $state(null);
