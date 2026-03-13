@@ -12,8 +12,10 @@
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import CrashList from '$lib/components/CrashList.svelte';
+	import CrashListSkeleton from '$lib/components/CrashListSkeleton.svelte';
 	import PaginationControls from '$lib/components/PaginationControls.svelte';
 	import LocationNearbyTable from '$lib/components/LocationNearbyTable.svelte';
+	import { paginationState, showCrashOnMap } from '$lib/pagination';
 
 	let { location } = $props<{ location: Location }>();
 
@@ -30,15 +32,10 @@
 	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
 
 	// Server-side pagination
-	const rangeStart = $derived(totalCrashes === 0 ? 0 : currentPage * perPage + 1);
-	const rangeEnd = $derived(Math.min((currentPage + 1) * perPage, totalCrashes));
-	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
-	const hasPrev = $derived(currentPage > 0);
-	const hasNext = $derived(currentPage < totalPages - 1);
-	const pageNumbers = $derived<(number | null)[]>(
-		totalPages <= 6
-			? Array.from({ length: totalPages }, (_, i) => i)
-			: [0, 1, 2, null, totalPages - 3, totalPages - 2, totalPages - 1]
+	const pg = paginationState(
+		() => totalCrashes,
+		() => currentPage,
+		perPage
 	);
 
 	async function fetchPage(locationId: string, page: number) {
@@ -52,21 +49,14 @@
 	}
 
 	function goToPrev() {
-		if (hasPrev) {
-			currentPage--;
-			loadPage(currentPage);
-		}
+		if (pg.hasPrev) loadPage(currentPage - 1);
 	}
 
 	function goToNext() {
-		if (hasNext) {
-			currentPage++;
-			loadPage(currentPage);
-		}
+		if (pg.hasNext) loadPage(currentPage + 1);
 	}
 
 	function goToPage(page: number) {
-		currentPage = page;
 		loadPage(page);
 	}
 
@@ -77,19 +67,10 @@
 			if (requestId !== loadRequestId) return;
 			pagedCrashes = result.crashes;
 			totalCrashes = result.total;
+			currentPage = page;
 		} catch {
 			if (requestId !== loadRequestId) return;
 			pagedCrashes = [];
-		}
-	}
-
-	function showCrashOnMap(crashId: string) {
-		if (mapRef) {
-			mapRef.openCrashPopup(crashId);
-			const mapEl = document.getElementById('map');
-			if (mapEl) {
-				mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-			}
 		}
 	}
 
@@ -178,14 +159,14 @@
 	<!-- Pagination + crash list -->
 	{#if totalCrashes > 0}
 		<PaginationControls
-			{rangeStart}
-			{rangeEnd}
+			rangeStart={pg.rangeStart}
+			rangeEnd={pg.rangeEnd}
 			totalItems={totalCrashes}
 			{currentPage}
-			{totalPages}
-			{hasPrev}
-			{hasNext}
-			{pageNumbers}
+			totalPages={pg.totalPages}
+			hasPrev={pg.hasPrev}
+			hasNext={pg.hasNext}
+			pageNumbers={pg.pageNumbers}
 			onPrev={goToPrev}
 			onNext={goToNext}
 			onPage={goToPage}
@@ -193,18 +174,11 @@
 	{/if}
 
 	{#if loading}
-		<div class="loading-stack">
-			{#each Array(5) as _}
-				<div class="loading-card">
-					<div class="loading-line loading-line-wide"></div>
-					<div class="loading-line loading-line-narrow"></div>
-				</div>
-			{/each}
-		</div>
+		<CrashListSkeleton />
 	{:else}
 		<p class="crash-heading">
-			{#if totalPages > 1}
-				Crashes &mdash; Page {currentPage + 1} of {totalPages}
+			{#if pg.totalPages > 1}
+				Crashes &mdash; Page {currentPage + 1} of {pg.totalPages}
 			{:else}
 				Crashes
 			{/if}
@@ -215,19 +189,23 @@
 				<p class="empty-text">No crashes found for this location.</p>
 			</div>
 		{:else}
-			<CrashList crashes={pagedCrashes} selectedLocation={location} {showCrashOnMap} />
+			<CrashList
+				crashes={pagedCrashes}
+				selectedLocation={location}
+				showCrashOnMap={(id) => showCrashOnMap(mapRef, id)}
+			/>
 		{/if}
 	{/if}
 
 	<!-- Bottom pagination -->
-	{#if totalPages > 1 && !loading}
+	{#if pg.totalPages > 1 && !loading}
 		<PaginationControls
 			variant="footer"
 			{currentPage}
-			{totalPages}
-			{hasPrev}
-			{hasNext}
-			{pageNumbers}
+			totalPages={pg.totalPages}
+			hasPrev={pg.hasPrev}
+			hasNext={pg.hasNext}
+			pageNumbers={pg.pageNumbers}
 			onPrev={goToPrev}
 			onNext={goToNext}
 			onPage={goToPage}
@@ -283,36 +261,6 @@
 		}
 	}
 
-	.loading-stack {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.loading-card {
-		border-radius: 0.75rem;
-		border: 1px solid #e5e7eb;
-		background: #fff;
-		padding: 1rem;
-	}
-
-	.loading-line {
-		background: #e5e7eb;
-		border-radius: 0.375rem;
-		animation: pulse 1.2s ease-in-out infinite;
-	}
-
-	.loading-line-wide {
-		height: 1rem;
-		width: 75%;
-		margin-bottom: 0.5rem;
-	}
-
-	.loading-line-narrow {
-		height: 0.75rem;
-		width: 50%;
-	}
-
 	.crash-heading {
 		font-size: 0.875rem;
 		font-weight: 600;
@@ -328,17 +276,5 @@
 
 	.empty-text {
 		font-size: 0.875rem;
-	}
-
-	@keyframes pulse {
-		0% {
-			opacity: 0.8;
-		}
-		50% {
-			opacity: 0.4;
-		}
-		100% {
-			opacity: 0.8;
-		}
 	}
 </style>

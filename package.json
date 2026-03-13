@@ -15,7 +15,7 @@
 		"test:e2e:local": "PLAYWRIGHT_PROFILE=local playwright test --project=local",
 		"test:e2e:api": "PLAYWRIGHT_PROFILE=api playwright test --project=api",
 		"test:e2e": "npm run test:e2e:local && npm run test:e2e:api",
-		"test:unit": "npm run test:unit -- --run",
+		"test:unit": "vitest --run",
 		"test:all": "npm run test && npm run test:e2e"
 	},
 	"devDependencies": {
