@@ -30,5 +30,5 @@
 		<p class="mt-1 text-sm text-gray-500">Sorted by total crashes · Click any ward to explore</p>
 	</div>
 
-	<AreaList title="Chicago City Council Wards" {stats} {loading} {error} category="wards" />
+	<AreaList {stats} {loading} {error} category="wards" />
 </div>

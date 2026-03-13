@@ -3,19 +3,28 @@
 	import type { AreaStat } from '$lib/models/types';
 	import { prettifyDate, currentAgeSimplified } from '$lib/transformHelpers';
 	import AreaShape from '$lib/components/AreaShape.svelte';
+	import StreetShape from '$lib/components/StreetShape.svelte';
 
 	function parseAreaDate(s: string): Date {
 		// Append time so JS treats it as local time, not UTC midnight
 		return new Date(s + 'T00:00:00');
 	}
 
-	let { title, stats, loading, error, category } = $props<{
-		title: string;
+	let {
+		stats,
+		loading,
+		error,
+		category,
+		cityGeoJson = null
+	} = $props<{
 		stats: AreaStat[];
 		loading: boolean;
 		error: string | null;
 		category: string;
+		cityGeoJson?: GeoJSON.FeatureCollection | null;
 	}>();
+
+	let isStreet = $derived(category === 'streets');
 
 	type SortField =
 		| 'name'
@@ -25,14 +34,13 @@
 		| 'totalFatal'
 		| 'totalSeriousInjuries';
 	let sortField: SortField = $state('avgPerYear');
-	let sortDirection: 1 | -1 = $state(-1); // 1 for asc, -1 for desc
+	let sortDirection: 1 | -1 = $state(-1);
 
 	let sortedStats = $derived.by(() => {
 		return [...stats].sort((a, b) => {
 			let valA: string | number | null = a[sortField as keyof AreaStat] as string | number | null;
 			let valB: string | number | null = b[sortField as keyof AreaStat] as string | number | null;
 
-			// Handle nulls
 			if (valA === null) valA = '';
 			if (valB === null) valB = '';
 
@@ -56,13 +64,18 @@
 		return '';
 	}
 
-	// Singular label for the name column header
 	let singularLabel = $derived(
-		category === 'neighborhoods' ? 'Neighborhood' : category === 'wards' ? 'Ward' : category
+		category === 'neighborhoods'
+			? 'Neighborhood'
+			: category === 'wards'
+				? 'Ward'
+				: category === 'streets'
+					? 'Street'
+					: category
 	);
 
-	// Show shape column when any item has geometry data
 	let hasGeom = $derived(stats.some((s: AreaStat) => s.geometry));
+	let showShapes = $derived(hasGeom && (!isStreet || cityGeoJson));
 </script>
 
 {#if loading}
@@ -95,7 +108,7 @@
 			<table class="area-table">
 				<thead class="table-head">
 					<tr>
-						{#if hasGeom}
+						{#if showShapes}
 							<th scope="col" class="table-th table-th-shape"></th>
 						{/if}
 						<th
@@ -205,11 +218,15 @@
 				<tbody class="table-body">
 					{#each sortedStats as item (item.id)}
 						<tr class="table-row">
-							{#if hasGeom}
+							{#if showShapes}
 								<td class="table-cell table-cell-shape">
-									{#if 'geometry' in item && item.geometry}
+									{#if item.geometry}
 										<a href="{base}/{category}/{item.id}" class="shape-link">
-											<AreaShape geometry={item.geometry} size={44} />
+											{#if isStreet && cityGeoJson}
+												<StreetShape geometry={item.geometry} {cityGeoJson} size={44} />
+											{:else}
+												<AreaShape geometry={item.geometry} size={44} />
+											{/if}
 										</a>
 									{/if}
 								</td>

@@ -108,3 +108,38 @@ export function formatPct(val: number | null): string {
 	const sign = val > 0 ? '+' : '';
 	return `${sign}${Math.round(val)}%`;
 }
+
+export interface WindowSums {
+	days: number;
+	crashes: number;
+	fatal: number;
+	incap: number;
+}
+
+/**
+ * Sum crash/injury counts from daily period data over a date range.
+ */
+export function sumWindow(
+	periods: Record<
+		string,
+		{ crash_count?: number; injuries_fatal?: number; injuries_incapacitating?: number }
+	>,
+	start: Date,
+	end: Date
+): WindowSums {
+	let crashes = 0;
+	let fatal = 0;
+	let incap = 0;
+	const d = new Date(start);
+	while (d <= end) {
+		const p = periods[toDateStr(d)];
+		if (p) {
+			crashes += p.crash_count ?? 0;
+			fatal += p.injuries_fatal ?? 0;
+			incap += p.injuries_incapacitating ?? 0;
+		}
+		d.setDate(d.getDate() + 1);
+	}
+	const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+	return { days, crashes, fatal, incap };
+}

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getDateCount, getYearToDateComparison } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/models/types';
-	import { toDateStr, addDays, pctChange, formatPct } from '$lib/transformHelpers';
+	import { addDays, pctChange, formatPct, sumWindow } from '$lib/transformHelpers';
 
 	interface WindowTotals {
 		crashes: number;
@@ -20,27 +20,6 @@
 	let curStart = $state(new Date());
 	let curEnd = $state(new Date());
 	let lastYear = $state(0);
-
-	function sumWindow(
-		periods: Record<string, DateCountPeriod>,
-		start: Date,
-		end: Date
-	): WindowTotals {
-		let crashes = 0;
-		let fatal = 0;
-		let incap = 0;
-		const d = new Date(start);
-		while (d <= end) {
-			const p = periods[toDateStr(d)];
-			if (p) {
-				crashes += p.crash_count ?? 0;
-				fatal += p.injuries_fatal ?? 0;
-				incap += p.injuries_incapacitating ?? 0;
-			}
-			d.setDate(d.getDate() + 1);
-		}
-		return { crashes, fatal, incap };
-	}
 
 	function formatShortDate(d: Date): string {
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

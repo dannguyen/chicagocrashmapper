@@ -32,5 +32,5 @@
 		</p>
 	</div>
 
-	<AreaList title="Chicago Neighborhoods" {stats} {loading} {error} category="neighborhoods" />
+	<AreaList {stats} {loading} {error} category="neighborhoods" />
 </div>

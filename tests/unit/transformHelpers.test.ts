@@ -9,6 +9,7 @@ import {
 	pctChange,
 	prettifyDate,
 	prettifyInteger,
+	sumWindow,
 	toDateStr
 } from '$lib/transformHelpers';
 
@@ -132,6 +133,56 @@ describe('transformHelpers', () => {
 			const date = new Date('2025-01-31T12:00:00Z');
 			addDays(date, 5);
 			expect(toDateStr(date)).toBe('2025-01-31');
+		});
+	});
+
+	describe('sumWindow', () => {
+		it('sums inclusive daily windows and returns day count', () => {
+			const periods = {
+				'2025-01-01': { crash_count: 2, injuries_fatal: 1, injuries_incapacitating: 3 },
+				'2025-01-02': { crash_count: 4, injuries_fatal: 0, injuries_incapacitating: 2 },
+				'2025-01-03': { crash_count: 1, injuries_fatal: 2, injuries_incapacitating: 0 }
+			};
+
+			expect(
+				sumWindow(periods, new Date('2025-01-01T12:00:00Z'), new Date('2025-01-03T12:00:00Z'))
+			).toEqual({
+				days: 3,
+				crashes: 7,
+				fatal: 3,
+				incap: 5
+			});
+		});
+
+		it('treats missing dates as zeroes', () => {
+			const periods = {
+				'2025-01-01': { crash_count: 2, injuries_fatal: 1, injuries_incapacitating: 3 },
+				'2025-01-03': { crash_count: 1, injuries_fatal: 2, injuries_incapacitating: 0 }
+			};
+
+			expect(
+				sumWindow(periods, new Date('2025-01-01T12:00:00Z'), new Date('2025-01-03T12:00:00Z'))
+			).toEqual({
+				days: 3,
+				crashes: 3,
+				fatal: 3,
+				incap: 3
+			});
+		});
+
+		it('treats undefined injury fields as zero', () => {
+			const periods = {
+				'2025-01-01': { crash_count: 5 }
+			};
+
+			expect(
+				sumWindow(periods, new Date('2025-01-01T12:00:00Z'), new Date('2025-01-01T12:00:00Z'))
+			).toEqual({
+				days: 1,
+				crashes: 5,
+				fatal: 0,
+				incap: 0
+			});
 		});
 	});
 

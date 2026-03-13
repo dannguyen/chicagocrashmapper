@@ -3,7 +3,7 @@
 	import { getStreetStats } from '$lib/api/client';
 	import { SITE_TITLE } from '$lib/constants';
 	import type { AreaStat } from '$lib/models/types';
-	import StreetList from '$lib/components/StreetList.svelte';
+	import AreaList from '$lib/components/AreaList.svelte';
 
 	let stats: AreaStat[] = $state([]);
 	let loading = $state(true);
@@ -38,5 +38,5 @@
 		</p>
 	</div>
 
-	<StreetList {stats} {loading} {error} {cityGeoJson} />
+	<AreaList {stats} {loading} {error} category="streets" {cityGeoJson} />
 </div>

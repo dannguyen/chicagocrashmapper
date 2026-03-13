@@ -3,15 +3,7 @@
 	import { base } from '$app/paths';
 
 	import { getDateCount } from '$lib/api/client';
-	import type { DateCountPeriod } from '$lib/models/types';
-	import { toDateStr, addDays } from '$lib/transformHelpers';
-
-	interface WindowSums {
-		days: number;
-		crashes: number;
-		fatal: number;
-		incap: number;
-	}
+	import { addDays, sumWindow, type WindowSums } from '$lib/transformHelpers';
 
 	interface WindowTotals extends WindowSums {
 		ytd: boolean;
@@ -22,24 +14,6 @@
 	let error = $state(false);
 
 	let cur = $state<WindowTotals>({ days: 0, ytd: false, year: 0, crashes: 0, fatal: 0, incap: 0 });
-
-	function sumWindow(periods: Record<string, DateCountPeriod>, start: Date, end: Date): WindowSums {
-		let crashes = 0;
-		let fatal = 0;
-		let incap = 0;
-		const d = new Date(start);
-		while (d <= end) {
-			const p = periods[toDateStr(d)];
-			if (p) {
-				crashes += p.crash_count ?? 0;
-				fatal += p.injuries_fatal ?? 0;
-				incap += p.injuries_incapacitating ?? 0;
-			}
-			d.setDate(d.getDate() + 1);
-		}
-		const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-		return { days, crashes, fatal, incap };
-	}
 
 	interface InjuryPart {
 		count: number;
