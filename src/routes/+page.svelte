@@ -290,7 +290,7 @@
 
 	.map-container {
 		flex: 1;
-		min-height: 20rem;
+		height: 24rem;
 		border-radius: 0.75rem;
 		overflow: hidden;
 		border: 1px solid #e5e7eb;
@@ -299,6 +299,13 @@
 	.map-container :global(.map-root) {
 		height: 100%;
 		margin-bottom: 0;
+	}
+
+	@media (min-width: 768px) {
+		.map-container {
+			height: auto;
+			min-height: 20rem;
+		}
 	}
 
 	/* ── Right column: trend + year table ── */

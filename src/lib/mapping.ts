@@ -1,6 +1,5 @@
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry, Polygon } from 'geojson';
 import type { Location } from '$lib/location';
-import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-csp-worker.js?url';
 
 const MAP_STYLE: import('maplibre-gl').StyleSpecification = {
 	version: 8,
@@ -30,7 +29,6 @@ const MAP_STYLE: import('maplibre-gl').StyleSpecification = {
 
 type MapLibreRuntimeModule = typeof import('maplibre-gl') & {
 	default?: typeof import('maplibre-gl');
-	setWorkerUrl(url: string): void;
 };
 export type MapLibreMap = import('maplibre-gl').Map;
 export type MapLibreMarker = import('maplibre-gl').Marker;
@@ -155,11 +153,8 @@ export class Mapper {
 			attributionControl?: boolean;
 		} = {}
 	) {
-		const maplibreModule = (await import(
-			'maplibre-gl/dist/maplibre-gl-csp.js'
-		)) as unknown as MapLibreRuntimeModule;
+		const maplibreModule = (await import('maplibre-gl')) as unknown as MapLibreRuntimeModule;
 		const maplibre = (maplibreModule.default ?? maplibreModule) as typeof import('maplibre-gl');
-		maplibreModule.setWorkerUrl(maplibreWorkerUrl);
 		this.maplibre = maplibre;
 		this.map = new maplibre.Map({
 			container,

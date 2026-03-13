@@ -4,6 +4,10 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	build: {
+		target: 'safari15',
+		minify: false
+	},
 
 	test: {
 		include: ['tests/**/*.{test,spec}.{js,ts}'],

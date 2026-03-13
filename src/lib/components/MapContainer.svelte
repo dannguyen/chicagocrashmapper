@@ -59,6 +59,7 @@
 	let crashMarkers = new Map<string, CrashMarkerEntry>();
 	let pendingCrashPopupId: string | null = null;
 	let activeHexRadiusMeters: number | null = null;
+	let resizeTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 	function emptyFeatureCollection() {
 		return {
@@ -265,6 +266,8 @@
 
 		await MapperInstance.init(mapHost, defaultGeoCenter, 11);
 		if (!MapperInstance.map) return;
+		MapperInstance.map.dragPan.enable();
+		MapperInstance.map.touchZoomRotate.enable();
 
 		MapperInstance.map.addSource(SELECTED_SOURCE_ID, {
 			type: 'geojson',
@@ -429,6 +432,22 @@
 	function logZoomLevel() {
 		if (!MapperInstance.map) return;
 		console.log(`[MapContainer] zoom=${MapperInstance.map.getZoom().toFixed(2)}`);
+	}
+
+	function scheduleMapResize() {
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				MapperInstance.resize();
+				updateDotScale();
+			});
+		});
+		if (resizeTimeoutId) {
+			clearTimeout(resizeTimeoutId);
+		}
+		resizeTimeoutId = setTimeout(() => {
+			MapperInstance.resize();
+			updateDotScale();
+		}, 120);
 	}
 
 	function clearCrashMarkers() {
@@ -738,17 +757,43 @@
 
 	onMount(() => {
 		let destroyed = false;
+		let resizeObserver: ResizeObserver | null = null;
+		const handleViewportChange = () => {
+			if (destroyed) return;
+			scheduleMapResize();
+		};
+
+		window.addEventListener('resize', handleViewportChange);
+		window.addEventListener('orientationchange', handleViewportChange);
+		window.visualViewport?.addEventListener('resize', handleViewportChange);
+
 		(async () => {
 			await initMap();
 			if (destroyed) return;
+			if (mapHost) {
+				resizeObserver = new ResizeObserver(() => {
+					if (destroyed) return;
+					scheduleMapResize();
+				});
+				resizeObserver.observe(mapHost);
+				if (mapHost.parentElement) {
+					resizeObserver.observe(mapHost.parentElement);
+				}
+			}
 			syncMapState();
-			requestAnimationFrame(() => {
-				MapperInstance.resize();
-			});
+			scheduleMapResize();
 		})();
 
 		return () => {
 			destroyed = true;
+			if (resizeTimeoutId) {
+				clearTimeout(resizeTimeoutId);
+				resizeTimeoutId = null;
+			}
+			resizeObserver?.disconnect();
+			window.removeEventListener('resize', handleViewportChange);
+			window.removeEventListener('orientationchange', handleViewportChange);
+			window.visualViewport?.removeEventListener('resize', handleViewportChange);
 			clearCrashMarkers();
 			clearActiveLayer();
 			MapperInstance.destroy();
@@ -774,6 +819,16 @@
 		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 		margin-bottom: 1rem;
 		z-index: 0;
+		touch-action: none;
+		overscroll-behavior: contain;
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
+	}
+
+	:global(.map-root .maplibregl-canvas-container),
+	:global(.map-root .maplibregl-canvas) {
+		touch-action: none;
 	}
 
 	:global(.map-root .marker-dot) {
