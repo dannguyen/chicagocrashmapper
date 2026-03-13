@@ -91,7 +91,7 @@ export function briefPopupHtml(item: BriefCrash): string {
 	const severity = briefSeverity(item);
 	const label = severityLabel(severity).toUpperCase();
 	const color = severityColors[severity];
-	const dateStr = new Date(item.crash_date).toLocaleDateString('en-US', {
+	const dateStr = item.crash_date.toLocaleDateString('en-US', {
 		month: 'short',
 		day: 'numeric',
 		year: 'numeric'
@@ -104,7 +104,7 @@ export function briefPopupHtml(item: BriefCrash): string {
 	<span style="font-size:11px;color:#9ca3af">${dateStr}</span>
 </div>
 <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:2px">${cause}</div>
-<a href="${base}/crashes/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
+<a href="${base}/crashes/${item.crash_record_id}" style="font-size:12px;color:#4d7aa6;text-decoration:none;font-weight:500">See details →</a>
 </div>`;
 }
 

@@ -434,11 +434,12 @@
 	}
 
 	.table-link {
-		color: #1d4ed8;
+		color: var(--color-link);
 		text-decoration: none;
 	}
 
 	.table-link:hover {
+		color: var(--color-link-hover);
 		text-decoration: underline;
 	}
 

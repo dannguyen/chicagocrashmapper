@@ -21,6 +21,15 @@ function makeBriefCrashRecord(overrides: Partial<BriefCrashRecord> = {}): BriefC
 }
 
 describe('BriefCrash casualty helpers', () => {
+	describe('constructor', () => {
+		it('converts crash_date into a Date object', () => {
+			const crash = new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-15T18:30:00Z' }));
+
+			expect(crash.crash_date).toBeInstanceOf(Date);
+			expect(crash.crash_date.toISOString()).toBe('2025-03-15T18:30:00.000Z');
+		});
+	});
+
 	describe('totalCasualties', () => {
 		it('adds fatalities and incapacitating injuries', () => {
 			const crash = new BriefCrash(
@@ -79,6 +88,42 @@ describe('BriefCrash casualty helpers', () => {
 			);
 
 			expect(crash.hasMultipleCasualties).toBe(false);
+		});
+	});
+
+	describe('time helpers', () => {
+		it('isWeekend is true for Friday, Saturday, and Sunday', () => {
+			expect(
+				new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-14T18:30:00Z' })).isWeekend
+			).toBe(true);
+			expect(
+				new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-15T18:30:00Z' })).isWeekend
+			).toBe(true);
+			expect(
+				new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-16T18:30:00Z' })).isWeekend
+			).toBe(true);
+		});
+
+		it('isWeekend is false Monday through Thursday', () => {
+			const crash = new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-13T18:30:00Z' }));
+
+			expect(crash.isWeekend).toBe(false);
+		});
+
+		it('isNightime is true from 8PM through 4:59AM', () => {
+			expect(
+				new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-15T20:00:00' })).isNightime
+			).toBe(true);
+			expect(
+				new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-15T04:59:00' })).isNightime
+			).toBe(true);
+		});
+
+		it('isNightime is false during daytime hours', () => {
+			const crash = new BriefCrash(makeBriefCrashRecord({ crash_date: '2025-03-15T12:30:00' }));
+
+			expect(crash.isNightime).toBe(false);
+			expect(crash.isNighttime).toBe(false);
 		});
 	});
 });

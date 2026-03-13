@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { SEVERITY_COLORS } from '$lib/constants';
 	import { Mapper } from '$lib/mapping';
 	import CrashDetail from '$lib/components/CrashDetail.svelte';
 	import type { Crash } from '$lib/models/crash';
@@ -35,7 +36,7 @@
 			await MapperInstance.init(mapEl, [crash.latitude, crash.longitude], 16);
 			if (destroyed || !MapperInstance.map || !MapperInstance.maplibre) return;
 
-			const markerColor = crash.isFatal ? '#dc2626' : '#f59e0b';
+			const markerColor = crash.isFatal ? SEVERITY_COLORS.fatal : SEVERITY_COLORS.serious;
 			new MapperInstance.maplibre.Marker({
 				element: buildCircleElement(markerColor, 20, 0.9, 3),
 				anchor: 'center'
@@ -47,10 +48,10 @@
 				for (const nc of nearby_crashes) {
 					const ncColor =
 						nc.injuries_fatal > 0
-							? '#dc2626'
+							? SEVERITY_COLORS.fatal
 							: nc.injuries_incapacitating > 0
-								? '#f59e0b'
-								: '#6b7280';
+								? SEVERITY_COLORS.serious
+								: SEVERITY_COLORS.none;
 					const feetAway = Math.round(nc.distance_miles * 5280);
 					const popup = MapperInstance.createPopup(
 						`<a href="${base}/crashes/${nc.crash_record_id}">${nc.crash_date.slice(0, 10)}</a><br/>${feetAway} ft away`,
@@ -85,10 +86,8 @@
 
 <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
 	<nav class="text-sm">
-		<button
-			type="button"
-			onclick={() => history.back()}
-			class="text-blue-600 hover:text-blue-800 transition-colors">← Back</button
+		<button type="button" onclick={() => history.back()} class="back-link transition-colors"
+			>← Back</button
 		>
 	</nav>
 
@@ -104,3 +103,13 @@
 
 	<p class="text-xs text-gray-400 text-center pt-2">Crash record: {crash.crash_record_id}</p>
 </div>
+
+<style>
+	.back-link {
+		color: var(--color-link);
+	}
+
+	.back-link:hover {
+		color: var(--color-link-hover);
+	}
+</style>

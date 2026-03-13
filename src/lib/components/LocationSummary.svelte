@@ -22,7 +22,7 @@
 		if ('date' in item) {
 			return item.date;
 		}
-		return new Date(Date.parse(item.crash_date));
+		return item.crash_date;
 	}
 
 	let stats = $derived.by(() => {
@@ -208,7 +208,7 @@
 	}
 
 	.summary-value-serious {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.summary-value-urgent {
@@ -216,7 +216,7 @@
 	}
 
 	.summary-value-recent {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.summary-value-muted {

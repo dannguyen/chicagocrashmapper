@@ -17,6 +17,7 @@
 		showBarLabel = defaultShowBarLabel,
 		scrollable = true,
 		labelFontSize = 9,
+		chartHeight = 80,
 		maxChartHeight = 320,
 		showLegend = true
 	} = $props<{
@@ -28,6 +29,7 @@
 		showBarLabel?: (bar: TrendBar, index: number) => boolean;
 		scrollable?: boolean;
 		labelFontSize?: number;
+		chartHeight?: number;
 		maxChartHeight?: number;
 		showLegend?: boolean;
 	}>();
@@ -36,7 +38,6 @@
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
 
-	const chartHeight = 80;
 	const labelHeight = 22;
 	const barGap = 3;
 	const barWidth = $derived(bars.length > 20 ? 16 : 18);

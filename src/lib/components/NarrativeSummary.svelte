@@ -77,8 +77,12 @@
 
 <style>
 	.link {
-		color: blue;
+		color: var(--color-link);
 		font-weight: 800;
+	}
+
+	.link:hover {
+		color: var(--color-link-hover);
 	}
 	.kpi {
 		font-weight: 800;
@@ -89,6 +93,6 @@
 	}
 
 	.kpi-incap {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 </style>

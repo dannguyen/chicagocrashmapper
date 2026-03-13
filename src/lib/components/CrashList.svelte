@@ -184,7 +184,7 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 		font-weight: 600;
 		font-size: 0.875rem;
@@ -194,6 +194,7 @@
 
 	.detail-link:hover,
 	.detail-link:focus-visible {
+		color: var(--color-link-hover);
 		background-color: #eff6ff;
 		text-decoration: underline;
 		outline: none;

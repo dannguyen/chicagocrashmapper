@@ -24,6 +24,8 @@
 
 		<!-- Desktop nav links -->
 		<nav class="desktop-nav" aria-label="Site navigation">
+			<a href="{base}/nearme" class="nav-link">Near You</a>
+
 			<a href="{base}/neighborhoods" class="nav-link">Neighborhoods</a>
 			<a href="{base}/streets" class="nav-link">Streets</a>
 			<a href="{base}/wards" class="nav-link">Wards</a>
@@ -69,6 +71,10 @@
 	<!-- Mobile nav drawer -->
 	{#if mobileMenuOpen}
 		<nav class="mobile-nav" aria-label="Mobile site navigation">
+			<a href="{base}/nearme" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
+				>Near You</a
+			>
+
 			<a href="{base}/neighborhoods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
 				>Neighborhoods</a
 			>

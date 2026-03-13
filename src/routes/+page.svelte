@@ -28,7 +28,7 @@
 	const latestFatals = $derived(
 		mapCrashes
 			.filter((c) => c.injuries_fatal > 0)
-			.sort((a, b) => b.crash_date.localeCompare(a.crash_date))
+			.sort((a, b) => b.crash_date.getTime() - a.crash_date.getTime())
 			.slice(0, 2)
 	);
 
@@ -153,7 +153,7 @@
 							<a href="{base}/crashes/{crash.crash_record_id}" class="fatality-card">
 								<div class="fatality-killed">{crash.injuries_fatal} killed</div>
 								<div class="fatality-date">
-									{new Date(crash.crash_date).toLocaleDateString('en-US', {
+									{crash.crash_date.toLocaleDateString('en-US', {
 										month: 'short',
 										day: 'numeric',
 										year: 'numeric'
@@ -331,7 +331,7 @@
 	.loading-icon {
 		width: 0.875rem;
 		height: 0.875rem;
-		color: #2563eb;
+		color: var(--color-link);
 		flex-shrink: 0;
 		animation: spin 1s linear infinite;
 	}
@@ -458,16 +458,17 @@
 	}
 
 	.col-serious {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.table-link {
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 		font-weight: inherit;
 	}
 
 	.table-link:hover {
+		color: var(--color-link-hover);
 		text-decoration: underline;
 	}
 
@@ -491,7 +492,7 @@
 	}
 
 	.bar-serious {
-		background: #f59e0b;
+		background: var(--color-serious);
 	}
 
 	.bar-fatal {

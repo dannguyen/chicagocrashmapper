@@ -9,6 +9,7 @@
 	import {
 		computePrevRange,
 		computeRange,
+		computeTwoYearsAgoRange,
 		computeYearAgoRange,
 		summaryDelta,
 		zeroPad
@@ -28,12 +29,14 @@
 	const range = $derived(computeRange(year, month));
 	const prevRange = $derived(computePrevRange(year, month));
 	const yearAgoRange = $derived(computeYearAgoRange(year, month));
+	const twoYearsAgoRange = $derived(computeTwoYearsAgoRange(year, month));
 
 	// ── Data state ───────────────────────────────────────────────────────────────
 
 	let summary: CrashSummary | null = $state(null);
 	let prevSummary: CrashSummary | null = $state(null);
 	let yearAgoSummary: CrashSummary | null = $state(null);
+	let twoYearsAgoSummary: CrashSummary | null = $state(null);
 
 	let chartBars: TrendBar[] = $state([]);
 
@@ -47,7 +50,6 @@
 	let crashesError = $state(false);
 
 	let topMapRef: MapContainer | undefined = $state(undefined);
-	let loadRequestId = 0;
 
 	// ── KPI deltas ───────────────────────────────────────────────────────────────
 
@@ -61,6 +63,13 @@
 	const seriousYoyDelta = $derived(
 		summaryDelta(summary, yearAgoSummary, (s) => s.injuries_incapacitating)
 	);
+	const crashesTwoYearsDelta = $derived(summaryDelta(summary, twoYearsAgoSummary, (s) => s.total));
+	const fatalTwoYearsDelta = $derived(
+		summaryDelta(summary, twoYearsAgoSummary, (s) => s.fatal_injuries)
+	);
+	const seriousTwoYearsDelta = $derived(
+		summaryDelta(summary, twoYearsAgoSummary, (s) => s.injuries_incapacitating)
+	);
 	const chartTitle = $derived(`${month != null ? 'Daily' : 'Monthly'} Crashes — ${range.label}`);
 	const chartAriaLabel = $derived(
 		`${month != null ? 'Daily' : 'Monthly'} crash trend for ${range.label}`
@@ -68,62 +77,71 @@
 
 	// ── Fetch functions ──────────────────────────────────────────────────────────
 
-	async function fetchStats(requestId: number) {
+	async function fetchStats(signal: AbortSignal) {
 		statsLoading = true;
 		statsError = false;
 		try {
 			const queries: Promise<CrashSummary>[] = [
-				getCrashSummary({ since: range.since, until: range.until }),
-				getCrashSummary({ since: prevRange.since, until: prevRange.until })
+				getCrashSummary({ since: range.since, until: range.until }, signal),
+				getCrashSummary({ since: prevRange.since, until: prevRange.until }, signal)
 			];
 			if (yearAgoRange) {
-				queries.push(getCrashSummary({ since: yearAgoRange.since, until: yearAgoRange.until }));
+				queries.push(
+					getCrashSummary({ since: yearAgoRange.since, until: yearAgoRange.until }, signal)
+				);
+			}
+			if (twoYearsAgoRange) {
+				queries.push(
+					getCrashSummary({ since: twoYearsAgoRange.since, until: twoYearsAgoRange.until }, signal)
+				);
 			}
 			const results = await Promise.all(queries);
-			if (requestId !== loadRequestId) return;
+			if (signal.aborted) return;
 			summary = results[0];
 			prevSummary = results[1];
 			yearAgoSummary = results[2] ?? null;
-		} catch {
-			if (requestId !== loadRequestId) return;
+			twoYearsAgoSummary = results[yearAgoRange ? 3 : 2] ?? null;
+		} catch (err) {
+			if (err instanceof DOMException && err.name === 'AbortError') return;
 			statsError = true;
 		} finally {
-			if (requestId !== loadRequestId) return;
-			statsLoading = false;
+			if (!signal.aborted) statsLoading = false;
 		}
 	}
 
-	async function fetchCrashes(requestId: number) {
+	async function fetchCrashes(signal: AbortSignal) {
 		crashesLoading = true;
 		crashesError = false;
 		try {
-			const result = await getCrashesBrief({
-				since: range.since,
-				until: range.until
-			});
-			if (requestId !== loadRequestId) return;
+			const result = await getCrashesBrief(
+				{
+					since: range.since,
+					until: range.until
+				},
+				signal
+			);
+			if (signal.aborted) return;
 			allCrashes = result.crashes;
 			visibleCrashes = result.crashes;
-		} catch {
-			if (requestId !== loadRequestId) return;
+		} catch (err) {
+			if (err instanceof DOMException && err.name === 'AbortError') return;
 			allCrashes = [];
 			visibleCrashes = [];
 			crashesError = true;
 		} finally {
-			if (requestId !== loadRequestId) return;
-			crashesLoading = false;
+			if (!signal.aborted) crashesLoading = false;
 		}
 	}
 
-	async function fetchChart(requestId: number) {
+	async function fetchChart(signal: AbortSignal) {
 		chartLoading = true;
 		try {
 			if (month != null) {
 				const now = new Date();
 				const firstDay = new Date(year, month - 1, 1);
 				const daysBack = Math.ceil((now.getTime() - firstDay.getTime()) / 86400000) + 5;
-				const data = await getDateCount('day', Math.max(daysBack, 35));
-				if (requestId !== loadRequestId) return;
+				const data = await getDateCount('day', Math.max(daysBack, 35), signal);
+				if (signal.aborted) return;
 				const prefix = `${year}-${zeroPad(month)}-`;
 				chartBars = Object.entries(data)
 					.filter(([p]) => p.startsWith(prefix))
@@ -138,8 +156,8 @@
 			} else {
 				const now = new Date();
 				const last = Math.max((now.getFullYear() - year) * 12 + now.getMonth() + 2, 13);
-				const data = await getDateCount('month', last);
-				if (requestId !== loadRequestId) return;
+				const data = await getDateCount('month', last, signal);
+				if (signal.aborted) return;
 				const currentYear = now.getFullYear();
 				const currentMonth = now.getMonth() + 1;
 				const completedMonths = fillMissingMonthsForYear(
@@ -162,12 +180,11 @@
 					})
 				);
 			}
-		} catch {
-			if (requestId !== loadRequestId) return;
+		} catch (err) {
+			if (err instanceof DOMException && err.name === 'AbortError') return;
 			chartBars = [];
 		} finally {
-			if (requestId !== loadRequestId) return;
-			chartLoading = false;
+			if (!signal.aborted) chartLoading = false;
 		}
 	}
 
@@ -177,34 +194,31 @@
 		return day === 1 || day % 7 === 1;
 	}
 
-	async function loadAll(requestId: number) {
+	async function loadAll(signal: AbortSignal) {
 		summary = null;
 		prevSummary = null;
 		yearAgoSummary = null;
+		twoYearsAgoSummary = null;
 		chartBars = [];
 		allCrashes = [];
 		visibleCrashes = [];
 
-		await Promise.all([fetchStats(requestId), fetchCrashes(requestId), fetchChart(requestId)]);
+		await Promise.all([fetchStats(signal), fetchCrashes(signal), fetchChart(signal)]);
 	}
 
 	$effect(() => {
 		year;
 		month;
-		const requestId = ++loadRequestId;
-		loadAll(requestId);
+		const controller = new AbortController();
+		loadAll(controller.signal);
 
-		return () => {
-			if (requestId === loadRequestId) {
-				loadRequestId++;
-			}
-		};
+		return () => controller.abort();
 	});
 </script>
 
 <div class="period-detail">
 	<div class="top-grid">
-		<div class="stats-col">
+		<div class="top-panel">
 			<!-- KPI Stats -->
 			{#if statsLoading}
 				<div class="kpi-card">
@@ -256,9 +270,23 @@
 							fatalDelta={fatalYoyDelta}
 						/>
 					{/if}
+
+					{#if twoYearsAgoSummary && twoYearsAgoRange}
+						<KpiCompareRow
+							label="vs. {twoYearsAgoRange.label}"
+							crashes={twoYearsAgoSummary.total}
+							serious={twoYearsAgoSummary.injuries_incapacitating}
+							fatal={twoYearsAgoSummary.fatal_injuries}
+							crashesDelta={crashesTwoYearsDelta}
+							seriousDelta={seriousTwoYearsDelta}
+							fatalDelta={fatalTwoYearsDelta}
+						/>
+					{/if}
 				</div>
 			{/if}
+		</div>
 
+		<div class="top-panel">
 			<TrendChart
 				loading={chartLoading}
 				bars={chartBars}
@@ -267,15 +295,10 @@
 				emptyMessage="No trend data available"
 				showBarLabel={showChartLabel}
 				scrollable={false}
+				chartHeight={month != null ? 96 : 80}
 				labelFontSize={6}
 				showLegend={false}
 			/>
-		</div>
-
-		<div class="map-col">
-			<div class="map-card top-map-card">
-				<MapContainer bind:this={topMapRef} crashes={visibleCrashes} {defaultGeoCenter} />
-			</div>
 		</div>
 	</div>
 
@@ -288,7 +311,11 @@
 		onFilteredCrashesChange={(items) => {
 			visibleCrashes = items;
 		}}
-	/>
+	>
+		<div class="map-card period-map-card">
+			<MapContainer bind:this={topMapRef} crashes={visibleCrashes} {defaultGeoCenter} />
+		</div>
+	</BriefCrashBrowser>
 </div>
 
 <style>
@@ -313,14 +340,7 @@
 		}
 	}
 
-	.stats-col {
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.map-col {
+	.top-panel {
 		min-width: 0;
 	}
 
@@ -369,7 +389,7 @@
 	}
 
 	.kpi-primary.kpi-serious {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.kpi-label {
@@ -389,14 +409,19 @@
 		background: #fff;
 	}
 
-	.top-map-card :global(.map-root) {
-		height: 20rem;
+	.period-map-card :global(.map-root) {
+		height: 22rem;
 		margin-bottom: 0;
 	}
 
-	@media (min-width: 768px) {
-		.top-map-card :global(.map-root) {
-			height: 28rem;
+	@media (min-width: 1024px) {
+		.period-map-card {
+			position: sticky;
+			top: 1rem;
+		}
+
+		.period-map-card :global(.map-root) {
+			height: 34rem;
 		}
 	}
 </style>

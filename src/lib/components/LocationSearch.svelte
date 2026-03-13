@@ -18,22 +18,21 @@
 	let showAutocomplete = $state<boolean>(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
 	let selectedIndex = $state<number>(-1);
-	let searchRequestId = 0;
 
 	let locationResults = $state<Location[]>([]);
 
 	$effect(() => {
-		const requestId = ++searchRequestId;
+		const controller = new AbortController();
 		const q = searchQuery.trim();
 		if (q.length >= 1) {
-			searchLocations(q)
+			searchLocations(q, controller.signal)
 				.then((results: LocationRecord[]) => {
-					if (requestId !== searchRequestId || searchQuery.trim() !== q) return;
+					if (controller.signal.aborted) return;
 					locationResults = results.map((r) => new Location(r));
 					selectedIndex = -1;
 				})
-				.catch(() => {
-					if (requestId !== searchRequestId || searchQuery.trim() !== q) return;
+				.catch((err) => {
+					if (err instanceof DOMException && err.name === 'AbortError') return;
 					locationResults = [];
 					selectedIndex = -1;
 				});
@@ -42,11 +41,7 @@
 			selectedIndex = -1;
 		}
 
-		return () => {
-			if (requestId === searchRequestId) {
-				searchRequestId++;
-			}
-		};
+		return () => controller.abort();
 	});
 
 	function handleInput() {

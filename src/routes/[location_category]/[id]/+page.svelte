@@ -34,10 +34,7 @@
 		{#if location.category === 'intersection'}
 			<span class="capitalize text-gray-600">{location.pluralCategory}</span>
 		{:else}
-			<a
-				href="{base}/{location.pluralCategory}"
-				class="text-blue-600 hover:text-blue-800 capitalize"
-			>
+			<a href="{base}/{location.pluralCategory}" class="location-parent-link capitalize">
 				{location.pluralCategory}
 			</a>
 		{/if}
@@ -57,3 +54,15 @@
 </div>
 
 <LocationDetail {location} />
+
+<style>
+	.location-parent-link {
+		color: var(--color-link);
+		text-decoration: none;
+	}
+
+	.location-parent-link:hover {
+		color: var(--color-link-hover);
+		text-decoration: underline;
+	}
+</style>

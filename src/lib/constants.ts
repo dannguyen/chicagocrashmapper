@@ -40,7 +40,7 @@ export const MONTH_SHORT = [
 
 export const SEVERITY_COLORS = {
 	fatal: '#dc2626',
-	serious: '#f59e0b',
+	serious: '#b77992',
 	minor: '#eab308',
 	none: '#9ca3af'
 } as const;

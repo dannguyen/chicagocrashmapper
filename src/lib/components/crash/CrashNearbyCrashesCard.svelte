@@ -116,8 +116,8 @@
 	}
 
 	.nearby-serious {
-		background: #fffbeb;
-		color: #f59e0b;
+		background: #fdf2f8;
+		color: var(--color-serious);
 	}
 
 	.nearby-minor {

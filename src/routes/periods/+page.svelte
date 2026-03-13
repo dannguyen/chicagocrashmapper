@@ -244,7 +244,7 @@
 	}
 
 	.kpi-serious {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.kpi-label {
@@ -343,7 +343,7 @@
 	}
 
 	.col-serious {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.row-year .col-fatal {
@@ -351,16 +351,17 @@
 	}
 
 	.row-year .col-serious {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.table-link {
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 		font-weight: inherit;
 	}
 
 	.table-link:hover {
+		color: var(--color-link-hover);
 		text-decoration: underline;
 	}
 
@@ -384,7 +385,7 @@
 	}
 
 	.bar-serious {
-		background: #f59e0b;
+		background: var(--color-serious);
 	}
 
 	.bar-fatal {

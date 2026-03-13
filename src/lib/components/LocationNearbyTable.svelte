@@ -78,11 +78,12 @@
 	}
 
 	.nearby-link {
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 	}
 
 	.nearby-link:hover {
+		color: var(--color-link-hover);
 		text-decoration: underline;
 	}
 </style>

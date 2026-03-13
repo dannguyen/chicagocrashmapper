@@ -71,6 +71,25 @@ export function computeYearAgoRange(year: number, month: number | null): DateRan
 	};
 }
 
+export function computeTwoYearsAgoRange(year: number, month: number | null): DateRange | null {
+	if (month != null) return null;
+
+	if (isCurrentYear(year)) {
+		const today = new Date();
+		return {
+			since: `${year - 2}-01-01`,
+			until: `${year - 2}-${zeroPad(today.getMonth() + 1)}-${zeroPad(today.getDate())}`,
+			label: `${year - 2} YTD`
+		};
+	}
+
+	return {
+		since: `${year - 2}-01-01`,
+		until: `${year - 2}-12-31`,
+		label: String(year - 2)
+	};
+}
+
 export function summaryDelta(
 	current: CrashSummary | null,
 	previous: CrashSummary | null,

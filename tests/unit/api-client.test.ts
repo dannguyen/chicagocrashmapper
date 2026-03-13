@@ -301,6 +301,7 @@ describe('api client', () => {
 			expect(result.total).toBe(1);
 			expect(result.crashes).toHaveLength(1);
 			expect(result.crashes[0]).toBeInstanceOf(BriefCrash);
+			expect(result.crashes[0].crash_date).toBeInstanceOf(Date);
 			expect(result.crashes[0].latitude).toBe(41.88);
 			expect(result.crashes[0].address).toBe('1200 S STATE ST');
 			expect(result.crashes[0].crash_type).toBe('REAR END');

@@ -15,7 +15,7 @@ function normalizeHitAndRun(value: unknown): boolean | null {
 export class BriefCrash {
 	address: string | null;
 	cause_prim: string | null;
-	crash_date: string;
+	crash_date: Date;
 	crash_record_id: string;
 	crash_type: string;
 	hit_and_run_i: boolean | null;
@@ -28,7 +28,7 @@ export class BriefCrash {
 	constructor(record: BriefCrashRecord) {
 		this.address = record.address;
 		this.cause_prim = record.cause_prim;
-		this.crash_date = record.crash_date;
+		this.crash_date = new Date(Date.parse(record.crash_date));
 		this.crash_record_id = record.crash_record_id;
 		this.crash_type = record.crash_type;
 		this.hit_and_run_i = normalizeHitAndRun(record.hit_and_run_i);
@@ -53,6 +53,20 @@ export class BriefCrash {
 
 	get hasMultipleCasualties(): boolean {
 		return this.totalCasualties > 1;
+	}
+
+	get isNightime(): boolean {
+		const hour = this.crash_date.getHours();
+		return hour >= 20 || hour < 5;
+	}
+
+	get isWeekend(): boolean {
+		const day = this.crash_date.getDay();
+		return day === 5 || day === 6 || day === 0;
+	}
+
+	get isNighttime(): boolean {
+		return this.isNightime;
 	}
 }
 

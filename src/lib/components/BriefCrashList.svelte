@@ -10,16 +10,16 @@
 		showCrashOnMap: (crashId: string) => void;
 	}>();
 
-	function shortDate(value: string): string {
-		return new Date(value).toLocaleDateString('en-US', {
+	function shortDate(value: Date): string {
+		return value.toLocaleDateString('en-US', {
 			month: 'short',
 			day: 'numeric',
 			year: 'numeric'
 		});
 	}
 
-	function shortTime(value: string): string {
-		return new Date(value).toLocaleTimeString('en-US', {
+	function shortTime(value: Date): string {
+		return value.toLocaleTimeString('en-US', {
 			hour: 'numeric',
 			minute: '2-digit'
 		});
@@ -215,7 +215,7 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 		font-weight: 600;
 		font-size: 0.875rem;
@@ -225,6 +225,7 @@
 
 	.detail-link:hover,
 	.detail-link:focus-visible {
+		color: var(--color-link-hover);
 		background-color: #eff6ff;
 		text-decoration: underline;
 		outline: none;

@@ -27,7 +27,7 @@
 					{
 						label: 'Serious',
 						count: crash.injuries_incapacitating,
-						color: 'bg-amber-600'
+						color: 'bg-pink-600'
 					},
 					{
 						label: 'Minor',
@@ -60,15 +60,16 @@
 				<p class="hero-cause">{crash.main_cause}</p>
 
 				<p class="hero-location">
-					{address}{#each intersections as ix}&ensp;·&ensp;<a
+					{#if neighborhood}<a href={`${base}/neighborhoods/${neighborhood.id}`} class="hero-link"
+							>{neighborhood.name}</a
+						>&ensp;·&ensp;{/if}{#if ward}<a href={`${base}/wards/${ward.id}`} class="hero-link"
+							>{ward.name}</a
+						>{/if}
+
+					{#each intersections as ix}&ensp;·&ensp;<a
 							href={`${base}/intersections/${ix.id}`}
 							class="hero-link">{ix.name}</a
-						>{/each}{#if ward}&ensp;·&ensp;<a href={`${base}/wards/${ward.id}`} class="hero-link"
-							>{ward.name}</a
-						>{/if}{#if neighborhood}&ensp;·&ensp;<a
-							href={`${base}/neighborhoods/${neighborhood.id}`}
-							class="hero-link">{neighborhood.name}</a
-						>{/if}
+						>{/each}
 				</p>
 			</div>
 
@@ -193,11 +194,12 @@
 	}
 
 	.hero-link {
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 	}
 
 	.hero-link:hover {
+		color: var(--color-link-hover);
 		text-decoration: underline;
 	}
 

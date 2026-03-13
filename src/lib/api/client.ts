@@ -39,7 +39,8 @@ function normalizeCrashRecord(record: CrashRecord): CrashRecord {
 async function apiGet<T>(
 	path: string,
 	params: Record<string, string | number | undefined> = {},
-	fetchImpl: FetchImpl = fetch
+	fetchImpl: FetchImpl = fetch,
+	signal?: AbortSignal
 ): Promise<T> {
 	const qs = new URLSearchParams();
 	for (const [key, value] of Object.entries(params)) {
@@ -47,15 +48,20 @@ async function apiGet<T>(
 	}
 	const query = qs.toString();
 	const url = `${API_BASE}${path}${query ? `?${query}` : ''}`;
-	const res = await fetchImpl(url);
+	const res = await fetchImpl(url, { signal });
 	if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
 	const data = await res.json();
 	return data.response as T;
 }
 
-export async function searchLocations(q: string): Promise<LocationRecord[]> {
+export async function searchLocations(q: string, signal?: AbortSignal): Promise<LocationRecord[]> {
 	if (!q.trim()) return [];
-	const data = await apiGet<{ locations: LocationRecord[] }>('/api/locations/search', { q });
+	const data = await apiGet<{ locations: LocationRecord[] }>(
+		'/api/locations/search',
+		{ q },
+		fetch,
+		signal
+	);
 	return data.locations;
 }
 
@@ -81,11 +87,14 @@ export interface NearbyLocation {
 
 export async function getNearbyLocations(
 	locationId: string,
-	limit: number = 5
+	limit: number = 5,
+	signal?: AbortSignal
 ): Promise<NearbyLocation[]> {
 	const data = await apiGet<{ locations: NearbyLocation[] }>(
 		`/api/locations/${encodeURIComponent(locationId)}/nearby`,
-		{ limit }
+		{ limit },
+		fetch,
+		signal
 	);
 	return data.locations;
 }
@@ -196,22 +205,30 @@ export async function getTopIntersections(): Promise<{
 	return apiGet('/api/intersections/top', { limit: 20, recent_days: 90 });
 }
 
-export async function getCrashSummary(params: {
-	locationId?: string;
-	latitude?: number;
-	longitude?: number;
-	distance?: number;
-	since?: string;
-	until?: string;
-}): Promise<CrashSummary> {
-	return apiGet<CrashSummary>('/api/crashes/summary', {
-		location_id: params.locationId,
-		latitude: params.latitude,
-		longitude: params.longitude,
-		distance: params.distance,
-		since: params.since,
-		until: params.until
-	});
+export async function getCrashSummary(
+	params: {
+		locationId?: string;
+		latitude?: number;
+		longitude?: number;
+		distance?: number;
+		since?: string;
+		until?: string;
+	},
+	signal?: AbortSignal
+): Promise<CrashSummary> {
+	return apiGet<CrashSummary>(
+		'/api/crashes/summary',
+		{
+			location_id: params.locationId,
+			latitude: params.latitude,
+			longitude: params.longitude,
+			distance: params.distance,
+			since: params.since,
+			until: params.until
+		},
+		fetch,
+		signal
+	);
 }
 
 export interface CrashListResult {
@@ -256,16 +273,24 @@ export interface BriefCrashResult {
 	crashes: BriefCrash[];
 }
 
-export async function getCrashesBrief(params?: {
-	since?: string;
-	until?: string;
-	locationId?: string;
-}): Promise<BriefCrashResult> {
-	const data = await apiGet<{ total: number; crashes: BriefCrashRecord[] }>('/api/crashes/brief', {
-		since: params?.since,
-		until: params?.until,
-		location_id: params?.locationId
-	});
+export async function getCrashesBrief(
+	params?: {
+		since?: string;
+		until?: string;
+		locationId?: string;
+	},
+	signal?: AbortSignal
+): Promise<BriefCrashResult> {
+	const data = await apiGet<{ total: number; crashes: BriefCrashRecord[] }>(
+		'/api/crashes/brief',
+		{
+			since: params?.since,
+			until: params?.until,
+			location_id: params?.locationId
+		},
+		fetch,
+		signal
+	);
 	return {
 		total: data.total,
 		crashes: parseBriefCrashes(data.crashes)
@@ -274,13 +299,14 @@ export async function getCrashesBrief(params?: {
 
 export async function getDateCount(
 	unit: 'day' | 'month' | 'year' = 'month',
-	last: number = 18
+	last: number = 18,
+	signal?: AbortSignal
 ): Promise<Record<string, DateCountPeriod>> {
 	const data = await apiGet<{
 		unit: string;
 		last: number;
 		periods: Record<string, DateCountPeriod>;
-	}>('/api/crashes/date-count', { unit, last });
+	}>('/api/crashes/date-count', { unit, last }, fetch, signal);
 	return data.periods;
 }
 export async function getYearToDateComparison(

@@ -75,12 +75,12 @@
 	}
 
 	.crumb-link {
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 	}
 
 	.crumb-link:hover {
-		color: #1d4ed8;
+		color: var(--color-link-hover);
 		text-decoration: underline;
 	}
 
@@ -105,13 +105,13 @@
 	.period-arrow {
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: none;
 		white-space: nowrap;
 	}
 
 	.period-arrow:hover {
-		color: #1d4ed8;
+		color: var(--color-link-hover);
 		text-decoration: underline;
 	}
 </style>

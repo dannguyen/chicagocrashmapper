@@ -18,11 +18,11 @@
 	let allTimeSummary: CrashSummary | null = $state(null);
 	let nearbyLocations: NearbyLocation[] = $state([]);
 	let topMapRef: MapContainer | undefined = $state(undefined);
-	let loadRequestId = 0;
 	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
 
 	$effect(() => {
-		const requestId = ++loadRequestId;
+		const controller = new AbortController();
+		const { signal } = controller;
 		// Track location.id so this re-runs on navigation
 		const locationId = location.id;
 
@@ -35,32 +35,27 @@
 		(async () => {
 			try {
 				const [briefResult, summary, nearby] = await Promise.all([
-					getCrashesBrief({ locationId }),
-					getCrashSummary({ locationId }),
-					getNearbyLocations(locationId)
+					getCrashesBrief({ locationId }, signal),
+					getCrashSummary({ locationId }, signal),
+					getNearbyLocations(locationId, 5, signal)
 				]);
 
-				if (requestId !== loadRequestId) return;
+				if (signal.aborted) return;
 
 				allCrashes = briefResult.crashes;
 				visibleCrashes = briefResult.crashes;
 				allTimeSummary = summary;
 				nearbyLocations = nearby;
-			} catch {
-				if (requestId !== loadRequestId) return;
+			} catch (err) {
+				if (err instanceof DOMException && err.name === 'AbortError') return;
 				allCrashes = [];
 				visibleCrashes = [];
 			} finally {
-				if (requestId !== loadRequestId) return;
-				loading = false;
+				if (!signal.aborted) loading = false;
 			}
 		})();
 
-		return () => {
-			if (requestId === loadRequestId) {
-				loadRequestId++;
-			}
-		};
+		return () => controller.abort();
 	});
 </script>
 

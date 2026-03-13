@@ -46,12 +46,12 @@
 
 	.near-me-link {
 		font-weight: 600;
-		color: #2563eb;
+		color: var(--color-link);
 		text-decoration: underline;
 		text-underline-offset: 2px;
 	}
 
 	.near-me-link:hover {
-		color: #1d4ed8;
+		color: var(--color-link-hover);
 	}
 </style>

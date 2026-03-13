@@ -5,9 +5,11 @@
 @theme {
 	--font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 	--color-fatal: #dc2626;
-	--color-serious: #f59e0b;
+	--color-serious: #b77992;
 	--color-minor: #eab308;
 	--color-none: #9ca3af;
+	--color-link: #4d7aa6;
+	--color-link-hover: #3e6486;
 }
 
 /* ── Severity (crash-level) ─────────────────────────────────────────────── */
@@ -17,7 +19,7 @@
 	@apply border-l-red-600;
 }
 [data-severity='serious'].hero-card {
-	@apply border-l-amber-600;
+	@apply border-l-pink-600;
 }
 [data-severity='minor'].hero-card {
 	@apply border-l-amber-500;
@@ -31,7 +33,7 @@
 	@apply bg-red-100 text-red-700;
 }
 .severity-badge[data-severity='serious'] {
-	@apply bg-amber-100 text-amber-700;
+	@apply bg-pink-100 text-pink-700;
 }
 .severity-badge[data-severity='minor'] {
 	@apply bg-amber-100 text-amber-700;
@@ -47,7 +49,7 @@
 	@apply bg-red-600;
 }
 .person-dot[data-injury='serious'] {
-	@apply bg-amber-600;
+	@apply bg-pink-600;
 }
 .person-dot[data-injury='minor'] {
 	@apply bg-amber-500;
@@ -65,7 +67,7 @@
 	@apply text-red-600 font-semibold;
 }
 .person-injury-label[data-injury='serious'] {
-	@apply text-amber-600 font-semibold;
+	@apply text-pink-600 font-semibold;
 }
 .person-injury-label[data-injury='minor'] {
 	@apply text-amber-600;

@@ -82,7 +82,7 @@
 	}
 
 	.kpi-abs-serious {
-		color: #f59e0b;
+		color: var(--color-serious);
 	}
 
 	.kpi-delta {
