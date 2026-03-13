@@ -6,6 +6,18 @@ import type { CrashRecord, PersonRecord, VehicleRecord } from '$lib/models/types
 
 const UNKNOWN_CAUSE_LABEL: string = 'UNKNOWN CAUSE';
 
+function normalizeHitAndRun(value: unknown): boolean | null {
+	if (value == null) return null;
+	if (typeof value === 'boolean') return value;
+	if (typeof value === 'number') return value !== 0;
+	if (typeof value === 'string') {
+		const normalized = value.trim().toLowerCase();
+		if (normalized === '1' || normalized === 'true' || normalized === 'y') return true;
+		if (normalized === '0' || normalized === 'false' || normalized === 'n') return false;
+	}
+	return null;
+}
+
 function isUnknownCause(cause: string | null | undefined): boolean {
 	if (cause == null || cause.trim() === '') return true;
 	return ['UNABLE TO DETERMINE', 'NOT APPLICABLE', UNKNOWN_CAUSE_LABEL].includes(cause);
@@ -42,7 +54,7 @@ export class Crash {
 		this.category = record.crash_type;
 		this.date = new Date(Date.parse(record.crash_date));
 		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
-		this.hit_and_run = record.hit_and_run_i ?? null;
+		this.hit_and_run = normalizeHitAndRun(record.hit_and_run_i);
 		this.injuries_fatal = record.injuries_fatal;
 		this.injuries_incapacitating = record.injuries_incapacitating;
 		this.injuries_no_indication = record.injuries_no_indication;
@@ -141,36 +153,8 @@ export class Crash {
 	}
 }
 
-export class Crashes extends Array<Crash> {
-	get fatal(): Crashes {
-		return new Crashes(...this.filter((c) => c.isFatal));
-	}
-	get harmed_children(): Crashes {
-		return new Crashes(...this.filter((c) => c.harmedChildren));
-	}
-	get harmed_cyclists(): Crashes {
-		return new Crashes(...this.filter((c) => c.harmedCyclists));
-	}
-	get harmed_pedestrians(): Crashes {
-		return new Crashes(...this.filter((c) => c.harmedPedestrians));
-	}
-	get killed_children(): Crashes {
-		return new Crashes(...this.filter((c) => c.killedChildren));
-	}
-	get killed_cyclists(): Crashes {
-		return new Crashes(...this.filter((c) => c.killedCyclists));
-	}
-	get killed_pedestrians(): Crashes {
-		return new Crashes(...this.filter((c) => c.killedPedestrians));
-	}
-
-	get people(): People {
-		return new People(...this.flatMap((c) => c.people));
-	}
-}
-
-export function parseCrashes(items: CrashRecord[]): Crashes {
-	return new Crashes(...items.map((item) => new Crash(item)));
+export function parseCrashes(items: CrashRecord[]): Crash[] {
+	return items.map((item) => new Crash(item));
 }
 
 function parsePassengers(vehicles: Vehicle[]): Person[] {

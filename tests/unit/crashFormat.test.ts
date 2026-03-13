@@ -3,12 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { Crash } from '$lib/models/crash';
 import { Person } from '$lib/models/person';
 import {
-	contextInfo,
 	fatalityPeople,
 	fatalityRoleLabel,
 	fmtCause,
-	peopleSummary,
-	popupHtml
+	peopleSummary
 } from '$lib/models/crashFormat';
 import { makeCrashRecord, makePersonRecord, makeVehicleRecord } from './fixtures';
 
@@ -115,27 +113,6 @@ describe('peopleSummary', () => {
 	});
 });
 
-describe('contextInfo', () => {
-	it('formats weather and trafficway', () => {
-		const crash = new Crash(
-			makeCrashRecord({ weather_condition: 'RAIN', trafficway_type: 'FOUR WAY' })
-		);
-		expect(contextInfo(crash)).toBe('Rain · Four Way');
-	});
-
-	it('excludes NOT DIVIDED trafficway', () => {
-		const crash = new Crash(
-			makeCrashRecord({ weather_condition: 'CLEAR', trafficway_type: 'NOT DIVIDED' })
-		);
-		expect(contextInfo(crash)).toBe('Clear');
-	});
-
-	it('returns empty string when both are null', () => {
-		const crash = new Crash(makeCrashRecord({ weather_condition: null, trafficway_type: null }));
-		expect(contextInfo(crash)).toBe('');
-	});
-});
-
 describe('fatalityPeople', () => {
 	it('returns all killed people by default', () => {
 		const crash = new Crash(
@@ -200,28 +177,5 @@ describe('fatalityRoleLabel', () => {
 		expect(fatalityRoleLabel(new Person(makePersonRecord({ person_type: 'BICYCLE' })))).toBe(
 			'Cyclist'
 		);
-	});
-});
-
-describe('popupHtml', () => {
-	it('includes severity label, formatted cause, and detail link', () => {
-		const crash = new Crash(
-			makeCrashRecord({
-				crash_record_id: 'abc123',
-				injuries_fatal: 1,
-				cause_prim: 'UNABLE TO DETERMINE',
-				vehicles: [
-					makeVehicleRecord({
-						passengers: [makePersonRecord({ injury_classification: 'FATAL' })]
-					})
-				]
-			})
-		);
-
-		const html = popupHtml(crash);
-		expect(html).toContain('FATAL');
-		expect(html).toContain('Unknown Cause');
-		expect(html).toContain('See details');
-		expect(html).toContain('/crashes/abc123');
 	});
 });

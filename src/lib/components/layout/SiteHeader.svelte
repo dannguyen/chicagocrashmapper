@@ -25,10 +25,10 @@
 		<!-- Desktop nav links -->
 		<nav class="desktop-nav" aria-label="Site navigation">
 			<a href="{base}/neighborhoods" class="nav-link">Neighborhoods</a>
+			<a href="{base}/streets" class="nav-link">Streets</a>
 			<a href="{base}/wards" class="nav-link">Wards</a>
-			<a href="{base}/intersections" class="nav-link">Intersections</a>
-			<a href="{base}/fatalities" class="nav-link">Fatalities</a>
 			<a href="{base}/periods" class="nav-link">Periods</a>
+			<a href="{base}/fatalities" class="nav-link">Fatalities</a>
 		</nav>
 
 		<!-- Mobile hamburger -->
@@ -72,15 +72,15 @@
 			<a href="{base}/neighborhoods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
 				>Neighborhoods</a
 			>
+			<a href="{base}/streets" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
+				>Streets</a
+			>
 			<a href="{base}/wards" class="mobile-link" onclick={() => (mobileMenuOpen = false)}>Wards</a>
-			<a href="{base}/intersections" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
-				>Intersections</a
+			<a href="{base}/periods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
+				>Periods</a
 			>
 			<a href="{base}/fatalities" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
 				>Fatalities</a
-			>
-			<a href="{base}/periods" class="mobile-link" onclick={() => (mobileMenuOpen = false)}
-				>Periods</a
 			>
 		</nav>
 	{/if}

@@ -1,8 +1,8 @@
 import { base } from '$app/paths';
+import { BriefCrash } from '$lib/models/briefCrash';
 import type { Crash } from '$lib/models/crash';
-import type { BriefCrash } from '$lib/models/types';
 import type { Person } from '$lib/models/person';
-import { crashSeverity, severityLabel } from '$lib/severity';
+import { severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
 import { SEVERITY_COLORS } from '$lib/constants';
 
@@ -79,38 +79,10 @@ export function fatalityPeople(item: Crash, filter: FatalityPersonType = 'all'):
 	});
 }
 
-export function contextInfo(item: Crash): string {
-	const parts: string[] = [];
-	if (item.weather_condition) {
-		parts.push(item.weather_condition.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()));
-	}
-	if (item.trafficway_type && item.trafficway_type !== 'NOT DIVIDED') {
-		parts.push(item.trafficway_type.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()));
-	}
-	return parts.join(' · ');
-}
-
 const severityColors: Record<SeverityLevel, string> = SEVERITY_COLORS;
 
-export function popupHtml(item: Crash): string {
-	const severity = crashSeverity(item);
-	const label = severityLabel(severity).toUpperCase();
-	const color = severityColors[severity];
-	const people = peopleSummary(item);
-
-	return `<div class="popup-content">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-	<span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:${color}">${label}</span>
-	<span style="font-size:11px;color:#9ca3af">${item.prettyDate}</span>
-</div>
-<div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:2px">${fmtCause(item.main_cause)}</div>
-${people ? `<div style="font-size:12px;color:#374151;margin-bottom:2px">${people}</div>` : ''}
-<a href="${base}/crashes/${item.crash_record_id}" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">See details →</a>
-</div>`;
-}
-
 function briefSeverity(item: BriefCrash): SeverityLevel {
-	if (item.injuries_fatal > 0) return 'fatal';
+	if (item.isFatal) return 'fatal';
 	if (item.injuries_incapacitating > 0) return 'serious';
 	return 'none';
 }
@@ -137,7 +109,7 @@ export function briefPopupHtml(item: BriefCrash): string {
 }
 
 export function crashToBrief(c: Crash): BriefCrash {
-	return {
+	return new BriefCrash({
 		crash_record_id: c.crash_record_id,
 		address: c.address || null,
 		latitude: c.latitude,
@@ -149,5 +121,5 @@ export function crashToBrief(c: Crash): BriefCrash {
 		injuries_incapacitating: c.injuries_incapacitating,
 		injuries_total: c.injuries_total,
 		cause_prim: c.primary_cause
-	};
+	});
 }

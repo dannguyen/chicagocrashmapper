@@ -1,18 +1,29 @@
 <script lang="ts">
 	import type { Crash } from '$lib/models/crash';
+	import type { BriefCrash } from '$lib/models/briefCrash';
 	import type { Location } from '$lib/location';
 	import type { CrashSummary } from '$lib/models/types';
+
+	type SummaryCrash = Crash | BriefCrash;
+
 	let {
 		crashes,
 		location,
 		summary = null,
 		compact = false
 	} = $props<{
-		crashes: Crash[];
+		crashes: SummaryCrash[];
 		location: Location | null;
 		summary?: CrashSummary | null;
 		compact?: boolean;
 	}>();
+
+	function crashDate(item: SummaryCrash): Date {
+		if ('date' in item) {
+			return item.date;
+		}
+		return new Date(Date.parse(item.crash_date));
+	}
 
 	let stats = $derived.by(() => {
 		// If a pre-computed all-time summary is provided, use it directly.
@@ -25,10 +36,10 @@
 			// Compute most recent from crashes array
 			const mostRecent =
 				crashes.length > 0
-					? crashes.reduce(
-							(latest: Date, c: Crash) => (c.date > latest ? c.date : latest),
-							crashes[0].date
-						)
+					? crashes.reduce((latest: Date, c: SummaryCrash) => {
+							const date = crashDate(c);
+							return date > latest ? date : latest;
+						}, crashDate(crashes[0]))
 					: null;
 
 			return {
@@ -46,17 +57,17 @@
 		if (crashes.length === 0) return null;
 
 		const total = crashes.length;
-		const fatalCount = crashes.filter((i: Crash) => i.isFatal).length;
-		const incapCount = crashes.filter((i: Crash) => i.injuries_incapacitating > 0).length;
+		const fatalCount = crashes.filter((i: SummaryCrash) => i.isFatal).length;
+		const incapCount = crashes.filter((i: SummaryCrash) => i.injuries_incapacitating > 0).length;
 
 		const dates = crashes
-			.map((i: Crash) => i.date)
+			.map((i: SummaryCrash) => crashDate(i))
 			.sort((a: Date, b: Date) => b.getTime() - a.getTime());
 		const mostRecent = dates[0];
 
 		const yearCounts = new Map<string, number>();
 		for (const inc of crashes) {
-			const yr = String(inc.date.getFullYear());
+			const yr = String(crashDate(inc).getFullYear());
 			yearCounts.set(yr, (yearCounts.get(yr) ?? 0) + 1);
 		}
 		const byYear = [...yearCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));

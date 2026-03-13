@@ -1,15 +1,9 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { Crash, parseCrashes } from '$lib/models/crash';
-	import { getCrashSummary, getCrashesList, getCrashesBrief, getDateCount } from '$lib/api/client';
-	import type { CrashListResult } from '$lib/api/client';
-	import type { BriefCrash, CrashSummary } from '$lib/models/types';
-	import {
-		CHICAGO_CENTER,
-		MAX_CRASH_RESULTS_PER_PAGE,
-		MONTH_NAMES,
-		MONTH_SHORT
-	} from '$lib/constants';
+	import { getCrashSummary, getCrashesBrief, getDateCount } from '$lib/api/client';
+	import type { CrashSummary } from '$lib/models/types';
+	import type { BriefCrash } from '$lib/models/briefCrash';
+	import { CHICAGO_CENTER, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
 	import { fillMissingMonthsForYear } from '$lib/transformHelpers';
 
 	import {
@@ -20,12 +14,10 @@
 		zeroPad
 	} from '$lib/periodRange';
 	import MapContainer from '$lib/components/MapContainer.svelte';
-	import CrashList from '$lib/components/CrashList.svelte';
-	import CrashListSkeleton from '$lib/components/CrashListSkeleton.svelte';
+	import BriefCrashBrowser from '$lib/components/BriefCrashBrowser.svelte';
 	import KpiCompareRow from '$lib/components/KpiCompareRow.svelte';
-	import PaginationControls from '$lib/components/PaginationControls.svelte';
 	import TrendChart, { type TrendBar } from '$lib/components/TrendChart.svelte';
-	import { paginationState, showCrashOnMap } from '$lib/pagination';
+	import { showCrashOnMap } from '$lib/pagination';
 
 	let { year, month = null } = $props<{ year: number; month?: number | null }>();
 
@@ -45,11 +37,8 @@
 
 	let chartBars: TrendBar[] = $state([]);
 
-	let mapCrashes: BriefCrash[] = $state([]);
-	let pagedCrashes: Crash[] = $state([]);
-	let totalCrashes = $state(0);
-	let currentPage = $state(0);
-	const perPage = MAX_CRASH_RESULTS_PER_PAGE;
+	let allCrashes: BriefCrash[] = $state([]);
+	let visibleCrashes: BriefCrash[] = $state([]);
 
 	let statsLoading = $state(true);
 	let chartLoading = $state(true);
@@ -59,14 +48,6 @@
 
 	let topMapRef: MapContainer | undefined = $state(undefined);
 	let loadRequestId = 0;
-
-	// ── Server-side pagination ──────────────────────────────────────────────────
-
-	const pg = paginationState(
-		() => totalCrashes,
-		() => currentPage,
-		perPage
-	);
 
 	// ── KPI deltas ───────────────────────────────────────────────────────────────
 
@@ -112,41 +93,25 @@
 		}
 	}
 
-	async function fetchPage(requestId: number, page: number = 0) {
+	async function fetchCrashes(requestId: number) {
 		crashesLoading = true;
 		crashesError = false;
-		try {
-			const result: CrashListResult = await getCrashesList({
-				since: range.since,
-				until: range.until,
-				page,
-				perPage,
-				sort: 'desc'
-			});
-			if (requestId !== loadRequestId) return;
-			pagedCrashes = parseCrashes(result.crashes);
-			totalCrashes = result.total;
-			currentPage = page;
-		} catch {
-			if (requestId !== loadRequestId) return;
-			crashesError = true;
-		} finally {
-			if (requestId !== loadRequestId) return;
-			crashesLoading = false;
-		}
-	}
-
-	async function fetchMapCrashes(requestId: number) {
 		try {
 			const result = await getCrashesBrief({
 				since: range.since,
 				until: range.until
 			});
 			if (requestId !== loadRequestId) return;
-			mapCrashes = result.crashes;
+			allCrashes = result.crashes;
+			visibleCrashes = result.crashes;
 		} catch {
 			if (requestId !== loadRequestId) return;
-			mapCrashes = [];
+			allCrashes = [];
+			visibleCrashes = [];
+			crashesError = true;
+		} finally {
+			if (requestId !== loadRequestId) return;
+			crashesLoading = false;
 		}
 	}
 
@@ -206,18 +171,6 @@
 		}
 	}
 
-	function goToPrev() {
-		if (pg.hasPrev) goToPage(currentPage - 1);
-	}
-
-	function goToNext() {
-		if (pg.hasNext) goToPage(currentPage + 1);
-	}
-
-	function goToPage(page: number) {
-		fetchPage(loadRequestId, page);
-	}
-
 	function showChartLabel(bar: TrendBar): boolean {
 		if (month == null) return true;
 		const day = parseInt(bar.period.split('-')[2]);
@@ -229,23 +182,10 @@
 		prevSummary = null;
 		yearAgoSummary = null;
 		chartBars = [];
-		mapCrashes = [];
-		pagedCrashes = [];
-		totalCrashes = 0;
-		currentPage = 0;
+		allCrashes = [];
+		visibleCrashes = [];
 
-		await Promise.all([
-			fetchStats(requestId),
-			fetchPage(requestId, 0),
-			fetchMapCrashes(requestId),
-			fetchChart(requestId)
-		]);
-		if (requestId !== loadRequestId) return;
-		requestAnimationFrame(() => {
-			if (requestId !== loadRequestId || !topMapRef) return;
-			topMapRef.updateNearbyMarkers(mapCrashes);
-			if (mapCrashes.length > 0) topMapRef.fitToCrashes(mapCrashes);
-		});
+		await Promise.all([fetchStats(requestId), fetchCrashes(requestId), fetchChart(requestId)]);
 	}
 
 	$effect(() => {
@@ -334,60 +274,21 @@
 
 		<div class="map-col">
 			<div class="map-card top-map-card">
-				<MapContainer bind:this={topMapRef} crashes={mapCrashes} {defaultGeoCenter} />
+				<MapContainer bind:this={topMapRef} crashes={visibleCrashes} {defaultGeoCenter} />
 			</div>
 		</div>
 	</div>
 
-	<!-- Pagination + crash list -->
-	{#if totalCrashes > 0}
-		<PaginationControls
-			rangeStart={pg.rangeStart}
-			rangeEnd={pg.rangeEnd}
-			totalItems={totalCrashes}
-			{currentPage}
-			totalPages={pg.totalPages}
-			hasPrev={pg.hasPrev}
-			hasNext={pg.hasNext}
-			pageNumbers={pg.pageNumbers}
-			onPrev={goToPrev}
-			onNext={goToNext}
-			onPage={goToPage}
-		/>
-	{/if}
-
-	{#if crashesError}
-		<div class="empty-state">
-			<p class="empty-text">Failed to load crashes.</p>
-		</div>
-	{:else if crashesLoading}
-		<CrashListSkeleton />
-	{:else if pagedCrashes.length === 0}
-		<div class="empty-state">
-			<p class="empty-text">No serious crashes found for this period.</p>
-		</div>
-	{:else}
-		<CrashList
-			crashes={pagedCrashes}
-			selectedLocation={null}
-			showCrashOnMap={(id) => showCrashOnMap(topMapRef, id)}
-		/>
-	{/if}
-
-	<!-- Bottom pagination -->
-	{#if pg.totalPages > 1 && !crashesLoading}
-		<PaginationControls
-			variant="footer"
-			{currentPage}
-			totalPages={pg.totalPages}
-			hasPrev={pg.hasPrev}
-			hasNext={pg.hasNext}
-			pageNumbers={pg.pageNumbers}
-			onPrev={goToPrev}
-			onNext={goToNext}
-			onPage={goToPage}
-		/>
-	{/if}
+	<BriefCrashBrowser
+		crashes={allCrashes}
+		loading={crashesLoading}
+		error={crashesError}
+		emptyMessage="No serious crashes found for this period."
+		showCrashOnMap={(id) => showCrashOnMap(topMapRef, id)}
+		onFilteredCrashesChange={(items) => {
+			visibleCrashes = items;
+		}}
+	/>
 </div>
 
 <style>
@@ -497,15 +398,5 @@
 		.top-map-card :global(.map-root) {
 			height: 28rem;
 		}
-	}
-
-	.empty-state {
-		text-align: center;
-		padding: 3rem 0;
-		color: #9ca3af;
-	}
-
-	.empty-text {
-		font-size: 0.875rem;
 	}
 </style>

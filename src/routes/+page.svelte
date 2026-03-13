@@ -9,7 +9,8 @@
 		MONTH_NAMES,
 		MONTH_SHORT
 	} from '$lib/constants';
-	import type { BriefCrash, DateCountPeriod } from '$lib/models/types';
+	import type { DateCountPeriod } from '$lib/models/types';
+	import type { BriefCrash } from '$lib/models/briefCrash';
 	import { getCrashesBrief, getDateCount } from '$lib/api/client';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import MapContainer from '$lib/components/MapContainer.svelte';

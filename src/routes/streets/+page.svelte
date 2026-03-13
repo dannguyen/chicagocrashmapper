@@ -9,11 +9,12 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let cityGeoJson: GeoJSON.FeatureCollection | null = $state(null);
+	const initialStreetLimit = 50;
 
 	onMount(async () => {
 		try {
 			const [streetData, geoRes] = await Promise.all([
-				getStreetStats(),
+				getStreetStats(initialStreetLimit),
 				fetch(`${import.meta.env.BASE_URL}chicago-city-boundaries.json`)
 			]);
 			stats = streetData;
@@ -34,7 +35,8 @@
 	<div class="mb-8">
 		<h1 class="text-2xl font-bold text-gray-900">Chicago Streets</h1>
 		<p class="mt-1 text-sm text-gray-500">
-			Sorted by average crashes per year · Click any street to explore
+			Showing the top {initialStreetLimit} streets by average crashes per year · Click any street to
+			explore
 		</p>
 	</div>
 

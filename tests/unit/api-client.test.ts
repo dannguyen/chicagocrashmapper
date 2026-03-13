@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { BriefCrash } from '$lib/models/briefCrash';
 import {
 	getCrashById,
 	getCrashesBrief,
@@ -11,7 +12,6 @@ import {
 	getLocationById,
 	getNearbyLocations,
 	getNeighborhoodStats,
-	getRecentCrashes,
 	getStreetStats,
 	getTopIntersections,
 	getWardStats,
@@ -118,7 +118,7 @@ describe('api client', () => {
 				ok: true,
 				json: async () => ({
 					response: {
-						crash: makeCrashRecord({ crash_record_id: 'custom-crash' }),
+						crash: makeCrashRecord({ crash_record_id: 'custom-crash', hit_and_run_i: 1 as never }),
 						neighborhood: null,
 						ward: null,
 						intersections: [],
@@ -132,12 +132,15 @@ describe('api client', () => {
 			expect(customFetch).toHaveBeenCalledOnce();
 			expect(fetch).not.toHaveBeenCalled();
 			expect(crash?.crash.crash_record_id).toBe('custom-crash');
+			expect(crash?.crash.hit_and_run_i).toBe(true);
 		});
 	});
 
 	describe('getCrashesNearPoint', () => {
 		it('converts distance from feet to miles in the request and back to feet in the result', async () => {
-			mockFetchOk({ crashes: [{ ...makeCrashRecord(), distance_miles: 0.5 }] });
+			mockFetchOk({
+				crashes: [{ ...makeCrashRecord(), hit_and_run_i: 1 as never, distance_miles: 0.5 }]
+			});
 
 			const crashes = await getCrashesNearPoint(
 				41.88,
@@ -151,6 +154,7 @@ describe('api client', () => {
 
 			expect(url.searchParams.get('distance')).toBe('0.5');
 			expect(crashes[0].distance).toBe(2640);
+			expect(crashes[0].hit_and_run_i).toBe(true);
 		});
 	});
 
@@ -185,19 +189,6 @@ describe('api client', () => {
 		});
 	});
 
-	describe('getRecentCrashes', () => {
-		it('passes the limit param and returns crashes', async () => {
-			mockFetchOk({ crashes: [makeCrashRecord({ crash_record_id: 'recent-1' })] });
-
-			const crashes = await getRecentCrashes(7);
-			const url = lastFetchUrl();
-
-			expect(url.pathname).toBe('/api/crashes/recent');
-			expect(url.searchParams.get('limit')).toBe('7');
-			expect(crashes[0].crash_record_id).toBe('recent-1');
-		});
-	});
-
 	describe('getNeighborhoodStats', () => {
 		it('fetches /api/neighborhoods/stats and returns the stats array', async () => {
 			mockFetchOk({ stats: [{ id: 'nbhd-1', name: 'Loop', total_crashes: 100 }] });
@@ -223,13 +214,14 @@ describe('api client', () => {
 	});
 
 	describe('getStreetStats', () => {
-		it('fetches /api/streets/stats and returns the stats array', async () => {
+		it('fetches /api/streets/stats with a limit and returns the stats array', async () => {
 			mockFetchOk({ stats: [{ id: 'street-1', name: 'Michigan Ave', total_crashes: 30 }] });
 
-			const stats = await getStreetStats();
+			const stats = await getStreetStats(50);
 			const url = lastFetchUrl();
 
 			expect(url.pathname).toBe('/api/streets/stats');
+			expect(url.searchParams.get('limit')).toBe('50');
 			expect(stats[0].name).toBe('Michigan Ave');
 		});
 	});
@@ -293,7 +285,7 @@ describe('api client', () => {
 					longitude: -87.62,
 					crash_date: '2025-01-15',
 					crash_type: 'REAR END',
-					hit_and_run_i: false,
+					hit_and_run_i: 1 as never,
 					injuries_fatal: 1,
 					injuries_incapacitating: 0,
 					injuries_total: 1,
@@ -308,12 +300,15 @@ describe('api client', () => {
 			expect(url.pathname).toBe('/api/crashes/brief');
 			expect(result.total).toBe(1);
 			expect(result.crashes).toHaveLength(1);
+			expect(result.crashes[0]).toBeInstanceOf(BriefCrash);
 			expect(result.crashes[0].latitude).toBe(41.88);
 			expect(result.crashes[0].address).toBe('1200 S STATE ST');
 			expect(result.crashes[0].crash_type).toBe('REAR END');
-			expect(result.crashes[0].hit_and_run_i).toBe(false);
+			expect(result.crashes[0].hit_and_run_i).toBe(true);
+			expect(result.crashes[0].isHitAndRun).toBe(true);
 			expect(result.crashes[0].injuries_fatal).toBe(1);
 			expect(result.crashes[0].injuries_total).toBe(1);
+			expect(result.crashes[0].isFatal).toBe(true);
 		});
 	});
 

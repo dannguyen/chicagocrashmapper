@@ -53,7 +53,7 @@ export interface DateCountPeriod {
 	injuries_incapacitating: number;
 }
 
-export interface BriefCrash {
+export interface BriefCrashRecord {
 	crash_record_id: string;
 	address: string | null;
 	latitude: number;

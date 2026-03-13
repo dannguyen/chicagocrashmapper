@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Mapper, type MapLibreMarker, type MapLibrePopup } from '$lib/mapping';
 	import { Location } from '$lib/location';
-	import type { BriefCrash } from '$lib/models/types';
+	import type { BriefCrash } from '$lib/models/briefCrash';
 	import { briefPopupHtml } from '$lib/models/crashFormat';
 	import { SEVERITY_COLORS } from '$lib/constants';
 
@@ -215,7 +215,7 @@
 		setGeoJSONSourceData(SEARCH_RADIUS_SOURCE_ID, MapperInstance.makeFeatureCollection([feature]));
 	}
 
-	export function updateMapWithLocation(location: Location) {
+	function updateMapWithLocation(location: Location) {
 		if (!MapperInstance.map || !MapperInstance.maplibre) return;
 
 		clearActiveLayer();
@@ -275,7 +275,7 @@
 		return coord + (Math.random() - 0.5) * 0.0006;
 	}
 
-	export function updateNearbyMarkers(items: BriefCrash[]) {
+	function updateNearbyMarkers(items: BriefCrash[]) {
 		if (!MapperInstance.map || !MapperInstance.maplibre) return;
 
 		clearCrashMarkers();
@@ -284,7 +284,7 @@
 		for (const item of items) {
 			const lat = item.latitude;
 			const lon = item.longitude;
-			const isFatal = item.injuries_fatal > 0;
+			const isFatal = item.isFatal;
 
 			if (
 				lat == null ||
@@ -362,7 +362,7 @@
 		}
 	}
 
-	export function fitToCrashes(items: BriefCrash[]) {
+	function fitToCrashes(items: BriefCrash[]) {
 		if (!MapperInstance.map) return;
 
 		const validLatLngs = items

@@ -3,18 +3,38 @@
  */
 
 import { PUBLIC_API_BASE_URL } from '$env/static/public';
+import { BriefCrash, parseBriefCrashes } from '$lib/models/briefCrash';
 import type {
 	LocationRecord,
 	AreaStat,
 	IntersectionStat,
 	CrashSummary,
 	DateCountPeriod,
-	BriefCrash,
+	BriefCrashRecord,
 	CrashRecord
 } from '$lib/models/types';
 
 const API_BASE = PUBLIC_API_BASE_URL ?? '';
 type FetchImpl = typeof fetch;
+
+function normalizeHitAndRun(value: unknown): boolean | null {
+	if (value == null) return null;
+	if (typeof value === 'boolean') return value;
+	if (typeof value === 'number') return value !== 0;
+	if (typeof value === 'string') {
+		const normalized = value.trim().toLowerCase();
+		if (normalized === '1' || normalized === 'true' || normalized === 'y') return true;
+		if (normalized === '0' || normalized === 'false' || normalized === 'n') return false;
+	}
+	return null;
+}
+
+function normalizeCrashRecord(record: CrashRecord): CrashRecord {
+	return {
+		...record,
+		hit_and_run_i: normalizeHitAndRun(record.hit_and_run_i)
+	};
+}
 
 async function apiGet<T>(
 	path: string,
@@ -85,7 +105,7 @@ export async function getCrashesNearPoint(
 	);
 	// Convert distance_miles -> distance in feet for the Crash model
 	return data.crashes.map((inc) => ({
-		...inc,
+		...normalizeCrashRecord(inc),
 		distance: inc.distance_miles != null ? inc.distance_miles * 5280 : undefined
 	}));
 }
@@ -102,7 +122,7 @@ export async function getCrashesWithin(
 		until,
 		limit
 	});
-	return data.crashes;
+	return data.crashes.map(normalizeCrashRecord);
 }
 
 export interface LocationInfo {
@@ -140,17 +160,18 @@ export async function getCrashById(
 	fetchImpl: FetchImpl = fetch
 ): Promise<CrashByIdResult | null> {
 	try {
-		return await apiGet<CrashByIdResult>(`/api/crashes/${encodeURIComponent(id)}`, {}, fetchImpl);
+		const data = await apiGet<CrashByIdResult>(
+			`/api/crashes/${encodeURIComponent(id)}`,
+			{},
+			fetchImpl
+		);
+		return {
+			...data,
+			crash: normalizeCrashRecord(data.crash)
+		};
 	} catch {
 		return null;
 	}
-}
-
-export async function getRecentCrashes(limit: number = 10): Promise<CrashRecord[]> {
-	const data = await apiGet<{ crashes: CrashRecord[] }>('/api/crashes/recent', {
-		limit
-	});
-	return data.crashes;
 }
 
 export async function getNeighborhoodStats(): Promise<AreaStat[]> {
@@ -163,8 +184,8 @@ export async function getWardStats(): Promise<AreaStat[]> {
 	return data.stats;
 }
 
-export async function getStreetStats(): Promise<AreaStat[]> {
-	const data = await apiGet<{ stats: AreaStat[] }>('/api/streets/stats');
+export async function getStreetStats(limit: number = 50): Promise<AreaStat[]> {
+	const data = await apiGet<{ stats: AreaStat[] }>('/api/streets/stats', { limit });
 	return data.stats;
 }
 
@@ -212,7 +233,7 @@ export async function getCrashesList(params: {
 	sort?: 'asc' | 'desc';
 	fatalOnly?: boolean;
 }): Promise<CrashListResult> {
-	return apiGet<CrashListResult>('/api/crashes/list', {
+	const data = await apiGet<CrashListResult>('/api/crashes/list', {
 		location_id: params.locationId,
 		latitude: params.latitude,
 		longitude: params.longitude,
@@ -224,6 +245,10 @@ export async function getCrashesList(params: {
 		sort: params.sort,
 		fatal_only: params.fatalOnly ? 'true' : undefined
 	});
+	return {
+		...data,
+		crashes: data.crashes.map(normalizeCrashRecord)
+	};
 }
 
 export interface BriefCrashResult {
@@ -236,11 +261,15 @@ export async function getCrashesBrief(params?: {
 	until?: string;
 	locationId?: string;
 }): Promise<BriefCrashResult> {
-	return apiGet<BriefCrashResult>('/api/crashes/brief', {
+	const data = await apiGet<{ total: number; crashes: BriefCrashRecord[] }>('/api/crashes/brief', {
 		since: params?.since,
 		until: params?.until,
 		location_id: params?.locationId
 	});
+	return {
+		total: data.total,
+		crashes: parseBriefCrashes(data.crashes)
+	};
 }
 
 export async function getDateCount(

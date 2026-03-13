@@ -9,7 +9,8 @@
 		DEFAULT_MAX_DAYS
 	} from '$lib/constants';
 	import { Location } from '$lib/location';
-	import type { BriefCrash, LocationRecord } from '$lib/models/types';
+	import type { LocationRecord } from '$lib/models/types';
+	import type { BriefCrash } from '$lib/models/briefCrash';
 	import { parseCrashes, type Crash } from '$lib/models/crash';
 	import { crashToBrief } from '$lib/models/crashFormat';
 	import { getCrashesNearPoint, getCrashesWithin } from '$lib/api/client';
