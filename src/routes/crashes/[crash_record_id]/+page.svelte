@@ -35,7 +35,7 @@
 			await MapperInstance.init(mapEl, [crash.latitude, crash.longitude], 16);
 			if (destroyed || !MapperInstance.map || !MapperInstance.maplibre) return;
 
-			const markerColor = crash.isFatal ? '#dc2626' : '#d97706';
+			const markerColor = crash.isFatal ? '#dc2626' : '#f59e0b';
 			new MapperInstance.maplibre.Marker({
 				element: buildCircleElement(markerColor, 20, 0.9, 3),
 				anchor: 'center'
@@ -49,7 +49,7 @@
 						nc.injuries_fatal > 0
 							? '#dc2626'
 							: nc.injuries_incapacitating > 0
-								? '#d97706'
+								? '#f59e0b'
 								: '#6b7280';
 					const feetAway = Math.round(nc.distance_miles * 5280);
 					const popup = MapperInstance.createPopup(

@@ -2,6 +2,8 @@
  * Shared types and interfaces for client-side models and API payloads.
  */
 
+import type { Geometry } from 'geojson';
+
 export type LocationCategory = 'neighborhood' | 'ward' | 'intersection' | 'street';
 
 export interface LocationRecord {
@@ -10,13 +12,13 @@ export interface LocationRecord {
 	latitude: number;
 	longitude: number;
 	id: string;
-	the_geom: string;
+	geometry: Geometry | null;
 }
 
 export interface AreaStat {
 	id: string;
 	name: string;
-	the_geom?: string | null;
+	geometry?: Geometry | null;
 	totalCrashes: number;
 	totalFatal: number;
 	totalSeriousInjuries: number;
@@ -110,7 +112,7 @@ export interface CrashRecord {
 	injuries_unknown: number;
 	latitude: number;
 	longitude: number;
-	non_passengers?: PersonRecord[] | string | null;
+	non_passengers?: PersonRecord[] | null;
 	posted_speed_limit?: number | null;
 	prim_contributory_cause?: string;
 	sec_contributory_cause?: string;
@@ -118,6 +120,6 @@ export interface CrashRecord {
 	street_name: string;
 	street_no?: string | null;
 	trafficway_type?: string | null;
-	vehicles?: VehicleRecord[] | string | null;
+	vehicles?: VehicleRecord[] | null;
 	weather_condition?: string | null;
 }

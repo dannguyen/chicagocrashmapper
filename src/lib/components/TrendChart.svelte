@@ -1,26 +1,32 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { base } from '$app/paths';
-	import { goto } from '$app/navigation';
-	import { getDateCount } from '$lib/api/client';
-	import type { DateCountPeriod } from '$lib/models/types';
-	import { MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
-
-	interface Props {
-		months?: number;
-	}
-
-	let { months = 24 }: Props = $props();
-
-	interface PeriodData {
+	export type TrendBar = {
 		period: string;
+		label: string;
 		injuries_fatal: number;
 		injuries_incapacitating: number;
-	}
+		href?: string;
+		tooltipLabel?: string;
+	};
 
-	let periods = $state<PeriodData[]>([]);
-	let loading = $state(true);
-	let error = $state(false);
+	let {
+		loading = false,
+		bars = [],
+		title,
+		ariaLabel,
+		emptyMessage = 'No trend data available',
+		showBarLabel = defaultShowBarLabel,
+		scrollable = true,
+		labelFontSize = 9
+	} = $props<{
+		loading?: boolean;
+		bars: TrendBar[];
+		title: string;
+		ariaLabel: string;
+		emptyMessage?: string;
+		showBarLabel?: (bar: TrendBar, index: number) => boolean;
+		scrollable?: boolean;
+		labelFontSize?: number;
+	}>();
 
 	let hoveredIndex = $state<number | null>(null);
 	let tooltipX = $state(0);
@@ -28,58 +34,39 @@
 
 	const chartHeight = 80;
 	const labelHeight = 22;
-
-	// Compute bar geometry from period count; viewBox scales to fit container
-	const svgWidth = $derived(periods.length > 0 ? periods.length * 19 : 456);
-	const barGap = $derived((svgWidth / periods.length) * 0.16);
-	const barWidth = $derived(svgWidth / periods.length - barGap);
-
-	onMount(async () => {
-		try {
-			const data = await getDateCount('month', months);
-			periods = Object.entries(data)
-				.map(([period, vals]: [string, DateCountPeriod]) => ({
-					period,
-					injuries_fatal: vals.injuries_fatal ?? 0,
-					injuries_incapacitating: vals.injuries_incapacitating ?? 0
-				}))
-				.sort((a, b) => a.period.localeCompare(b.period));
-		} catch {
-			error = true;
-		} finally {
-			loading = false;
-		}
-	});
-
-	let maxVal = $derived(
-		periods.length > 0
-			? Math.max(...periods.map((p) => p.injuries_fatal + p.injuries_incapacitating), 1)
+	const barGap = 3;
+	const barWidth = $derived(bars.length > 20 ? 16 : 18);
+	const svgWidth = $derived(bars.length > 0 ? bars.length * (barWidth + barGap) : 456);
+	const totalFatal = $derived(
+		bars.reduce((sum: number, bar: TrendBar) => sum + bar.injuries_fatal, 0)
+	);
+	const totalSerious = $derived(
+		bars.reduce((sum: number, bar: TrendBar) => sum + bar.injuries_incapacitating, 0)
+	);
+	const hasData = $derived(totalFatal + totalSerious > 0);
+	const maxVal = $derived(
+		bars.length > 0
+			? Math.max(
+					...bars.map((bar: TrendBar) => bar.injuries_fatal + bar.injuries_incapacitating),
+					1
+				)
 			: 1
 	);
 
-	function barH(val: number): number {
-		return Math.max(2, (val / maxVal) * chartHeight);
+	function defaultShowBarLabel(_bar: TrendBar, index: number): boolean {
+		return index % 3 === 0;
 	}
 
-	function formatPeriod(period: string): string {
-		const parts = period.split('-');
-		const month = parseInt(parts[1]) - 1;
-		return MONTH_SHORT[month] ?? period;
+	function barH(value: number): number {
+		return Math.max(2, (value / maxVal) * chartHeight);
 	}
 
-	function periodUrl(period: string): string {
-		const [year, month] = period.split('-');
-		return `${base}/periods/${year}/${parseInt(month)}`;
+	function formatTooltipLabel(bar: TrendBar): string {
+		return bar.tooltipLabel ?? bar.period;
 	}
 
-	function formatTooltipLabel(p: PeriodData): string {
-		const parts = p.period.split('-');
-		const monthIdx = parseInt(parts[1]) - 1;
-		return `${MONTH_NAMES[monthIdx]} ${parts[0]}`;
-	}
-
-	function handleBarClick(p: PeriodData) {
-		goto(periodUrl(p.period));
+	function formatAriaLabel(bar: TrendBar): string {
+		return `${formatTooltipLabel(bar)}: ${bar.injuries_fatal} killed, ${bar.injuries_incapacitating} seriously injured`;
 	}
 
 	function handleBarHover(event: MouseEvent, index: number) {
@@ -95,120 +82,139 @@
 	function handleBarLeave() {
 		hoveredIndex = null;
 	}
-
-	let totalFatal = $derived(periods.reduce((s, p) => s + p.injuries_fatal, 0));
-	let totalIncap = $derived(periods.reduce((s, p) => s + p.injuries_incapacitating, 0));
-	let hasData = $derived(totalFatal + totalIncap > 0);
 </script>
 
 {#if loading}
 	<div class="trend-loading">Loading trend data...</div>
-{:else if !error && periods.length > 0 && !hasData}
+{:else if bars.length > 0 && !hasData}
 	<div class="trend-card">
-		<div class="trend-empty">No trend data available</div>
+		<div class="trend-empty">{emptyMessage}</div>
 	</div>
-{:else if !error && periods.length > 0}
+{:else if bars.length > 0}
 	<div class="trend-card">
-		<!-- Header -->
 		<div class="trend-header">
-			<h3 class="trend-title">{months}-Month Injury Trend</h3>
+			<h3 class="trend-title">{title}</h3>
 			<div class="trend-stats">
 				<span class="trend-stat trend-stat-fatal">{totalFatal} killed</span>
-				<span class="trend-stat trend-stat-serious">{totalIncap} seriously injured</span>
+				<span class="trend-stat trend-stat-serious">{totalSerious} seriously injured</span>
 			</div>
 		</div>
 
-		<!-- Chart -->
 		<div class="trend-chart">
-			<svg
-				viewBox="0 0 {svgWidth} {chartHeight + labelHeight}"
-				preserveAspectRatio="xMinYMin meet"
-				class="trend-svg"
-				role="img"
-				aria-label="Monthly injury trend chart"
-			>
-				{#each periods as p, i}
-					{@const inCapH = barH(p.injuries_incapacitating)}
-					{@const fatalH = barH(p.injuries_fatal)}
-					{@const x = i * (barWidth + barGap)}
-					{@const isHovered = hoveredIndex === i}
-					<!-- Invisible hit area covering the full column height -->
-					<rect
-						{x}
-						y={0}
-						width={barWidth}
-						height={chartHeight}
-						fill="transparent"
-						class="bar-hit"
-						onclick={() => handleBarClick(p)}
-						onkeydown={(e) => {
-							if (e.key === 'Enter' || e.key === ' ') {
-								e.preventDefault();
-								handleBarClick(p);
-							}
-						}}
-						onmouseenter={(e) => handleBarHover(e, i)}
-						onmousemove={(e) => handleBarHover(e, i)}
-						onmouseleave={handleBarLeave}
-						role="link"
-						tabindex="0"
-						aria-label="{formatTooltipLabel(
-							p
-						)}: {p.injuries_fatal} killed, {p.injuries_incapacitating} seriously injured"
-					/>
-					<!-- Serious injury bar -->
-					<rect
-						{x}
-						y={chartHeight - inCapH}
-						width={barWidth}
-						height={inCapH}
-						class="bar-segment bar-serious"
-						opacity={isHovered ? 0.8 : 1}
-						pointer-events="none"
-					/>
-					<!-- Fatal bar -->
-					<rect
-						{x}
-						y={chartHeight - inCapH - fatalH}
-						width={barWidth}
-						height={fatalH}
-						class="bar-segment bar-fatal"
-						opacity={isHovered ? 0.8 : 1}
-						pointer-events="none"
-					/>
-					{#if i % 3 === 0}
-						<text
-							x={x + barWidth / 2}
-							y={chartHeight + 14}
-							text-anchor="middle"
-							font-size="9"
-							fill="#9ca3af"
-							pointer-events="none"
-						>
-							{formatPeriod(p.period)}
-						</text>
-					{/if}
-				{/each}
-			</svg>
+			<div class:trend-chart-scrollable={scrollable}>
+				<svg
+					viewBox="0 0 {svgWidth} {chartHeight + labelHeight}"
+					preserveAspectRatio="xMinYMin meet"
+					class="trend-svg"
+					style:min-width={scrollable ? `${svgWidth}px` : undefined}
+					role="img"
+					aria-label={ariaLabel}
+				>
+					{#each bars as bar, i}
+						{@const inCapH = barH(bar.injuries_incapacitating)}
+						{@const fatalH = barH(bar.injuries_fatal)}
+						{@const x = i * (barWidth + barGap)}
+						{@const isHovered = hoveredIndex === i}
+						{#if bar.href}
+							<a
+								href={bar.href}
+								aria-label={formatAriaLabel(bar)}
+								onmouseenter={(event) => handleBarHover(event, i)}
+								onmousemove={(event) => handleBarHover(event, i)}
+								onmouseleave={handleBarLeave}
+							>
+								<rect
+									{x}
+									y={0}
+									width={barWidth}
+									height={chartHeight}
+									fill="transparent"
+									class="bar-hit bar-hit-clickable"
+								/>
+								<rect
+									{x}
+									y={chartHeight - inCapH}
+									width={barWidth}
+									height={inCapH}
+									class="bar-segment bar-serious"
+									opacity={isHovered ? 0.8 : 1}
+									pointer-events="none"
+								/>
+								<rect
+									{x}
+									y={chartHeight - inCapH - fatalH}
+									width={barWidth}
+									height={fatalH}
+									class="bar-segment bar-fatal"
+									opacity={isHovered ? 0.8 : 1}
+									pointer-events="none"
+								/>
+							</a>
+						{:else}
+							<rect
+								{x}
+								y={0}
+								width={barWidth}
+								height={chartHeight}
+								fill="transparent"
+								class="bar-hit"
+								onmouseenter={(event) => handleBarHover(event, i)}
+								onmousemove={(event) => handleBarHover(event, i)}
+								onmouseleave={handleBarLeave}
+								role="img"
+								aria-label={formatAriaLabel(bar)}
+							/>
+							<rect
+								{x}
+								y={chartHeight - inCapH}
+								width={barWidth}
+								height={inCapH}
+								class="bar-segment bar-serious"
+								opacity={isHovered ? 0.8 : 1}
+								pointer-events="none"
+							/>
+							<rect
+								{x}
+								y={chartHeight - inCapH - fatalH}
+								width={barWidth}
+								height={fatalH}
+								class="bar-segment bar-fatal"
+								opacity={isHovered ? 0.8 : 1}
+								pointer-events="none"
+							/>
+						{/if}
+						{#if showBarLabel(bar, i)}
+							<text
+								x={x + barWidth / 2}
+								y={chartHeight + 14}
+								text-anchor="middle"
+								font-size={labelFontSize}
+								fill="#9ca3af"
+								pointer-events="none"
+							>
+								{bar.label}
+							</text>
+						{/if}
+					{/each}
+				</svg>
+			</div>
 
-			<!-- Custom tooltip -->
-			{#if hoveredIndex !== null && periods[hoveredIndex]}
-				{@const p = periods[hoveredIndex]}
+			{#if hoveredIndex !== null && bars[hoveredIndex]}
+				{@const bar = bars[hoveredIndex]}
 				<div class="chart-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;">
-					<div class="tooltip-title">{formatTooltipLabel(p)}</div>
+					<div class="tooltip-title">{formatTooltipLabel(bar)}</div>
 					<div class="tooltip-row">
 						<span class="tooltip-swatch tooltip-fatal"></span>
-						{p.injuries_fatal} killed
+						{bar.injuries_fatal} killed
 					</div>
 					<div class="tooltip-row">
 						<span class="tooltip-swatch tooltip-serious"></span>
-						{p.injuries_incapacitating} seriously injured
+						{bar.injuries_incapacitating} seriously injured
 					</div>
 				</div>
 			{/if}
 		</div>
 
-		<!-- Legend -->
 		<div class="trend-legend">
 			<span class="legend-item">
 				<span class="legend-swatch legend-fatal"></span>
@@ -281,6 +287,11 @@
 
 	.trend-chart {
 		position: relative;
+		padding-bottom: 0.25rem;
+	}
+
+	.trend-chart-scrollable {
+		overflow-x: auto;
 	}
 
 	.trend-svg {
@@ -289,7 +300,7 @@
 		height: auto;
 	}
 
-	.bar-hit {
+	.bar-hit-clickable {
 		cursor: pointer;
 	}
 
@@ -305,7 +316,6 @@
 		fill: var(--color-serious);
 	}
 
-	/* ── Tooltip ── */
 	.chart-tooltip {
 		position: absolute;
 		pointer-events: none;

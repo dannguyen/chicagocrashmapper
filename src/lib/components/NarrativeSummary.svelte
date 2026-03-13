@@ -79,9 +79,7 @@
 {#if loading}
 	<div class="loading">Loading...</div>
 {:else if error}
-	<div class="error">
-		Loading error: {error}
-	</div>
+	<div class="error">Unable to load crash summary.</div>
 {:else if cur.crashes > 0}
 	<p>
 		{#if cur.ytd}
@@ -117,6 +115,6 @@
 	}
 
 	.kpi-incap {
-		color: #d97706;
+		color: #f59e0b;
 	}
 </style>

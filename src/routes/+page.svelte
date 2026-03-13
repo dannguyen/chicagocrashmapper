@@ -2,20 +2,26 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 
-	import { SITE_TITLE, SITE_SUBTITLE, CHICAGO_CENTER } from '$lib/constants';
-	import type { Crash } from '$lib/models/crash';
-	import { parseCrashes } from '$lib/models/crash';
-	import type { DenseCrash } from '$lib/models/types';
+	import {
+		SITE_TITLE,
+		SITE_SUBTITLE,
+		CHICAGO_CENTER,
+		MONTH_NAMES,
+		MONTH_SHORT
+	} from '$lib/constants';
+	import type { DenseCrash, DateCountPeriod } from '$lib/models/types';
 	import { getCrashesDense, getDateCount } from '$lib/api/client';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import MapContainer from '$lib/components/MapContainer.svelte';
-	import TrendChart from '$lib/components/TrendChart.svelte';
+	import TrendChart, { type TrendBar } from '$lib/components/TrendChart.svelte';
 	import NarrativeSummary from '$lib/components/NarrativeSummary.svelte';
 	import KpiCards from '$lib/components/KpiCards.svelte';
 
 	const defaultGeoCenter = CHICAGO_CENTER;
 	let mapCrashes: DenseCrash[] = $state([]);
 	let loading = $state(true);
+	let trendLoading = $state(true);
+	let trendBars: TrendBar[] = $state([]);
 
 	// Latest 2 fatal crashes from loaded data
 	const latestFatals = $derived(
@@ -36,6 +42,35 @@
 
 	let yearRows: YearRow[] = $state([]);
 	let yearTableLoading = $state(true);
+
+	async function loadTrendChart() {
+		trendLoading = true;
+		try {
+			const data = await getDateCount('month', 24);
+			trendBars = Object.entries(data)
+				.map(([period, vals]: [string, DateCountPeriod]) => {
+					const [year, month] = period.split('-');
+					const monthNumber = parseInt(month);
+					return {
+						period,
+						label: MONTH_SHORT[monthNumber - 1] ?? period,
+						injuries_fatal: vals.injuries_fatal ?? 0,
+						injuries_incapacitating: vals.injuries_incapacitating ?? 0,
+						href: `${base}/periods/${year}/${monthNumber}`,
+						tooltipLabel: `${MONTH_NAMES[monthNumber - 1]} ${year}`
+					} satisfies TrendBar;
+				})
+				.sort((a, b) => a.period.localeCompare(b.period));
+		} catch {
+			trendBars = [];
+		} finally {
+			trendLoading = false;
+		}
+	}
+
+	function showTrendLabel(_bar: TrendBar, index: number): boolean {
+		return index % 3 === 0;
+	}
 
 	async function loadYearTable() {
 		yearTableLoading = true;
@@ -72,6 +107,7 @@
 	onMount(async () => {
 		loading = true;
 		loadYearTable();
+		loadTrendChart();
 		try {
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
@@ -165,7 +201,13 @@
 		{/if}
 
 		<div class="panel-block">
-			<TrendChart months={24} />
+			<TrendChart
+				loading={trendLoading}
+				bars={trendBars}
+				title="24-Month Injury Trend"
+				ariaLabel="24-month injury trend chart"
+				showBarLabel={showTrendLabel}
+			/>
 		</div>
 
 		<!-- Year table -->
@@ -415,7 +457,7 @@
 	}
 
 	.col-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.table-link {
@@ -448,7 +490,7 @@
 	}
 
 	.bar-serious {
-		background: #d97706;
+		background: #f59e0b;
 	}
 
 	.bar-fatal {

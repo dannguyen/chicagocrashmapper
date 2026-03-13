@@ -11,39 +11,71 @@ describe('Location', () => {
 	});
 
 	describe('isPoint / isShape', () => {
-		it('treats POINT intersections as points', () => {
-			const loc = new Location(
-				makeLocationRecord({ category: 'intersection', the_geom: 'POINT (-87.6 41.8)' })
-			);
+		it('treats intersections as points even without geometry', () => {
+			const loc = new Location(makeLocationRecord({ category: 'intersection', geometry: null }));
 			expect(loc.isPoint).toBe(true);
 			expect(loc.isShape).toBe(false);
 		});
 
-		it('treats POLYGON intersections as points (no voronoi rendering)', () => {
+		it('treats intersections with polygon geometry as points', () => {
 			const loc = new Location(
 				makeLocationRecord({
 					category: 'intersection',
-					the_geom: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
+					geometry: {
+						type: 'Polygon',
+						coordinates: [
+							[
+								[0, 0],
+								[1, 0],
+								[1, 1],
+								[0, 1],
+								[0, 0]
+							]
+						]
+					}
 				})
 			);
 			expect(loc.isShape).toBe(false);
 			expect(loc.isPoint).toBe(true);
 		});
 
-		it('treats MULTIPOLYGON intersections as points (no voronoi rendering)', () => {
+		it('treats intersections with multipolygon geometry as points', () => {
 			const loc = new Location(
 				makeLocationRecord({
 					category: 'intersection',
-					the_geom: 'MULTIPOLYGON (((0 0, 1 0, 1 1, 0 0)))'
+					geometry: {
+						type: 'MultiPolygon',
+						coordinates: [
+							[
+								[
+									[0, 0],
+									[1, 0],
+									[1, 1],
+									[0, 0]
+								]
+							]
+						]
+					}
 				})
 			);
 			expect(loc.isShape).toBe(false);
 			expect(loc.isPoint).toBe(true);
 		});
 
-		it('treats non-intersection categories as shapes regardless of geom type', () => {
+		it('treats non-intersection categories as shapes when geometry exists', () => {
 			for (const category of ['ward', 'neighborhood', 'street'] as const) {
-				const loc = new Location(makeLocationRecord({ category, the_geom: 'POINT (-87.6 41.8)' }));
+				const loc = new Location(
+					makeLocationRecord({
+						category,
+						geometry: {
+							type: 'LineString',
+							coordinates: [
+								[-87.6, 41.8],
+								[-87.59, 41.81]
+							]
+						}
+					})
+				);
 				expect(loc.isShape).toBe(true);
 				expect(loc.isPoint).toBe(false);
 			}

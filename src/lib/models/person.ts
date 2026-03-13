@@ -161,7 +161,7 @@ export class Person {
 		return this.category === 'PEDESTRIAN';
 	}
 
-	get isseriously_injured(): boolean {
+	get isSeriouslyInjured(): boolean {
 		return this.injury_level === 'incapacitating';
 	}
 
@@ -206,10 +206,10 @@ export class People extends Array<Person> {
 		return new People(...this.filter((p) => p.isKilled));
 	}
 	get seriously_harmed(): People {
-		return new People(...this.filter((p) => p.isKilled || p.isseriously_injured));
+		return new People(...this.filter((p) => p.isKilled || p.isSeriouslyInjured));
 	}
 	get seriously_injured(): People {
-		return new People(...this.filter((p) => p.isseriously_injured));
+		return new People(...this.filter((p) => p.isSeriouslyInjured));
 	}
 	get uninjured(): People {
 		return new People(...this.filter((p) => p.isUninjured));

@@ -1,6 +1,5 @@
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry, Polygon } from 'geojson';
 import type { Location } from '$lib/location';
-import wellknown from 'wellknown';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-csp-worker.js?url';
 
 const MAP_STYLE: import('maplibre-gl').StyleSpecification = {
@@ -107,14 +106,13 @@ function circlePolygonCoordinates(
 }
 
 function parseLocationGeometry(location: Location): Geometry {
-	const geometry = wellknown.parse(location.the_geom);
-	if (!geometry) {
-		return {
-			type: 'Point',
-			coordinates: toLngLat(location.latitude, location.longitude)
-		};
+	if (location.geometry) {
+		return location.geometry;
 	}
-	return geometry as Geometry;
+	return {
+		type: 'Point',
+		coordinates: toLngLat(location.latitude, location.longitude)
+	};
 }
 
 function getGeometryBounds(geometry: Geometry): Bounds | null {

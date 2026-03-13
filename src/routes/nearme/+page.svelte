@@ -97,7 +97,7 @@
 				category: 'intersection',
 				latitude,
 				longitude,
-				the_geom: `POINT(${longitude} ${latitude})`
+				geometry: null
 			};
 			selectedLocation = new Location(record);
 		} catch (e: unknown) {

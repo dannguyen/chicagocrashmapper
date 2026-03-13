@@ -62,7 +62,7 @@
 	);
 
 	// Show shape column when any item has geometry data
-	let hasGeom = $derived(stats.some((s: AreaStat) => s.the_geom));
+	let hasGeom = $derived(stats.some((s: AreaStat) => s.geometry));
 </script>
 
 {#if loading}
@@ -207,9 +207,9 @@
 						<tr class="table-row">
 							{#if hasGeom}
 								<td class="table-cell table-cell-shape">
-									{#if 'the_geom' in item && item.the_geom}
+									{#if 'geometry' in item && item.geometry}
 										<a href="{base}/{category}/{item.id}" class="shape-link">
-											<AreaShape wkt={item.the_geom} size={44} />
+											<AreaShape geometry={item.geometry} size={44} />
 										</a>
 									{/if}
 								</td>

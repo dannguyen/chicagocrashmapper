@@ -1,16 +1,16 @@
 <script lang="ts">
 	/**
-	 * Renders a WKT polygon/multipolygon as an inline SVG thumbnail.
-	 * Parses the WKT coordinate string and projects to SVG path coordinates.
+	 * Renders a GeoJSON polygon/multipolygon as an inline SVG thumbnail.
 	 */
+	import type { Geometry, MultiPolygon, Polygon } from 'geojson';
 
 	let {
-		wkt,
+		geometry,
 		size = 48,
 		fill = '#dbeafe',
 		stroke = '#3b82f6'
 	} = $props<{
-		wkt: string;
+		geometry: Geometry | null;
 		size?: number;
 		fill?: string;
 		stroke?: string;
@@ -18,68 +18,14 @@
 
 	type Ring = [number, number][];
 
-	function parseCoords(s: string): Ring {
-		const pairs: Ring = [];
-		const re = /([-\d.]+)\s+([-\d.]+)/g;
-		let m: RegExpExecArray | null;
-		while ((m = re.exec(s)) !== null) {
-			pairs.push([parseFloat(m[1]), parseFloat(m[2])]);
-		}
-		return pairs;
-	}
-
-	function parsePolygonRings(wkt: string): Ring[] {
-		const rings: Ring[] = [];
-		let depth = 0;
-		let ringStart = -1;
-		for (let i = 0; i < wkt.length; i++) {
-			if (wkt[i] === '(') {
-				depth++;
-				if (depth === 2) ringStart = i + 1;
-			} else if (wkt[i] === ')') {
-				if (depth === 2) {
-					rings.push(parseCoords(wkt.slice(ringStart, i)));
-				}
-				depth--;
-			}
-		}
-		return rings;
-	}
-
-	function parseMultiPolygonRings(wkt: string): Ring[][] {
-		const polygons: Ring[][] = [];
-		let currentPoly: Ring[] = [];
-		let depth = 0;
-		let ringStart = -1;
-		for (let i = 0; i < wkt.length; i++) {
-			if (wkt[i] === '(') {
-				depth++;
-				if (depth === 2) currentPoly = [];
-				else if (depth === 3) ringStart = i + 1;
-			} else if (wkt[i] === ')') {
-				if (depth === 3) {
-					currentPoly.push(parseCoords(wkt.slice(ringStart, i)));
-				} else if (depth === 2) {
-					if (currentPoly.length) polygons.push(currentPoly);
-					currentPoly = [];
-				}
-				depth--;
-			}
-		}
-		return polygons;
-	}
-
 	let pathData = $derived.by(() => {
-		if (!wkt) return '';
+		if (!geometry) return '';
 
-		const upper = wkt.trimStart().toUpperCase();
-		let allRings: Ring[];
-
-		if (upper.startsWith('MULTIPOLYGON')) {
-			const polys = parseMultiPolygonRings(wkt);
-			allRings = polys.flat();
-		} else if (upper.startsWith('POLYGON')) {
-			allRings = parsePolygonRings(wkt);
+		let allRings: Ring[] = [];
+		if (geometry.type === 'Polygon') {
+			allRings = (geometry as Polygon).coordinates as Ring[];
+		} else if (geometry.type === 'MultiPolygon') {
+			allRings = (geometry as MultiPolygon).coordinates.flat() as Ring[];
 		} else {
 			return '';
 		}

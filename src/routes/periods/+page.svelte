@@ -244,7 +244,7 @@
 	}
 
 	.kpi-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.kpi-label {
@@ -343,7 +343,7 @@
 	}
 
 	.col-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.row-year .col-fatal {
@@ -351,7 +351,7 @@
 	}
 
 	.row-year .col-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.table-link {
@@ -384,7 +384,7 @@
 	}
 
 	.bar-serious {
-		background: #d97706;
+		background: #f59e0b;
 	}
 
 	.bar-fatal {

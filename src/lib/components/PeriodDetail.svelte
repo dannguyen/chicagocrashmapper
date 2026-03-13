@@ -1,92 +1,26 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { Crash, parseCrashes } from '$lib/models/crash';
 	import { getCrashSummary, getCrashesList, getCrashesDense, getDateCount } from '$lib/api/client';
 	import type { CrashListResult } from '$lib/api/client';
 	import type { CrashSummary, DenseCrash } from '$lib/models/types';
 	import { CHICAGO_CENTER, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
-	import { pctChange, formatPct } from '$lib/transformHelpers';
+	import { formatPct } from '$lib/transformHelpers';
+	import {
+		computePrevRange,
+		computeRange,
+		computeYearAgoRange,
+		summaryDelta,
+		zeroPad
+	} from '$lib/periodRange';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import CrashList from '$lib/components/CrashList.svelte';
+	import PaginationControls from '$lib/components/PaginationControls.svelte';
+	import TrendChart, { type TrendBar } from '$lib/components/TrendChart.svelte';
 
 	let { year, month = null } = $props<{ year: number; month?: number | null }>();
 
 	const defaultGeoCenter = CHICAGO_CENTER;
-
-	// ── Pure helpers ────────────────────────────────────────────────────────────
-
-	function pad(n: number): string {
-		return String(n).padStart(2, '0');
-	}
-
-	function lastDayOfMonth(y: number, m: number): string {
-		const d = new Date(y, m, 0); // day 0 of month m+1
-		return `${y}-${pad(m)}-${pad(d.getDate())}`;
-	}
-
-	function summaryDelta(
-		cur: CrashSummary | null,
-		prev: CrashSummary | null,
-		getter: (s: CrashSummary) => number
-	): number | null {
-		if (!cur || !prev) return null;
-		return pctChange(getter(cur), getter(prev));
-	}
-
-	interface DateRange {
-		since: string;
-		until: string;
-		label: string;
-	}
-
-	function todayStr(): string {
-		const d = new Date();
-		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-	}
-
-	function isCurrentYear(y: number): boolean {
-		return y === new Date().getFullYear();
-	}
-
-	function computeRange(y: number, m: number | null): DateRange {
-		if (m != null) {
-			return {
-				since: `${y}-${pad(m)}-01`,
-				until: lastDayOfMonth(y, m),
-				label: `${MONTH_NAMES[m - 1]} ${y}`
-			};
-		}
-		if (isCurrentYear(y)) {
-			return { since: `${y}-01-01`, until: todayStr(), label: `${y} YTD` };
-		}
-		return { since: `${y}-01-01`, until: `${y}-12-31`, label: String(y) };
-	}
-
-	function computePrevRange(y: number, m: number | null): DateRange {
-		if (m != null) {
-			const prevM = m === 1 ? 12 : m - 1;
-			const prevY = m === 1 ? y - 1 : y;
-			return {
-				since: `${prevY}-${pad(prevM)}-01`,
-				until: lastDayOfMonth(prevY, prevM),
-				label: `${MONTH_NAMES[prevM - 1]} ${prevY}`
-			};
-		}
-		if (isCurrentYear(y)) {
-			const today = new Date();
-			const prevUntil = `${y - 1}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-			return { since: `${y - 1}-01-01`, until: prevUntil, label: `${y - 1} YTD` };
-		}
-		return { since: `${y - 1}-01-01`, until: `${y - 1}-12-31`, label: String(y - 1) };
-	}
-
-	function computeYearAgoRange(y: number, m: number | null): DateRange | null {
-		if (m == null) return null;
-		return {
-			since: `${y - 1}-${pad(m)}-01`,
-			until: lastDayOfMonth(y - 1, m),
-			label: `${MONTH_NAMES[m - 1]} ${y - 1}`
-		};
-	}
 
 	// ── Reactive date windows ────────────────────────────────────────────────────
 
@@ -100,13 +34,7 @@
 	let prevSummary: CrashSummary | null = $state(null);
 	let yearAgoSummary: CrashSummary | null = $state(null);
 
-	interface BarData {
-		period: string;
-		label: string;
-		injuries_fatal: number;
-		injuries_incapacitating: number;
-	}
-	let chartBars: BarData[] = $state([]);
+	let chartBars: TrendBar[] = $state([]);
 
 	let mapCrashes: DenseCrash[] = $state([]);
 	let pagedCrashes: Crash[] = $state([]);
@@ -148,33 +76,10 @@
 	const seriousYoyDelta = $derived(
 		summaryDelta(summary, yearAgoSummary, (s) => s.injuries_incapacitating)
 	);
-
-	// ── Chart ────────────────────────────────────────────────────────────────────
-
-	const chartHeight = 80;
-	const barWidth = $derived(month != null ? 14 : 24);
-	const barGap = $derived(month != null ? 3 : 4);
-	const chartMaxVal = $derived(
-		chartBars.length > 0
-			? Math.max(...chartBars.map((b) => b.injuries_fatal + b.injuries_incapacitating), 1)
-			: 1
+	const chartTitle = $derived(`${month != null ? 'Daily' : 'Monthly'} Crashes — ${range.label}`);
+	const chartAriaLabel = $derived(
+		`${month != null ? 'Daily' : 'Monthly'} crash trend for ${range.label}`
 	);
-
-	function barH(val: number): number {
-		return Math.max(2, (val / chartMaxVal) * chartHeight);
-	}
-
-	function showBarLabel(bar: BarData): boolean {
-		if (month != null) {
-			const day = parseInt(bar.period.split('-')[2]);
-			return day === 1 || day % 7 === 1;
-		}
-		return true;
-	}
-
-	function formatTooltip(bar: BarData): string {
-		return `${bar.period}: ${bar.injuries_fatal} killed, ${bar.injuries_incapacitating} seriously injured`;
-	}
 
 	// ── Fetch functions ──────────────────────────────────────────────────────────
 
@@ -250,13 +155,14 @@
 				const daysBack = Math.ceil((now.getTime() - firstDay.getTime()) / 86400000) + 5;
 				const data = await getDateCount('day', Math.max(daysBack, 35));
 				if (requestId !== loadRequestId) return;
-				const prefix = `${year}-${pad(month)}-`;
+				const prefix = `${year}-${zeroPad(month)}-`;
 				chartBars = Object.entries(data)
 					.filter(([p]) => p.startsWith(prefix))
 					.sort(([a], [b]) => a.localeCompare(b))
 					.map(([p, v]) => ({
 						period: p,
 						label: parseInt(p.split('-')[2]).toString(),
+						tooltipLabel: `${MONTH_NAMES[month - 1]} ${parseInt(p.split('-')[2])}, ${year}`,
 						injuries_fatal: v.injuries_fatal ?? 0,
 						injuries_incapacitating: v.injuries_incapacitating ?? 0
 					}));
@@ -271,6 +177,8 @@
 					.map(([p, v]) => ({
 						period: p,
 						label: MONTH_SHORT[parseInt(p.split('-')[1]) - 1] ?? p,
+						href: `${base}/periods/${year}/${parseInt(p.split('-')[1])}`,
+						tooltipLabel: `${MONTH_NAMES[parseInt(p.split('-')[1]) - 1]} ${year}`,
 						injuries_fatal: v.injuries_fatal ?? 0,
 						injuries_incapacitating: v.injuries_incapacitating ?? 0
 					}));
@@ -304,6 +212,12 @@
 				mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			}
 		}
+	}
+
+	function showChartLabel(bar: TrendBar): boolean {
+		if (month == null) return true;
+		const day = parseInt(bar.period.split('-')[2]);
+		return day === 1 || day % 7 === 1;
 	}
 
 	async function loadAll(requestId: number) {
@@ -462,61 +376,16 @@
 				</div>
 			{/if}
 
-			<!-- Bar chart -->
-			{#if chartLoading}
-				<div class="chart-card chart-loading-card">
-					<div class="chart-loading-text">Loading chart...</div>
-				</div>
-			{:else if chartBars.length > 0}
-				<div class="chart-card">
-					<div class="chart-header">
-						<h3 class="chart-title">
-							{month != null ? 'Daily' : 'Monthly'} Crashes — {range.label}
-						</h3>
-						<div class="chart-legend">
-							<span class="legend-item"><span class="legend-swatch legend-fatal"></span>Fatal</span>
-							<span class="legend-item"
-								><span class="legend-swatch legend-serious"></span>Serious injury</span
-							>
-						</div>
-					</div>
-					<div class="chart-scroll">
-						<svg
-							width={chartBars.length * (barWidth + barGap)}
-							height={chartHeight + 22}
-							role="img"
-							aria-label="{month != null ? 'Daily' : 'Monthly'} crash trend for {range.label}"
-						>
-							{#each chartBars as bar, i}
-								{@const incapH = barH(bar.injuries_incapacitating)}
-								{@const fatalH = barH(bar.injuries_fatal)}
-								{@const x = i * (barWidth + barGap)}
-								<rect {x} y={chartHeight - incapH} width={barWidth} height={incapH} fill="#f59e0b">
-									<title>{formatTooltip(bar)}</title>
-								</rect>
-								<rect
-									{x}
-									y={chartHeight - incapH - fatalH}
-									width={barWidth}
-									height={fatalH}
-									fill="#dc2626"
-								>
-									<title>{formatTooltip(bar)}</title>
-								</rect>
-								{#if showBarLabel(bar)}
-									<text
-										x={x + barWidth / 2}
-										y={chartHeight + 14}
-										text-anchor="middle"
-										font-size="9"
-										fill="#9ca3af">{bar.label}</text
-									>
-								{/if}
-							{/each}
-						</svg>
-					</div>
-				</div>
-			{/if}
+			<TrendChart
+				loading={chartLoading}
+				bars={chartBars}
+				title={chartTitle}
+				ariaLabel={chartAriaLabel}
+				emptyMessage="No trend data available"
+				showBarLabel={showChartLabel}
+				scrollable={false}
+				labelFontSize={6}
+			/>
 		</div>
 
 		<div class="map-col">
@@ -528,35 +397,19 @@
 
 	<!-- Pagination + crash list -->
 	{#if totalCrashes > 0}
-		<div class="pagination-bar">
-			<span class="pagination-text">
-				Showing {rangeStart}–{rangeEnd} of {totalCrashes} crashes
-			</span>
-			{#if totalPages > 1}
-				<div class="pager-controls">
-					<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}>
-						Prev
-					</button>
-					{#each pageNumbers as pg}
-						{#if pg === null}
-							<span class="pager-ellipsis">…</span>
-						{:else}
-							<button
-								class="pager-button pager-page"
-								class:active-page={pg === currentPage}
-								class:inactive-page={pg !== currentPage}
-								onclick={() => goToPage(pg)}
-							>
-								{pg + 1}
-							</button>
-						{/if}
-					{/each}
-					<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}>
-						Next
-					</button>
-				</div>
-			{/if}
-		</div>
+		<PaginationControls
+			{rangeStart}
+			{rangeEnd}
+			totalItems={totalCrashes}
+			{currentPage}
+			{totalPages}
+			{hasPrev}
+			{hasNext}
+			{pageNumbers}
+			onPrev={goToPrev}
+			onNext={goToNext}
+			onPage={goToPage}
+		/>
 	{/if}
 
 	{#if crashesError}
@@ -592,24 +445,17 @@
 
 	<!-- Bottom pagination -->
 	{#if totalPages > 1 && !crashesLoading}
-		<div class="pager-footer">
-			<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}> Prev </button>
-			{#each pageNumbers as pg}
-				{#if pg === null}
-					<span class="pager-ellipsis">…</span>
-				{:else}
-					<button
-						class="pager-button pager-page"
-						class:active-page={pg === currentPage}
-						class:inactive-page={pg !== currentPage}
-						onclick={() => goToPage(pg)}
-					>
-						{pg + 1}
-					</button>
-				{/if}
-			{/each}
-			<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}> Next </button>
-		</div>
+		<PaginationControls
+			variant="footer"
+			{currentPage}
+			{totalPages}
+			{hasPrev}
+			{hasNext}
+			{pageNumbers}
+			onPrev={goToPrev}
+			onNext={goToNext}
+			onPage={goToPage}
+		/>
 	{/if}
 </div>
 
@@ -692,7 +538,7 @@
 	}
 
 	.kpi-primary.kpi-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.kpi-label {
@@ -728,7 +574,7 @@
 	}
 
 	.kpi-abs-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.kpi-delta {
@@ -747,73 +593,6 @@
 		color: #b0b0b0;
 	}
 
-	/* ── Bar chart ── */
-	.chart-card {
-		background: #fff;
-		border-radius: 0.75rem;
-		border: 1px solid #e5e7eb;
-		padding: 1rem;
-	}
-
-	.chart-loading-card {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 6rem;
-	}
-
-	.chart-loading-text {
-		font-size: 0.875rem;
-		color: #9ca3af;
-	}
-
-	.chart-header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.chart-title {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #374151;
-	}
-
-	.chart-legend {
-		display: flex;
-		gap: 1rem;
-	}
-
-	.legend-item {
-		font-size: 0.75rem;
-		color: #6b7280;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-	}
-
-	.legend-swatch {
-		display: inline-block;
-		width: 0.75rem;
-		height: 0.75rem;
-		border-radius: 0.125rem;
-	}
-
-	.legend-fatal {
-		background: #dc2626;
-	}
-
-	.legend-serious {
-		background: #f59e0b;
-	}
-
-	.chart-scroll {
-		overflow-x: auto;
-	}
-
 	/* ── Map ── */
 	.map-card {
 		border-radius: 0.75rem;
@@ -830,76 +609,6 @@
 		.map-card :global(#map) {
 			height: 28rem;
 		}
-	}
-
-	/* ── Pagination ── */
-	.pagination-bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1rem;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.75rem;
-		background: #fff;
-	}
-
-	.pagination-text {
-		font-size: 0.875rem;
-		color: #4b5563;
-	}
-
-	.pager-controls {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.pager-button {
-		padding: 0.375rem 0.75rem;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		border: 1px solid #d1d5db;
-		background: #fff;
-		transition:
-			border-color 120ms ease,
-			color 120ms ease,
-			background-color 120ms ease;
-	}
-
-	.pager-button:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
-
-	.pager-nav:hover:not(:disabled) {
-		border-color: #3b82f6;
-		color: #1d4ed8;
-	}
-
-	.pager-page {
-		min-width: 2.25rem;
-	}
-
-	.pager-ellipsis {
-		padding: 0 0.25rem;
-		font-size: 0.875rem;
-		color: #9ca3af;
-		align-self: center;
-	}
-
-	.active-page {
-		background-color: #1d4ed8;
-		color: white;
-		border-color: #1d4ed8;
-	}
-
-	.inactive-page {
-		border-color: rgb(209 213 219);
-	}
-
-	.inactive-page:hover {
-		border-color: rgb(59 130 246);
-		color: #1d4ed8;
 	}
 
 	/* ── Loading skeleton ── */
@@ -949,14 +658,6 @@
 
 	.empty-text {
 		font-size: 0.875rem;
-	}
-
-	.pager-footer {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		margin-top: 1.5rem;
 	}
 
 	@keyframes pulse {

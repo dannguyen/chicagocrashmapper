@@ -260,7 +260,7 @@
 	}
 
 	.kpi-primary.kpi-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.kpi-label {
@@ -296,7 +296,7 @@
 	}
 
 	.kpi-abs-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.kpi-delta {

@@ -16,13 +16,16 @@ function datelineFor(crashDate: string): string {
 
 describe('Crash', () => {
 	describe('vehicle and non_passenger parsing', () => {
-		it('parses JSON string vehicles and non_passengers into instances', () => {
+		it('accepts array inputs directly', () => {
 			const crash = new Crash(
 				makeCrashRecord({
-					vehicles: JSON.stringify([
-						makeVehicleRecord({ passengers: [makePersonRecord({ person_id: 'P1' })] })
-					]),
-					non_passengers: JSON.stringify([makePersonRecord({ person_id: 'NP1' })])
+					vehicles: [
+						makeVehicleRecord({
+							vehicle_id: 2,
+							passengers: [makePersonRecord({ person_id: 'P1' })]
+						})
+					],
+					non_passengers: [makePersonRecord({ person_id: 'NP1' })]
 				})
 			);
 
@@ -31,32 +34,19 @@ describe('Crash', () => {
 			expect(crash.vehicles[0].passengers[0]).toBeInstanceOf(Person);
 			expect(crash.non_passengers).toHaveLength(1);
 			expect(crash.non_passengers[0]).toBeInstanceOf(Person);
-		});
-
-		it('accepts array inputs directly', () => {
-			const crash = new Crash(
-				makeCrashRecord({
-					vehicles: [makeVehicleRecord({ vehicle_id: 2 })],
-					non_passengers: [makePersonRecord({ person_id: 'NP2' })]
-				})
-			);
-
 			expect(crash.vehicles[0].vehicle_id).toBe(2);
-			expect(crash.non_passengers[0].person_id).toBe('NP2');
-		});
-
-		it('returns empty arrays for invalid JSON', () => {
-			const crash = new Crash(
-				makeCrashRecord({ vehicles: '{not json', non_passengers: 'also-bad' })
-			);
-			expect(crash.vehicles).toEqual([]);
-			expect(crash.non_passengers).toEqual([]);
+			expect(crash.non_passengers[0].person_id).toBe('NP1');
 		});
 
 		it('filters out vehicles with null vehicle_id', () => {
+			const invalidVehicle = {
+				...makeVehicleRecord(),
+				vehicle_id: null
+			} as unknown as import('$lib/models/types').VehicleRecord;
+
 			const crash = new Crash(
 				makeCrashRecord({
-					vehicles: JSON.stringify([makeVehicleRecord({ vehicle_id: 1 }), { vehicle_id: null }])
+					vehicles: [makeVehicleRecord({ vehicle_id: 1 }), invalidVehicle]
 				})
 			);
 			expect(crash.vehicles).toHaveLength(1);
@@ -308,7 +298,7 @@ describe('people filter properties (via People class)', () => {
 			{ injury_classification: 'NONINCAPACITATING INJURY' }
 		]);
 		expect(crash.people.seriously_injured).toHaveLength(1);
-		expect(crash.people.seriously_injured[0].isseriously_injured).toBe(true);
+		expect(crash.people.seriously_injured[0].isSeriouslyInjured).toBe(true);
 	});
 
 	it('returns empty People when no people match', () => {

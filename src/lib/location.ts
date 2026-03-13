@@ -1,4 +1,5 @@
 import type { LocationRecord, LocationCategory } from '$lib/models/types';
+import type { Geometry } from 'geojson';
 
 export class Location {
 	name: string;
@@ -6,9 +7,9 @@ export class Location {
 	longitude: number;
 	latitude: number;
 	id: string;
-	the_geom: string;
+	geometry: Geometry | null;
 	get isShape(): boolean {
-		return this.category !== 'intersection';
+		return this.category !== 'intersection' && this.geometry != null;
 	}
 	get isPoint(): boolean {
 		return this.category === 'intersection';
@@ -24,6 +25,6 @@ export class Location {
 		this.longitude = data.longitude;
 		this.latitude = data.latitude;
 		this.id = data.id;
-		this.the_geom = data.the_geom;
+		this.geometry = data.geometry ?? null;
 	}
 }

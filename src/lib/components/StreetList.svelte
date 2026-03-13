@@ -53,7 +53,7 @@
 		return '';
 	}
 
-	let hasGeom = $derived(stats.some((s: AreaStat) => s.the_geom));
+	let hasGeom = $derived(stats.some((s: AreaStat) => s.geometry));
 </script>
 
 {#if loading}
@@ -197,9 +197,9 @@
 						<tr class="table-row">
 							{#if hasGeom && cityGeoJson}
 								<td class="table-cell table-cell-shape">
-									{#if item.the_geom}
+									{#if item.geometry}
 										<a href="{base}/streets/{item.id}" class="shape-link">
-											<StreetShape wkt={item.the_geom} {cityGeoJson} size={44} />
+											<StreetShape geometry={item.geometry} {cityGeoJson} size={44} />
 										</a>
 									{/if}
 								</td>

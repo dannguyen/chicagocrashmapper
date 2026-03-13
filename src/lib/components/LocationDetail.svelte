@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { base } from '$app/paths';
 	import { Crash, parseCrashes } from '$lib/models/crash';
 	import { Location } from '$lib/location';
 	import {
@@ -13,6 +12,8 @@
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import CrashList from '$lib/components/CrashList.svelte';
+	import PaginationControls from '$lib/components/PaginationControls.svelte';
+	import LocationNearbyTable from '$lib/components/LocationNearbyTable.svelte';
 
 	let { location } = $props<{ location: Location }>();
 
@@ -168,64 +169,27 @@
 		</div>
 	</div>
 
-	<!-- Nearby locations of same type -->
-	{#if nearbyLocations.length > 0}
-		<div class="nearby-locations-card">
-			<p class="info-title">Nearby {location.pluralCategory}</p>
-			<table class="nearby-table">
-				<thead>
-					<tr>
-						<th class="nearby-th">Name</th>
-						<th class="nearby-th nearby-th-right">Crashes</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each nearbyLocations as loc}
-						<tr class="nearby-tr">
-							<td class="nearby-td">
-								<a href={`${base}/${location.pluralCategory}/${loc.id}`} class="nearby-link">
-									{loc.name}
-								</a>
-							</td>
-							<td class="nearby-td nearby-td-right">{loc.total_crashes.toLocaleString()}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-	{/if}
+	<LocationNearbyTable
+		title={`Nearby ${location.pluralCategory}`}
+		hrefBase={location.pluralCategory}
+		locations={nearbyLocations}
+	/>
 
 	<!-- Pagination + crash list -->
 	{#if totalCrashes > 0}
-		<div class="pagination-bar">
-			<span class="pagination-text">
-				Showing {rangeStart}–{rangeEnd} of {totalCrashes} crashes
-			</span>
-			{#if totalPages > 1}
-				<div class="pager-controls">
-					<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}>
-						Prev
-					</button>
-					{#each pageNumbers as pg}
-						{#if pg === null}
-							<span class="pager-ellipsis">…</span>
-						{:else}
-							<button
-								class="pager-button pager-page"
-								class:active-page={pg === currentPage}
-								class:inactive-page={pg !== currentPage}
-								onclick={() => goToPage(pg)}
-							>
-								{pg + 1}
-							</button>
-						{/if}
-					{/each}
-					<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}>
-						Next
-					</button>
-				</div>
-			{/if}
-		</div>
+		<PaginationControls
+			{rangeStart}
+			{rangeEnd}
+			totalItems={totalCrashes}
+			{currentPage}
+			{totalPages}
+			{hasPrev}
+			{hasNext}
+			{pageNumbers}
+			onPrev={goToPrev}
+			onNext={goToNext}
+			onPage={goToPage}
+		/>
 	{/if}
 
 	{#if loading}
@@ -257,24 +221,17 @@
 
 	<!-- Bottom pagination -->
 	{#if totalPages > 1 && !loading}
-		<div class="pager-footer">
-			<button class="pager-button pager-nav" disabled={!hasPrev} onclick={goToPrev}> Prev </button>
-			{#each pageNumbers as pg}
-				{#if pg === null}
-					<span class="pager-ellipsis">…</span>
-				{:else}
-					<button
-						class="pager-button pager-page"
-						class:active-page={pg === currentPage}
-						class:inactive-page={pg !== currentPage}
-						onclick={() => goToPage(pg)}
-					>
-						{pg + 1}
-					</button>
-				{/if}
-			{/each}
-			<button class="pager-button pager-nav" disabled={!hasNext} onclick={goToNext}> Next </button>
-		</div>
+		<PaginationControls
+			variant="footer"
+			{currentPage}
+			{totalPages}
+			{hasPrev}
+			{hasNext}
+			{pageNumbers}
+			onPrev={goToPrev}
+			onNext={goToNext}
+			onPage={goToPage}
+		/>
 	{/if}
 </div>
 
@@ -326,60 +283,6 @@
 		}
 	}
 
-	.pagination-bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1rem;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.75rem;
-		background: #fff;
-	}
-
-	.pagination-text {
-		font-size: 0.875rem;
-		color: #4b5563;
-	}
-
-	.pager-controls {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.pager-button {
-		padding: 0.375rem 0.75rem;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		border: 1px solid #d1d5db;
-		background: #fff;
-		transition:
-			border-color 120ms ease,
-			color 120ms ease,
-			background-color 120ms ease;
-	}
-
-	.pager-button:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
-
-	.pager-nav:hover:not(:disabled) {
-		border-color: #3b82f6;
-		color: #1d4ed8;
-	}
-
-	.pager-page {
-		min-width: 2.25rem;
-	}
-
-	.pager-ellipsis {
-		padding: 0 0.25rem;
-		font-size: 0.875rem;
-		color: #9ca3af;
-		align-self: center;
-	}
-
 	.loading-stack {
 		display: flex;
 		flex-direction: column;
@@ -425,82 +328,6 @@
 
 	.empty-text {
 		font-size: 0.875rem;
-	}
-
-	.pager-footer {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		margin-top: 1.5rem;
-	}
-
-	.active-page {
-		background-color: #1d4ed8;
-		color: white;
-		border-color: #1d4ed8;
-	}
-
-	.inactive-page {
-		border-color: rgb(209 213 219);
-	}
-
-	.inactive-page:hover {
-		border-color: rgb(59 130 246);
-		color: #1d4ed8;
-	}
-
-	.nearby-locations-card {
-		background: #fff;
-		border-radius: 0.75rem;
-		border: 1px solid #e5e7eb;
-		padding: 1rem;
-		box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
-	}
-
-	.nearby-table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-
-	.nearby-th {
-		font-size: 0.6875rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: #9ca3af;
-		text-align: left;
-		padding: 0 0 0.5rem;
-		border-bottom: 1px solid #e5e7eb;
-	}
-
-	.nearby-th-right {
-		text-align: right;
-	}
-
-	.nearby-tr + .nearby-tr .nearby-td {
-		border-top: 1px solid #f3f4f6;
-	}
-
-	.nearby-td {
-		font-size: 0.875rem;
-		padding: 0.5rem 0;
-		color: #1f2937;
-	}
-
-	.nearby-td-right {
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-		color: #6b7280;
-	}
-
-	.nearby-link {
-		color: #2563eb;
-		text-decoration: none;
-	}
-
-	.nearby-link:hover {
-		text-decoration: underline;
 	}
 
 	@keyframes pulse {

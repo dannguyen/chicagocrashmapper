@@ -4,18 +4,6 @@ import { Location } from '$lib/location';
 import { Mapper } from '$lib/mapping';
 import { makeLocationRecord } from './fixtures';
 
-vi.mock('wellknown', () => ({
-	default: {
-		parse: vi.fn(() => ({
-			type: 'LineString',
-			coordinates: [
-				[-87.62, 41.88],
-				[-87.62, 41.89]
-			]
-		}))
-	}
-}));
-
 const mockMap = {
 	loaded: vi.fn(() => true),
 	scrollZoom: { disable: vi.fn() },
@@ -131,7 +119,13 @@ describe('Mapper', () => {
 						id: 'ward-1',
 						category: 'street',
 						name: 'S MICHIGAN AVE',
-						the_geom: 'LINESTRING (-87.62 41.88, -87.62 41.89)'
+						geometry: {
+							type: 'LineString',
+							coordinates: [
+								[-87.62, 41.88],
+								[-87.62, 41.89]
+							]
+						}
 					})
 				)
 			);
@@ -151,7 +145,13 @@ describe('Mapper', () => {
 				mapper.makeShapeFeature(
 					new Location(
 						makeLocationRecord({
-							the_geom: 'LINESTRING (-87.62 41.88, -87.61 41.89)'
+							geometry: {
+								type: 'LineString',
+								coordinates: [
+									[-87.62, 41.88],
+									[-87.61, 41.89]
+								]
+							}
 						})
 					)
 				)
@@ -161,7 +161,7 @@ describe('Mapper', () => {
 
 			expect(combined).toEqual([
 				[-87.63, 41.87],
-				[-87.62, 41.89]
+				[-87.61, 41.89]
 			]);
 		});
 

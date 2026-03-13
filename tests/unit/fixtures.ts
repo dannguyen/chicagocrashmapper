@@ -77,7 +77,7 @@ export function makeLocationRecord(overrides: Partial<LocationRecord> = {}): Loc
 		category: 'intersection',
 		latitude: 41.866,
 		longitude: -87.624,
-		the_geom: 'POINT (-87.624 41.866)',
+		geometry: null,
 		...overrides
 	};
 }

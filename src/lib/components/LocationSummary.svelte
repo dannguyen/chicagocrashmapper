@@ -197,7 +197,7 @@
 	}
 
 	.summary-value-serious {
-		color: #d97706;
+		color: #f59e0b;
 	}
 
 	.summary-value-urgent {

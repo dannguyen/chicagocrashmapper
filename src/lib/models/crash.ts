@@ -193,35 +193,21 @@ function parsePassengers(vehicles: Vehicle[]): Person[] {
 
 function parsePeople(raw: CrashRecord['non_passengers']): Person[] {
 	if (!raw) return [];
-	let people: PersonRecord[] = [];
-	if (typeof raw === 'string') {
-		try {
-			people = JSON.parse(raw) as PersonRecord[];
-		} catch (e) {
-			return [];
-		}
-	} else {
-		people = raw;
+
+	if (!Array.isArray(raw)) {
+		console.warn('Unexpected non_passengers payload', raw);
+		return [];
 	}
 
-	if (!Array.isArray(people)) return [];
-	return people.map((p) => new Person(p));
+	return raw.map((p: PersonRecord) => new Person(p));
 }
 
 function parseVehicles(raw: CrashRecord['vehicles']): Vehicle[] {
 	if (!raw) return [];
-
-	let vehicles: VehicleRecord[] = [];
-	if (typeof raw === 'string') {
-		try {
-			vehicles = JSON.parse(raw) as VehicleRecord[];
-		} catch (e) {
-			return [];
-		}
-	} else {
-		vehicles = raw;
+	if (!Array.isArray(raw)) {
+		console.warn('Unexpected vehicles payload', raw);
+		return [];
 	}
 
-	if (!Array.isArray(vehicles)) return [];
-	return vehicles.filter((v) => v.vehicle_id != null).map((v) => new Vehicle(v));
+	return raw.filter((v: VehicleRecord) => v.vehicle_id != null).map((v) => new Vehicle(v));
 }

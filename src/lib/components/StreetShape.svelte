@@ -1,13 +1,11 @@
 <script lang="ts">
 	/**
 	 * Renders a street linestring overlaid on the Chicago city boundary outline.
-	 * Uses the static chicago-city-boundaries.json for the city silhouette and
-	 * projects the street's WKT geometry on top.
 	 */
-	import { base } from '$app/paths';
+	import type { Geometry, LineString, MultiLineString } from 'geojson';
 
 	let {
-		wkt,
+		geometry,
 		cityGeoJson,
 		size = 48,
 		cityFill = '#f3f4f6',
@@ -15,7 +13,7 @@
 		streetStroke = '#2563eb',
 		streetWidth = 2
 	} = $props<{
-		wkt: string;
+		geometry: Geometry | null;
 		cityGeoJson: GeoJSON.FeatureCollection;
 		size?: number;
 		cityFill?: string;
@@ -25,45 +23,6 @@
 	}>();
 
 	type Ring = [number, number][];
-
-	function parseLineCoords(s: string): Ring {
-		const pairs: Ring = [];
-		const re = /([-\d.]+)\s+([-\d.]+)/g;
-		let m: RegExpExecArray | null;
-		while ((m = re.exec(s)) !== null) {
-			pairs.push([parseFloat(m[1]), parseFloat(m[2])]);
-		}
-		return pairs;
-	}
-
-	function parseWktLines(wkt: string): Ring[] {
-		const upper = wkt.trimStart().toUpperCase();
-		if (upper.startsWith('MULTILINESTRING')) {
-			// Parse each linestring within the multi
-			const lines: Ring[] = [];
-			let depth = 0;
-			let start = -1;
-			for (let i = 0; i < wkt.length; i++) {
-				if (wkt[i] === '(') {
-					depth++;
-					if (depth === 2) start = i + 1;
-				} else if (wkt[i] === ')') {
-					if (depth === 2) {
-						lines.push(parseLineCoords(wkt.slice(start, i)));
-					}
-					depth--;
-				}
-			}
-			return lines;
-		} else if (upper.startsWith('LINESTRING')) {
-			const parenStart = wkt.indexOf('(');
-			const parenEnd = wkt.lastIndexOf(')');
-			if (parenStart >= 0 && parenEnd > parenStart) {
-				return [parseLineCoords(wkt.slice(parenStart + 1, parenEnd))];
-			}
-		}
-		return [];
-	}
 
 	function extractCityRings(geoJson: GeoJSON.FeatureCollection): Ring[] {
 		const rings: Ring[] = [];
@@ -85,10 +44,15 @@
 	}
 
 	let paths = $derived.by(() => {
-		if (!wkt || !cityGeoJson) return { city: '', street: '' };
+		if (!geometry || !cityGeoJson) return { city: '', street: '' };
 
 		const cityRings = extractCityRings(cityGeoJson);
-		const streetLines = parseWktLines(wkt);
+		let streetLines: Ring[] = [];
+		if (geometry.type === 'LineString') {
+			streetLines = [(geometry as LineString).coordinates as Ring];
+		} else if (geometry.type === 'MultiLineString') {
+			streetLines = (geometry as MultiLineString).coordinates as Ring[];
+		}
 		if (cityRings.length === 0) return { city: '', street: '' };
 
 		// Compute bounding box from city boundary
