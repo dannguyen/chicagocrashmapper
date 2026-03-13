@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { Crash } from '$lib/models/crash';
-import { contextInfo, fmtCause, peopleSummary, popupHtml } from '$lib/models/crashFormat';
+import { Person } from '$lib/models/person';
+import {
+	contextInfo,
+	fatalityPeople,
+	fatalityRoleLabel,
+	fmtCause,
+	peopleSummary,
+	popupHtml
+} from '$lib/models/crashFormat';
 import { makeCrashRecord, makePersonRecord, makeVehicleRecord } from './fixtures';
 
 describe('fmtCause', () => {
@@ -128,13 +136,80 @@ describe('contextInfo', () => {
 	});
 });
 
+describe('fatalityPeople', () => {
+	it('returns all killed people by default', () => {
+		const crash = new Crash(
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [
+							makePersonRecord({
+								person_id: 'p1',
+								person_type: 'PEDESTRIAN',
+								injury_classification: 'FATAL'
+							}),
+							makePersonRecord({
+								person_id: 'p2',
+								person_type: 'DRIVER',
+								injury_classification: 'FATAL'
+							})
+						]
+					})
+				],
+				non_passengers: []
+			})
+		);
+
+		expect(fatalityPeople(crash).map((person) => person.person_id)).toEqual(['p1', 'p2']);
+	});
+
+	it('filters killed people by requested role', () => {
+		const crash = new Crash(
+			makeCrashRecord({
+				vehicles: [
+					makeVehicleRecord({
+						passengers: [
+							makePersonRecord({
+								person_id: 'p1',
+								person_type: 'PEDESTRIAN',
+								injury_classification: 'FATAL'
+							}),
+							makePersonRecord({
+								person_id: 'p2',
+								person_type: 'DRIVER',
+								injury_classification: 'FATAL'
+							})
+						]
+					})
+				],
+				non_passengers: []
+			})
+		);
+
+		expect(fatalityPeople(crash, 'pedestrian').map((person) => person.person_id)).toEqual(['p1']);
+		expect(fatalityPeople(crash, 'driver').map((person) => person.person_id)).toEqual(['p2']);
+		expect(fatalityPeople(crash, 'cyclist')).toEqual([]);
+	});
+});
+
+describe('fatalityRoleLabel', () => {
+	it('formats known person types for fatality subitems', () => {
+		expect(fatalityRoleLabel(new Person(makePersonRecord({ person_type: 'PEDESTRIAN' })))).toBe(
+			'Pedestrian'
+		);
+		expect(fatalityRoleLabel(new Person(makePersonRecord({ person_type: 'BICYCLE' })))).toBe(
+			'Cyclist'
+		);
+	});
+});
+
 describe('popupHtml', () => {
 	it('includes severity label, formatted cause, and detail link', () => {
 		const crash = new Crash(
 			makeCrashRecord({
 				crash_record_id: 'abc123',
 				injuries_fatal: 1,
-				prim_contributory_cause: 'UNABLE TO DETERMINE',
+				cause_prim: 'UNABLE TO DETERMINE',
 				vehicles: [
 					makeVehicleRecord({
 						passengers: [makePersonRecord({ injury_classification: 'FATAL' })]

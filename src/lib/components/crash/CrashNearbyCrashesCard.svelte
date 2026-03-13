@@ -18,12 +18,9 @@
 		{#each sortedCrashes as nc}
 			{@const feetAway = Math.round(nc.distance_miles * 5280)}
 			{@const ncDate = new Date(nc.crash_date)}
-			{@const ncAddress = [nc.street_no, nc.street_direction, nc.street_name]
-				.filter(Boolean)
-				.join(' ')}
 			<a href={`${base}/crashes/${nc.crash_record_id}`} class="nearby-row">
 				<div class="nearby-main">
-					<span class="nearby-address">{ncAddress || 'Unknown location'}</span>
+					<span class="nearby-address">{nc.address || 'Unknown location'}</span>
 					<span class="nearby-meta">
 						{ncDate.toLocaleDateString('en-US', {
 							month: 'short',

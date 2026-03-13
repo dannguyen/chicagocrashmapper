@@ -2,20 +2,22 @@
 	import { onMount } from 'svelte';
 	import { Mapper, type MapLibreMarker, type MapLibrePopup } from '$lib/mapping';
 	import { Location } from '$lib/location';
-	import type { DenseCrash } from '$lib/models/types';
-	import { densePopupHtml } from '$lib/models/crashFormat';
+	import type { BriefCrash } from '$lib/models/types';
+	import { briefPopupHtml } from '$lib/models/crashFormat';
 	import { SEVERITY_COLORS } from '$lib/constants';
 
 	let {
 		selectedLocation = null,
 		crashes,
 		defaultGeoCenter,
-		maxDistance = 5280
+		maxDistance = 5280,
+		fitPadding = 50
 	} = $props<{
 		selectedLocation?: Location | null;
-		crashes: DenseCrash[];
+		crashes: BriefCrash[];
 		defaultGeoCenter: [number, number];
 		maxDistance?: number;
+		fitPadding?: number;
 	}>();
 
 	const MapperInstance = new Mapper();
@@ -36,6 +38,7 @@
 	let activeLocationPopup: MapLibrePopup | null = null;
 	let activeLocationBounds: Bounds | null = null;
 	let crashMarkers = new Map<string, CrashMarkerEntry>();
+	let pendingCrashPopupId: string | null = null;
 
 	function emptyFeatureCollection() {
 		return {
@@ -272,7 +275,7 @@
 		return coord + (Math.random() - 0.5) * 0.0006;
 	}
 
-	export function updateNearbyMarkers(items: DenseCrash[]) {
+	export function updateNearbyMarkers(items: BriefCrash[]) {
 		if (!MapperInstance.map || !MapperInstance.maplibre) return;
 
 		clearCrashMarkers();
@@ -304,7 +307,7 @@
 				}
 			});
 
-			const popup = MapperInstance.createPopup(densePopupHtml(item));
+			const popup = MapperInstance.createPopup(briefPopupHtml(item));
 			const coordinates: [number, number] = [jitter(lon), jitter(lat)];
 			const marker = new MapperInstance.maplibre.Marker({
 				element: createCrashMarkerElement(isFatal),
@@ -331,25 +334,35 @@
 		setMapDataset('crashCount', String(crashMarkers.size));
 
 		fitToCrashes(items);
+
+		if (pendingCrashPopupId && crashMarkers.has(pendingCrashPopupId)) {
+			const pendingId = pendingCrashPopupId;
+			pendingCrashPopupId = null;
+			openCrashPopup(pendingId);
+		}
 	}
 
 	export function openCrashPopup(crashId: string) {
 		if (!MapperInstance.map) return;
 		const marker = crashMarkers.get(crashId);
-		if (!marker) return;
+		if (!marker) {
+			pendingCrashPopupId = crashId;
+			return;
+		}
+		pendingCrashPopupId = null;
 
 		const [lng, lat] = marker.coordinates;
 		const currentZoom = MapperInstance.map.getZoom();
+		marker.popup?.remove();
+		marker.popup?.setLngLat(marker.coordinates).addTo(MapperInstance.map);
 		if (currentZoom < 15) {
 			MapperInstance.setView([lat, lng], 16);
-			setTimeout(() => marker.popup?.setLngLat(marker.coordinates).addTo(MapperInstance.map!), 350);
 		} else {
 			MapperInstance.panTo([lat, lng]);
-			setTimeout(() => marker.popup?.setLngLat(marker.coordinates).addTo(MapperInstance.map!), 200);
 		}
 	}
 
-	export function fitToCrashes(items: DenseCrash[]) {
+	export function fitToCrashes(items: BriefCrash[]) {
 		if (!MapperInstance.map) return;
 
 		const validLatLngs = items
@@ -380,7 +393,7 @@
 			}
 
 			if (bounds) {
-				MapperInstance.fitBounds(bounds, selectedLocation?.isShape ? 40 : 50);
+				MapperInstance.fitBounds(bounds, selectedLocation?.isShape ? 40 : fitPadding);
 			}
 			MapperInstance.resize();
 		} else if (selectedLocation) {
@@ -393,6 +406,10 @@
 			}
 			MapperInstance.resize();
 		}
+	}
+
+	export function scrollIntoView() {
+		mapHost?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 	}
 
 	function syncMapState() {
@@ -459,7 +476,7 @@
 </script>
 
 <div
-	id="map"
+	class="map-root"
 	bind:this={mapHost}
 	data-map-ready="false"
 	data-active-location-kind="none"
@@ -467,7 +484,7 @@
 ></div>
 
 <style>
-	:global(#map) {
+	.map-root {
 		height: 24rem;
 		width: 100%;
 		border-radius: 0.375rem;

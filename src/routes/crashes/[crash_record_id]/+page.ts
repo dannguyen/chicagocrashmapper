@@ -6,8 +6,8 @@ import { error } from '@sveltejs/kit';
 export const ssr = false;
 export const prerender = false;
 
-export const load: PageLoad = async ({ params }) => {
-	const result = await getCrashById(params.crash_record_id);
+export const load: PageLoad = async ({ params, fetch }) => {
+	const result = await getCrashById(params.crash_record_id, fetch);
 	if (!result) {
 		throw error(404, `Crash '${params.crash_record_id}' not found.`);
 	}

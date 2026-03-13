@@ -53,14 +53,18 @@ export interface DateCountPeriod {
 	injuries_incapacitating: number;
 }
 
-export interface DenseCrash {
+export interface BriefCrash {
 	crash_record_id: string;
+	address: string | null;
 	latitude: number;
 	longitude: number;
 	crash_date: string;
+	crash_type: string;
+	hit_and_run_i: boolean | null;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
-	prim_contributory_cause: string | null;
+	injuries_total: number;
+	cause_prim: string | null;
 }
 
 export interface PersonRecord {
@@ -99,9 +103,10 @@ export interface VehicleRecord {
 export interface CrashRecord {
 	crash_record_id: string;
 	crash_date: string;
-	crash_type?: string;
+	crash_result?: string;
+	address?: string | null;
 	distance?: number;
-	first_crash_type: string;
+	crash_type: string;
 	hit_and_run_i?: boolean | null;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
@@ -114,11 +119,8 @@ export interface CrashRecord {
 	longitude: number;
 	non_passengers?: PersonRecord[] | null;
 	posted_speed_limit?: number | null;
-	prim_contributory_cause?: string;
-	sec_contributory_cause?: string;
-	street_direction: string;
-	street_name: string;
-	street_no?: string | null;
+	cause_prim?: string;
+	cause_sec?: string;
 	trafficway_type?: string | null;
 	vehicles?: VehicleRecord[] | null;
 	weather_condition?: string | null;

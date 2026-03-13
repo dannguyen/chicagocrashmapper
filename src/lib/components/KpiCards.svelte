@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { getDateCount, getYearToDateComparison } from '$lib/api/client';
 	import type { DateCountPeriod } from '$lib/models/types';
-	import { addDays, pctChange, formatPct, sumWindow } from '$lib/transformHelpers';
+	import { addDays, pctChange, sumWindow } from '$lib/transformHelpers';
+	import KpiCompareRow from '$lib/components/KpiCompareRow.svelte';
 
 	interface WindowTotals {
 		crashes: number;
@@ -117,75 +118,27 @@
 
 		<!-- Row 2: previous 30d (only in 30-day mode) -->
 		{#if !useYtd}
-			<div class="kpi-compare">
-				<div class="kpi-compare-label">Previous 30-day period</div>
-				<div class="kpi-grid">
-					<div class="kpi-col">
-						<span class="kpi-abs">{prev.crashes.toLocaleString()}</span>
-						<span
-							class="kpi-delta"
-							class:up={crashesPop !== null && crashesPop > 0}
-							class:down={crashesPop !== null && crashesPop < 0}
-							class:flat={crashesPop === null || crashesPop === 0}>{formatPct(crashesPop)}</span
-						>
-					</div>
-					<div class="kpi-col">
-						<span class="kpi-abs kpi-abs-serious">{prev.incap.toLocaleString()}</span>
-						<span
-							class="kpi-delta"
-							class:up={injuredPop !== null && injuredPop > 0}
-							class:down={injuredPop !== null && injuredPop < 0}
-							class:flat={injuredPop === null || injuredPop === 0}>{formatPct(injuredPop)}</span
-						>
-					</div>
-					<div class="kpi-col">
-						<span class="kpi-abs kpi-abs-fatal">{prev.fatal.toLocaleString()}</span>
-						<span
-							class="kpi-delta"
-							class:up={killedPop !== null && killedPop > 0}
-							class:down={killedPop !== null && killedPop < 0}
-							class:flat={killedPop === null || killedPop === 0}>{formatPct(killedPop)}</span
-						>
-					</div>
-				</div>
-			</div>
+			<KpiCompareRow
+				label="Previous 30-day period"
+				crashes={prev.crashes}
+				serious={prev.incap}
+				fatal={prev.fatal}
+				crashesDelta={crashesPop}
+				seriousDelta={injuredPop}
+				fatalDelta={killedPop}
+			/>
 		{/if}
 
 		<!-- Row 3: last year -->
-		<div class="kpi-compare">
-			<div class="kpi-compare-label">
-				{#if useYtd}Same period in {lastYear}{:else}Same period last year{/if}
-			</div>
-			<div class="kpi-grid">
-				<div class="kpi-col">
-					<span class="kpi-abs">{yoy.crashes.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={crashesYoy !== null && crashesYoy > 0}
-						class:down={crashesYoy !== null && crashesYoy < 0}
-						class:flat={crashesYoy === null || crashesYoy === 0}>{formatPct(crashesYoy)}</span
-					>
-				</div>
-				<div class="kpi-col">
-					<span class="kpi-abs kpi-abs-serious">{yoy.incap.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={injuredYoy !== null && injuredYoy > 0}
-						class:down={injuredYoy !== null && injuredYoy < 0}
-						class:flat={injuredYoy === null || injuredYoy === 0}>{formatPct(injuredYoy)}</span
-					>
-				</div>
-				<div class="kpi-col">
-					<span class="kpi-abs kpi-abs-fatal">{yoy.fatal.toLocaleString()}</span>
-					<span
-						class="kpi-delta"
-						class:up={killedYoy !== null && killedYoy > 0}
-						class:down={killedYoy !== null && killedYoy < 0}
-						class:flat={killedYoy === null || killedYoy === 0}>{formatPct(killedYoy)}</span
-					>
-				</div>
-			</div>
-		</div>
+		<KpiCompareRow
+			label={useYtd ? `Same period in ${lastYear}` : 'Same period last year'}
+			crashes={yoy.crashes}
+			serious={yoy.incap}
+			fatal={yoy.fatal}
+			crashesDelta={crashesYoy}
+			seriousDelta={injuredYoy}
+			fatalDelta={killedYoy}
+		/>
 	</div>
 {/if}
 
@@ -249,49 +202,5 @@
 		margin-top: 0.25rem;
 		text-transform: uppercase;
 		letter-spacing: 0.025em;
-	}
-
-	.kpi-compare {
-		margin-top: 0.625rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid #f3f4f6;
-	}
-
-	.kpi-compare-label {
-		font-size: 0.6875rem;
-		color: #9ca3af;
-		margin-bottom: 0.25rem;
-	}
-
-	.kpi-abs {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #111827;
-		line-height: 1;
-	}
-
-	.kpi-abs-fatal {
-		color: #dc2626;
-	}
-
-	.kpi-abs-serious {
-		color: #f59e0b;
-	}
-
-	.kpi-delta {
-		font-size: 0.8125rem;
-		font-weight: 400;
-	}
-
-	.kpi-delta.up {
-		color: #b08a8a;
-	}
-
-	.kpi-delta.down {
-		color: #7a9e7a;
-	}
-
-	.kpi-delta.flat {
-		color: #b0b0b0;
 	}
 </style>

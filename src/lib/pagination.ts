@@ -36,14 +36,16 @@ export function paginationState(
  * Scroll to the map and open a crash popup.
  */
 export function showCrashOnMap(
-	mapRef: { openCrashPopup(id: string): void } | undefined,
+	mapRef:
+		| {
+				openCrashPopup(id: string): void;
+				scrollIntoView?(): void;
+		  }
+		| undefined,
 	crashId: string
 ) {
 	if (mapRef) {
 		mapRef.openCrashPopup(crashId);
-		const mapEl = document.getElementById('map');
-		if (mapEl) {
-			mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		}
+		mapRef.scrollIntoView?.();
 	}
 }

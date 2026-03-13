@@ -48,9 +48,9 @@
 							<span class="crash-date">{shortDate(item.date)}</span>
 							<span class="meta-sep">·</span>
 							<span class="crash-time">{item.prettyTime}</span>
-							{#if item.street_address.trim()}
+							{#if item.address.trim()}
 								<span class="meta-sep">·</span>
-								<span class="crash-addr">{item.street_address}</span>
+								<span class="crash-addr">{item.address}</span>
 							{/if}
 						</span>
 					</span>

@@ -1,11 +1,17 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { Crash, parseCrashes } from '$lib/models/crash';
-	import { getCrashSummary, getCrashesList, getCrashesDense, getDateCount } from '$lib/api/client';
+	import { getCrashSummary, getCrashesList, getCrashesBrief, getDateCount } from '$lib/api/client';
 	import type { CrashListResult } from '$lib/api/client';
-	import type { CrashSummary, DenseCrash } from '$lib/models/types';
-	import { CHICAGO_CENTER, MONTH_NAMES, MONTH_SHORT } from '$lib/constants';
-	import { formatPct } from '$lib/transformHelpers';
+	import type { BriefCrash, CrashSummary } from '$lib/models/types';
+	import {
+		CHICAGO_CENTER,
+		MAX_CRASH_RESULTS_PER_PAGE,
+		MONTH_NAMES,
+		MONTH_SHORT
+	} from '$lib/constants';
+	import { fillMissingMonthsForYear } from '$lib/transformHelpers';
+
 	import {
 		computePrevRange,
 		computeRange,
@@ -16,6 +22,7 @@
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import CrashList from '$lib/components/CrashList.svelte';
 	import CrashListSkeleton from '$lib/components/CrashListSkeleton.svelte';
+	import KpiCompareRow from '$lib/components/KpiCompareRow.svelte';
 	import PaginationControls from '$lib/components/PaginationControls.svelte';
 	import TrendChart, { type TrendBar } from '$lib/components/TrendChart.svelte';
 	import { paginationState, showCrashOnMap } from '$lib/pagination';
@@ -38,11 +45,11 @@
 
 	let chartBars: TrendBar[] = $state([]);
 
-	let mapCrashes: DenseCrash[] = $state([]);
+	let mapCrashes: BriefCrash[] = $state([]);
 	let pagedCrashes: Crash[] = $state([]);
 	let totalCrashes = $state(0);
 	let currentPage = $state(0);
-	const perPage = 25;
+	const perPage = MAX_CRASH_RESULTS_PER_PAGE;
 
 	let statsLoading = $state(true);
 	let chartLoading = $state(true);
@@ -50,7 +57,7 @@
 	let statsError = $state(false);
 	let crashesError = $state(false);
 
-	let mapRef: MapContainer | undefined = $state(undefined);
+	let topMapRef: MapContainer | undefined = $state(undefined);
 	let loadRequestId = 0;
 
 	// ── Server-side pagination ──────────────────────────────────────────────────
@@ -131,7 +138,7 @@
 
 	async function fetchMapCrashes(requestId: number) {
 		try {
-			const result = await getCrashesDense({
+			const result = await getCrashesBrief({
 				since: range.since,
 				until: range.until
 			});
@@ -168,17 +175,27 @@
 				const last = Math.max((now.getFullYear() - year) * 12 + now.getMonth() + 2, 13);
 				const data = await getDateCount('month', last);
 				if (requestId !== loadRequestId) return;
-				chartBars = Object.entries(data)
-					.filter(([p]) => p.startsWith(`${year}-`))
-					.sort(([a], [b]) => a.localeCompare(b))
-					.map(([p, v]) => ({
-						period: p,
-						label: MONTH_SHORT[parseInt(p.split('-')[1]) - 1] ?? p,
-						href: `${base}/periods/${year}/${parseInt(p.split('-')[1])}`,
-						tooltipLabel: `${MONTH_NAMES[parseInt(p.split('-')[1]) - 1]} ${year}`,
-						injuries_fatal: v.injuries_fatal ?? 0,
-						injuries_incapacitating: v.injuries_incapacitating ?? 0
-					}));
+				const currentYear = now.getFullYear();
+				const currentMonth = now.getMonth() + 1;
+				const completedMonths = fillMissingMonthsForYear(
+					year,
+					Object.fromEntries(
+						Object.entries(data).filter(([period]) => period.startsWith(`${year}-`))
+					)
+				);
+				chartBars = completedMonths.map(
+					({ period, month, injuries_fatal, injuries_incapacitating }) => ({
+						period,
+						label: MONTH_SHORT[month - 1] ?? period,
+						href:
+							year < currentYear || (year === currentYear && month <= currentMonth)
+								? `${base}/periods/${year}/${month}`
+								: undefined,
+						tooltipLabel: `${MONTH_NAMES[month - 1]} ${year}`,
+						injuries_fatal,
+						injuries_incapacitating
+					})
+				);
 			}
 		} catch {
 			if (requestId !== loadRequestId) return;
@@ -225,9 +242,9 @@
 		]);
 		if (requestId !== loadRequestId) return;
 		requestAnimationFrame(() => {
-			if (requestId !== loadRequestId || !mapRef) return;
-			mapRef.updateNearbyMarkers(mapCrashes);
-			if (mapCrashes.length > 0) mapRef.fitToCrashes(mapCrashes);
+			if (requestId !== loadRequestId || !topMapRef) return;
+			topMapRef.updateNearbyMarkers(mapCrashes);
+			if (mapCrashes.length > 0) topMapRef.fitToCrashes(mapCrashes);
 		});
 	}
 
@@ -246,7 +263,6 @@
 </script>
 
 <div class="period-detail">
-	<!-- Top section: KPIs + chart left, map right -->
 	<div class="top-grid">
 		<div class="stats-col">
 			<!-- KPI Stats -->
@@ -278,87 +294,27 @@
 					</div>
 
 					{#if prevSummary}
-						<div class="kpi-compare">
-							<div class="kpi-compare-label">vs. {prevRange.label}</div>
-							<div class="kpi-grid">
-								<div class="kpi-col">
-									<span class="kpi-abs">{prevSummary.total.toLocaleString()}</span>
-									<span
-										class="kpi-delta"
-										class:up={crashesPrevDelta !== null && crashesPrevDelta > 0}
-										class:down={crashesPrevDelta !== null && crashesPrevDelta < 0}
-										class:flat={crashesPrevDelta === null || crashesPrevDelta === 0}
-										>{formatPct(crashesPrevDelta)}</span
-									>
-								</div>
-								<div class="kpi-col">
-									<span class="kpi-abs kpi-abs-serious"
-										>{prevSummary.injuries_incapacitating.toLocaleString()}</span
-									>
-									<span
-										class="kpi-delta"
-										class:up={seriousPrevDelta !== null && seriousPrevDelta > 0}
-										class:down={seriousPrevDelta !== null && seriousPrevDelta < 0}
-										class:flat={seriousPrevDelta === null || seriousPrevDelta === 0}
-										>{formatPct(seriousPrevDelta)}</span
-									>
-								</div>
-								<div class="kpi-col">
-									<span class="kpi-abs kpi-abs-fatal"
-										>{prevSummary.fatal_injuries.toLocaleString()}</span
-									>
-									<span
-										class="kpi-delta"
-										class:up={fatalPrevDelta !== null && fatalPrevDelta > 0}
-										class:down={fatalPrevDelta !== null && fatalPrevDelta < 0}
-										class:flat={fatalPrevDelta === null || fatalPrevDelta === 0}
-										>{formatPct(fatalPrevDelta)}</span
-									>
-								</div>
-							</div>
-						</div>
+						<KpiCompareRow
+							label="vs. {prevRange.label}"
+							crashes={prevSummary.total}
+							serious={prevSummary.injuries_incapacitating}
+							fatal={prevSummary.fatal_injuries}
+							crashesDelta={crashesPrevDelta}
+							seriousDelta={seriousPrevDelta}
+							fatalDelta={fatalPrevDelta}
+						/>
 					{/if}
 
 					{#if yearAgoSummary && yearAgoRange}
-						<div class="kpi-compare">
-							<div class="kpi-compare-label">vs. {yearAgoRange.label}</div>
-							<div class="kpi-grid">
-								<div class="kpi-col">
-									<span class="kpi-abs">{yearAgoSummary.total.toLocaleString()}</span>
-									<span
-										class="kpi-delta"
-										class:up={crashesYoyDelta !== null && crashesYoyDelta > 0}
-										class:down={crashesYoyDelta !== null && crashesYoyDelta < 0}
-										class:flat={crashesYoyDelta === null || crashesYoyDelta === 0}
-										>{formatPct(crashesYoyDelta)}</span
-									>
-								</div>
-								<div class="kpi-col">
-									<span class="kpi-abs kpi-abs-serious"
-										>{yearAgoSummary.injuries_incapacitating.toLocaleString()}</span
-									>
-									<span
-										class="kpi-delta"
-										class:up={seriousYoyDelta !== null && seriousYoyDelta > 0}
-										class:down={seriousYoyDelta !== null && seriousYoyDelta < 0}
-										class:flat={seriousYoyDelta === null || seriousYoyDelta === 0}
-										>{formatPct(seriousYoyDelta)}</span
-									>
-								</div>
-								<div class="kpi-col">
-									<span class="kpi-abs kpi-abs-fatal"
-										>{yearAgoSummary.fatal_injuries.toLocaleString()}</span
-									>
-									<span
-										class="kpi-delta"
-										class:up={fatalYoyDelta !== null && fatalYoyDelta > 0}
-										class:down={fatalYoyDelta !== null && fatalYoyDelta < 0}
-										class:flat={fatalYoyDelta === null || fatalYoyDelta === 0}
-										>{formatPct(fatalYoyDelta)}</span
-									>
-								</div>
-							</div>
-						</div>
+						<KpiCompareRow
+							label="vs. {yearAgoRange.label}"
+							crashes={yearAgoSummary.total}
+							serious={yearAgoSummary.injuries_incapacitating}
+							fatal={yearAgoSummary.fatal_injuries}
+							crashesDelta={crashesYoyDelta}
+							seriousDelta={seriousYoyDelta}
+							fatalDelta={fatalYoyDelta}
+						/>
 					{/if}
 				</div>
 			{/if}
@@ -372,12 +328,13 @@
 				showBarLabel={showChartLabel}
 				scrollable={false}
 				labelFontSize={6}
+				showLegend={false}
 			/>
 		</div>
 
 		<div class="map-col">
-			<div class="map-card">
-				<MapContainer bind:this={mapRef} crashes={mapCrashes} {defaultGeoCenter} />
+			<div class="map-card top-map-card">
+				<MapContainer bind:this={topMapRef} crashes={mapCrashes} {defaultGeoCenter} />
 			</div>
 		</div>
 	</div>
@@ -405,26 +362,16 @@
 		</div>
 	{:else if crashesLoading}
 		<CrashListSkeleton />
+	{:else if pagedCrashes.length === 0}
+		<div class="empty-state">
+			<p class="empty-text">No serious crashes found for this period.</p>
+		</div>
 	{:else}
-		<p class="crash-heading">
-			{#if pg.totalPages > 1}
-				Crashes &mdash; Page {currentPage + 1} of {pg.totalPages}
-			{:else}
-				Crashes
-			{/if}
-		</p>
-
-		{#if pagedCrashes.length === 0}
-			<div class="empty-state">
-				<p class="empty-text">No serious crashes found for this period.</p>
-			</div>
-		{:else}
-			<CrashList
-				crashes={pagedCrashes}
-				selectedLocation={null}
-				showCrashOnMap={(id) => showCrashOnMap(mapRef, id)}
-			/>
-		{/if}
+		<CrashList
+			crashes={pagedCrashes}
+			selectedLocation={null}
+			showCrashOnMap={(id) => showCrashOnMap(topMapRef, id)}
+		/>
 	{/if}
 
 	<!-- Bottom pagination -->
@@ -461,7 +408,6 @@
 		.top-grid {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 1rem;
 			align-items: start;
 		}
 	}
@@ -534,49 +480,6 @@
 		letter-spacing: 0.025em;
 	}
 
-	.kpi-compare {
-		margin-top: 0.625rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid #f3f4f6;
-	}
-
-	.kpi-compare-label {
-		font-size: 0.6875rem;
-		color: #9ca3af;
-		margin-bottom: 0.25rem;
-	}
-
-	.kpi-abs {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #111827;
-		line-height: 1;
-	}
-
-	.kpi-abs-fatal {
-		color: #dc2626;
-	}
-
-	.kpi-abs-serious {
-		color: #f59e0b;
-	}
-
-	.kpi-delta {
-		font-size: 0.8125rem;
-	}
-
-	.kpi-delta.up {
-		color: #b08a8a;
-	}
-
-	.kpi-delta.down {
-		color: #7a9e7a;
-	}
-
-	.kpi-delta.flat {
-		color: #b0b0b0;
-	}
-
 	/* ── Map ── */
 	.map-card {
 		border-radius: 0.75rem;
@@ -585,22 +488,15 @@
 		background: #fff;
 	}
 
-	.map-card :global(#map) {
+	.top-map-card :global(.map-root) {
 		height: 20rem;
+		margin-bottom: 0;
 	}
 
 	@media (min-width: 768px) {
-		.map-card :global(#map) {
+		.top-map-card :global(.map-root) {
 			height: 28rem;
 		}
-	}
-
-	/* ── Crash list header ── */
-	.crash-heading {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #374151;
-		margin-bottom: 0.75rem;
 	}
 
 	.empty-state {

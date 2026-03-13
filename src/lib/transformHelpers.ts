@@ -98,6 +98,36 @@ export function addDays(d: Date, days: number): Date {
 	return result;
 }
 
+export interface PeriodCountFields {
+	crash_count?: number;
+	injuries_fatal?: number;
+	injuries_incapacitating?: number;
+}
+
+export interface YearMonthPeriod extends Required<PeriodCountFields> {
+	period: string;
+	month: number;
+}
+
+export function fillMissingMonthsForYear(
+	year: number,
+	periods: Record<string, PeriodCountFields>
+): YearMonthPeriod[] {
+	return Array.from({ length: 12 }, (_, index) => {
+		const month = index + 1;
+		const period = `${year}-${String(month).padStart(2, '0')}`;
+		const counts = periods[period];
+
+		return {
+			period,
+			month,
+			crash_count: counts?.crash_count ?? 0,
+			injuries_fatal: counts?.injuries_fatal ?? 0,
+			injuries_incapacitating: counts?.injuries_incapacitating ?? 0
+		};
+	});
+}
+
 export function pctChange(current: number, previous: number): number | null {
 	if (previous === 0) return null;
 	return ((current - previous) / previous) * 100;

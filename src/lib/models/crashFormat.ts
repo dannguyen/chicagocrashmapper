@@ -1,10 +1,12 @@
 import { base } from '$app/paths';
 import type { Crash } from '$lib/models/crash';
-import type { DenseCrash } from '$lib/models/types';
+import type { BriefCrash } from '$lib/models/types';
 import type { Person } from '$lib/models/person';
 import { crashSeverity, severityLabel } from '$lib/severity';
 import type { SeverityLevel } from '$lib/severity';
 import { SEVERITY_COLORS } from '$lib/constants';
+
+export type FatalityPersonType = 'all' | 'pedestrian' | 'cyclist' | 'driver' | 'passenger';
 
 export function fmtCause(cause: string): string {
 	return cause
@@ -47,6 +49,36 @@ export function peopleSummary(item: Crash): string {
 	return parts.join(', ');
 }
 
+export function fatalityRoleLabel(person: Person): string {
+	switch (person.person_type) {
+		case 'PEDESTRIAN':
+			return 'Pedestrian';
+		case 'BICYCLE':
+			return 'Cyclist';
+		case 'DRIVER':
+			return 'Driver';
+		case 'PASSENGER':
+			return 'Passenger';
+		default:
+			return person.person_type;
+	}
+}
+
+export function fatalityPeople(item: Crash, filter: FatalityPersonType = 'all'): Person[] {
+	const killed = [...item.people.killed];
+	if (filter === 'all') {
+		return killed;
+	}
+
+	return killed.filter((person) => {
+		if (filter === 'pedestrian') return person.person_type === 'PEDESTRIAN';
+		if (filter === 'cyclist') return person.person_type === 'BICYCLE';
+		if (filter === 'driver') return person.person_type === 'DRIVER';
+		if (filter === 'passenger') return person.person_type === 'PASSENGER';
+		return true;
+	});
+}
+
 export function contextInfo(item: Crash): string {
 	const parts: string[] = [];
 	if (item.weather_condition) {
@@ -77,14 +109,14 @@ ${people ? `<div style="font-size:12px;color:#374151;margin-bottom:2px">${people
 </div>`;
 }
 
-function denseSeverity(item: DenseCrash): SeverityLevel {
+function briefSeverity(item: BriefCrash): SeverityLevel {
 	if (item.injuries_fatal > 0) return 'fatal';
 	if (item.injuries_incapacitating > 0) return 'serious';
 	return 'none';
 }
 
-export function densePopupHtml(item: DenseCrash): string {
-	const severity = denseSeverity(item);
+export function briefPopupHtml(item: BriefCrash): string {
+	const severity = briefSeverity(item);
 	const label = severityLabel(severity).toUpperCase();
 	const color = severityColors[severity];
 	const dateStr = new Date(item.crash_date).toLocaleDateString('en-US', {
@@ -92,9 +124,7 @@ export function densePopupHtml(item: DenseCrash): string {
 		day: 'numeric',
 		year: 'numeric'
 	});
-	const cause = item.prim_contributory_cause
-		? fmtCause(item.prim_contributory_cause)
-		: 'Unknown cause';
+	const cause = item.cause_prim ? fmtCause(item.cause_prim) : 'Unknown cause';
 
 	return `<div class="popup-content">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -106,14 +136,18 @@ export function densePopupHtml(item: DenseCrash): string {
 </div>`;
 }
 
-export function crashToDense(c: Crash): DenseCrash {
+export function crashToBrief(c: Crash): BriefCrash {
 	return {
 		crash_record_id: c.crash_record_id,
+		address: c.address || null,
 		latitude: c.latitude,
 		longitude: c.longitude,
 		crash_date: c.date.toISOString().slice(0, 10),
+		crash_type: c.category,
+		hit_and_run_i: c.hit_and_run,
 		injuries_fatal: c.injuries_fatal,
 		injuries_incapacitating: c.injuries_incapacitating,
-		prim_contributory_cause: c.primary_cause
+		injuries_total: c.injuries_total,
+		cause_prim: c.primary_cause
 	};
 }

@@ -16,7 +16,9 @@
 		emptyMessage = 'No trend data available',
 		showBarLabel = defaultShowBarLabel,
 		scrollable = true,
-		labelFontSize = 9
+		labelFontSize = 9,
+		maxChartHeight = 320,
+		showLegend = true
 	} = $props<{
 		loading?: boolean;
 		bars: TrendBar[];
@@ -26,6 +28,8 @@
 		showBarLabel?: (bar: TrendBar, index: number) => boolean;
 		scrollable?: boolean;
 		labelFontSize?: number;
+		maxChartHeight?: number;
+		showLegend?: boolean;
 	}>();
 
 	let hoveredIndex = $state<number | null>(null);
@@ -58,6 +62,7 @@
 	}
 
 	function barH(value: number): number {
+		if (value <= 0) return 0;
 		return Math.max(2, (value / maxVal) * chartHeight);
 	}
 
@@ -107,6 +112,7 @@
 					preserveAspectRatio="xMinYMin meet"
 					class="trend-svg"
 					style:min-width={scrollable ? `${svgWidth}px` : undefined}
+					style:max-height={`${maxChartHeight}px`}
 					role="img"
 					aria-label={ariaLabel}
 				>
@@ -215,16 +221,18 @@
 			{/if}
 		</div>
 
-		<div class="trend-legend">
-			<span class="legend-item">
-				<span class="legend-swatch legend-fatal"></span>
-				Fatal
-			</span>
-			<span class="legend-item">
-				<span class="legend-swatch legend-serious"></span>
-				Serious injury
-			</span>
-		</div>
+		{#if showLegend}
+			<div class="trend-legend">
+				<span class="legend-item">
+					<span class="legend-swatch legend-fatal"></span>
+					Fatal
+				</span>
+				<span class="legend-item">
+					<span class="legend-swatch legend-serious"></span>
+					Serious injury
+				</span>
+			</div>
+		{/if}
 	</div>
 {/if}
 

@@ -9,9 +9,9 @@
 		DEFAULT_MAX_DAYS
 	} from '$lib/constants';
 	import { Location } from '$lib/location';
-	import type { LocationRecord, DenseCrash } from '$lib/models/types';
+	import type { BriefCrash, LocationRecord } from '$lib/models/types';
 	import { parseCrashes, type Crash } from '$lib/models/crash';
-	import { crashToDense } from '$lib/models/crashFormat';
+	import { crashToBrief } from '$lib/models/crashFormat';
 	import { getCrashesNearPoint, getCrashesWithin } from '$lib/api/client';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import CrashList from '$lib/components/CrashList.svelte';
@@ -39,7 +39,7 @@
 		causeFilter ? crashes.filter((crash) => crash.primary_cause === causeFilter) : crashes
 	);
 
-	const mapCrashes: DenseCrash[] = $derived(filteredCrashes.map(crashToDense));
+	const mapCrashes: BriefCrash[] = $derived(filteredCrashes.map(crashToBrief));
 
 	function invalidateSearch() {
 		searchRequestId++;
@@ -157,10 +157,7 @@
 	function showCrashOnMap(crashId: string) {
 		if (!mapRef) return;
 		mapRef.openCrashPopup(crashId);
-		const mapEl = document.getElementById('map');
-		if (mapEl) {
-			mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		}
+		mapRef.scrollIntoView?.();
 	}
 
 	function isToday(date: Date): boolean {
@@ -632,7 +629,7 @@
 	}
 
 	@media (min-width: 1024px) {
-		.map-shell :global(#map) {
+		.map-shell :global(.map-root) {
 			height: 100%;
 			margin-bottom: 0;
 		}

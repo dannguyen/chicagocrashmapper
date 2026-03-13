@@ -5,6 +5,7 @@ import {
 	currentAgeInDays,
 	currentAgePrettified,
 	currentAgeSimplified,
+	fillMissingMonthsForYear,
 	formatPct,
 	pctChange,
 	prettifyDate,
@@ -133,6 +134,110 @@ describe('transformHelpers', () => {
 			const date = new Date('2025-01-31T12:00:00Z');
 			addDays(date, 5);
 			expect(toDateStr(date)).toBe('2025-01-31');
+		});
+	});
+
+	describe('fillMissingMonthsForYear', () => {
+		it('returns all 12 months in order and fills missing months with zeros', () => {
+			expect(
+				fillMissingMonthsForYear(2025, {
+					'2025-01': {
+						crash_count: 5,
+						injuries_fatal: 1,
+						injuries_incapacitating: 3
+					},
+					'2025-03': {
+						crash_count: 2,
+						injuries_fatal: 0,
+						injuries_incapacitating: 1
+					}
+				})
+			).toEqual([
+				{
+					period: '2025-01',
+					month: 1,
+					crash_count: 5,
+					injuries_fatal: 1,
+					injuries_incapacitating: 3
+				},
+				{
+					period: '2025-02',
+					month: 2,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-03',
+					month: 3,
+					crash_count: 2,
+					injuries_fatal: 0,
+					injuries_incapacitating: 1
+				},
+				{
+					period: '2025-04',
+					month: 4,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-05',
+					month: 5,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-06',
+					month: 6,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-07',
+					month: 7,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-08',
+					month: 8,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-09',
+					month: 9,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-10',
+					month: 10,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-11',
+					month: 11,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				},
+				{
+					period: '2025-12',
+					month: 12,
+					crash_count: 0,
+					injuries_fatal: 0,
+					injuries_incapacitating: 0
+				}
+			]);
 		});
 	});
 

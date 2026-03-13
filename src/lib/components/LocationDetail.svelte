@@ -4,11 +4,12 @@
 	import {
 		getCrashSummary,
 		getCrashesList,
-		getCrashesDense,
+		getCrashesBrief,
 		getNearbyLocations
 	} from '$lib/api/client';
 	import type { CrashListResult, NearbyLocation } from '$lib/api/client';
-	import type { CrashSummary, DenseCrash } from '$lib/models/types';
+	import type { BriefCrash, CrashSummary } from '$lib/models/types';
+	import { MAX_CRASH_RESULTS_PER_PAGE } from '$lib/constants';
 	import LocationSummary from '$lib/components/LocationSummary.svelte';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import CrashList from '$lib/components/CrashList.svelte';
@@ -19,15 +20,15 @@
 
 	let { location } = $props<{ location: Location }>();
 
-	let mapCrashes: DenseCrash[] = $state([]);
+	let mapCrashes: BriefCrash[] = $state([]);
 	let pagedCrashes: Crash[] = $state([]);
 	let totalCrashes: number = $state(0);
 	let currentPage: number = $state(0);
-	const perPage = 25;
+	const perPage = MAX_CRASH_RESULTS_PER_PAGE;
 	let loading: boolean = $state(true);
 	let allTimeSummary: CrashSummary | null = $state(null);
 	let nearbyLocations: NearbyLocation[] = $state([]);
-	let mapRef: MapContainer | undefined = $state(undefined);
+	let topMapRef: MapContainer | undefined = $state(undefined);
 	let loadRequestId = 0;
 	const mapRadiusFeet = $derived(location.isPoint ? 500 : 5280);
 
@@ -90,8 +91,8 @@
 
 		(async () => {
 			try {
-				const [denseResult, pageResult, summary, nearby] = await Promise.all([
-					getCrashesDense({ locationId }),
+				const [briefResult, pageResult, summary, nearby] = await Promise.all([
+					getCrashesBrief({ locationId }),
 					fetchPage(locationId, 0),
 					getCrashSummary({ locationId }),
 					getNearbyLocations(locationId)
@@ -99,7 +100,7 @@
 
 				if (requestId !== loadRequestId) return;
 
-				mapCrashes = denseResult.crashes;
+				mapCrashes = briefResult.crashes;
 				pagedCrashes = pageResult.crashes;
 				totalCrashes = pageResult.total;
 				currentPage = 0;
@@ -107,9 +108,9 @@
 				nearbyLocations = nearby;
 
 				requestAnimationFrame(() => {
-					if (requestId !== loadRequestId || !mapRef) return;
-					mapRef.updateMapWithLocation(locationSnapshot);
-					mapRef.updateNearbyMarkers(denseResult.crashes);
+					if (requestId !== loadRequestId || !topMapRef) return;
+					topMapRef.updateMapWithLocation(locationSnapshot);
+					topMapRef.updateNearbyMarkers(briefResult.crashes);
 				});
 			} catch {
 				if (requestId !== loadRequestId) return;
@@ -132,15 +133,14 @@
 </script>
 
 <div class="location-detail">
-	<!-- Top section: stats left, map right -->
 	<div class="top-grid">
 		<div class="stats-col">
 			<LocationSummary crashes={pagedCrashes} {location} summary={allTimeSummary} compact={true} />
 		</div>
 		<div class="map-col">
-			<div class="map-card">
+			<div class="map-card top-map-card">
 				<MapContainer
-					bind:this={mapRef}
+					bind:this={topMapRef}
 					selectedLocation={location}
 					crashes={mapCrashes}
 					defaultGeoCenter={[location.latitude, location.longitude]}
@@ -175,26 +175,16 @@
 
 	{#if loading}
 		<CrashListSkeleton />
+	{:else if pagedCrashes.length === 0}
+		<div class="empty-state">
+			<p class="empty-text">No crashes found for this location.</p>
+		</div>
 	{:else}
-		<p class="crash-heading">
-			{#if pg.totalPages > 1}
-				Crashes &mdash; Page {currentPage + 1} of {pg.totalPages}
-			{:else}
-				Crashes
-			{/if}
-		</p>
-
-		{#if pagedCrashes.length === 0}
-			<div class="empty-state">
-				<p class="empty-text">No crashes found for this location.</p>
-			</div>
-		{:else}
-			<CrashList
-				crashes={pagedCrashes}
-				selectedLocation={location}
-				showCrashOnMap={(id) => showCrashOnMap(mapRef, id)}
-			/>
-		{/if}
+		<CrashList
+			crashes={pagedCrashes}
+			selectedLocation={location}
+			showCrashOnMap={(id) => showCrashOnMap(topMapRef, id)}
+		/>
 	{/if}
 
 	<!-- Bottom pagination -->
@@ -230,7 +220,6 @@
 		.top-grid {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 1rem;
 			align-items: start;
 		}
 	}
@@ -250,22 +239,15 @@
 		background: #fff;
 	}
 
-	/* Make map tall/vertical on desktop to match Chicago's shape */
-	.map-card :global(#map) {
+	.top-map-card :global(.map-root) {
 		height: 20rem;
+		margin-bottom: 0;
 	}
 
 	@media (min-width: 768px) {
-		.map-card :global(#map) {
+		.top-map-card :global(.map-root) {
 			height: 28rem;
 		}
-	}
-
-	.crash-heading {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #374151;
-		margin-bottom: 0.75rem;
 	}
 
 	.empty-state {

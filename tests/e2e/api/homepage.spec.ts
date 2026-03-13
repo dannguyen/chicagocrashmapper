@@ -11,7 +11,7 @@ async function stubHomepageApi(page: import('@playwright/test').Page) {
 
 		const responseBody = (() => {
 			switch (url.pathname) {
-				case '/api/crashes/dense':
+				case '/api/crashes/brief':
 					return { response: { total: 0, crashes: [] } };
 				case '/api/crashes/date-count':
 				case '/api/crashes/ytd-comparison':

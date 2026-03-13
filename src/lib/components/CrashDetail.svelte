@@ -18,13 +18,7 @@
 
 	const severity = $derived(crash ? crashSeverity(crash) : 'none');
 
-	const address = $derived(
-		crash
-			? [crash.street_no, crash.street_direction, crash.street_name]
-					.filter((x) => x != null && x !== '')
-					.join(' ') || 'Unknown location'
-			: 'Unknown location'
-	);
+	const address = $derived(crash ? crash.address.trim() || 'Unknown location' : 'Unknown location');
 
 	const injuryCategories = $derived(
 		crash

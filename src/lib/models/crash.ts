@@ -32,16 +32,14 @@ export class Crash {
 	posted_speed_limit: number | null;
 	primary_cause: string;
 	secondary_cause: string;
-	street_direction: string;
-	street_name: string;
-	street_no?: string | null;
+	address: string;
 	trafficway_type: string | null;
 	vehicles: Vehicle[];
 	weather_condition: string | null;
 
 	constructor(record: CrashRecord) {
 		this.crash_record_id = record.crash_record_id;
-		this.category = record.first_crash_type;
+		this.category = record.crash_type;
 		this.date = new Date(Date.parse(record.crash_date));
 		this.distance = record.distance != null ? parseFloat(record.distance.toFixed(0)) : undefined;
 		this.hit_and_run = record.hit_and_run_i ?? null;
@@ -55,11 +53,9 @@ export class Crash {
 		this.latitude = record.latitude;
 		this.longitude = record.longitude;
 		this.posted_speed_limit = record.posted_speed_limit ?? null;
-		this.primary_cause = record.prim_contributory_cause ?? UNKNOWN_CAUSE_LABEL;
-		this.secondary_cause = record.sec_contributory_cause ?? UNKNOWN_CAUSE_LABEL;
-		this.street_direction = record.street_direction;
-		this.street_name = record.street_name;
-		this.street_no = record.street_no ?? null;
+		this.primary_cause = record.cause_prim ?? UNKNOWN_CAUSE_LABEL;
+		this.secondary_cause = record.cause_sec ?? UNKNOWN_CAUSE_LABEL;
+		this.address = record.address ?? '';
 		this.trafficway_type = record.trafficway_type ?? null;
 		this.vehicles = parseVehicles(record.vehicles);
 		this.passengers = new People(...parsePassengers(this.vehicles));
@@ -124,12 +120,6 @@ export class Crash {
 		return this.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 	}
 
-	get street_address(): string {
-		return [this.street_no, this.street_direction, this.street_name]
-			.filter((x) => x != null)
-			.join(' ');
-	}
-
 	get title(): string {
 		const headline = [
 			this.injuries_fatal > 0 ? `${this.injuries_fatal} killed` : null,
@@ -146,11 +136,7 @@ export class Crash {
 		const time = this.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
 		return (
-			headline +
-			` near ` +
-			`${this.street_no ?? ''} ${this.street_direction} ` +
-			`${this.street_name}` +
-			` on ${dateline} at ${time}`
+			headline + ` near ` + `${this.address || 'Unknown location'}` + ` on ${dateline} at ${time}`
 		);
 	}
 }

@@ -9,8 +9,8 @@
 		MONTH_NAMES,
 		MONTH_SHORT
 	} from '$lib/constants';
-	import type { DenseCrash, DateCountPeriod } from '$lib/models/types';
-	import { getCrashesDense, getDateCount } from '$lib/api/client';
+	import type { BriefCrash, DateCountPeriod } from '$lib/models/types';
+	import { getCrashesBrief, getDateCount } from '$lib/api/client';
 	import { toDateStr, addDays } from '$lib/transformHelpers';
 	import MapContainer from '$lib/components/MapContainer.svelte';
 	import TrendChart, { type TrendBar } from '$lib/components/TrendChart.svelte';
@@ -18,7 +18,7 @@
 	import KpiCards from '$lib/components/KpiCards.svelte';
 
 	const defaultGeoCenter = CHICAGO_CENTER;
-	let mapCrashes: DenseCrash[] = $state([]);
+	let mapCrashes: BriefCrash[] = $state([]);
 	let loading = $state(true);
 	let trendLoading = $state(true);
 	let trendBars: TrendBar[] = $state([]);
@@ -118,7 +118,7 @@
 
 			const since = toDateStr(useYtd ? jan1 : addDays(today, -29));
 			const until = toDateStr(today);
-			const result = await getCrashesDense({ since, until });
+			const result = await getCrashesBrief({ since, until });
 			mapCrashes = result.crashes;
 		} catch {
 			mapCrashes = [];
@@ -158,8 +158,8 @@
 										year: 'numeric'
 									})}
 								</div>
-								{#if crash.prim_contributory_cause}
-									<div class="fatality-cause">{crash.prim_contributory_cause}</div>
+								{#if crash.cause_prim}
+									<div class="fatality-cause">{crash.cause_prim}</div>
 								{/if}
 							</a>
 						{/each}
@@ -295,7 +295,7 @@
 		border: 1px solid #e5e7eb;
 	}
 
-	.map-container :global(#map) {
+	.map-container :global(.map-root) {
 		height: 100%;
 		margin-bottom: 0;
 	}

@@ -9,15 +9,17 @@ import type {
 	IntersectionStat,
 	CrashSummary,
 	DateCountPeriod,
-	DenseCrash,
+	BriefCrash,
 	CrashRecord
 } from '$lib/models/types';
 
 const API_BASE = PUBLIC_API_BASE_URL ?? '';
+type FetchImpl = typeof fetch;
 
 async function apiGet<T>(
 	path: string,
-	params: Record<string, string | number | undefined> = {}
+	params: Record<string, string | number | undefined> = {},
+	fetchImpl: FetchImpl = fetch
 ): Promise<T> {
 	const qs = new URLSearchParams();
 	for (const [key, value] of Object.entries(params)) {
@@ -25,7 +27,7 @@ async function apiGet<T>(
 	}
 	const query = qs.toString();
 	const url = `${API_BASE}${path}${query ? `?${query}` : ''}`;
-	const res = await fetch(url);
+	const res = await fetchImpl(url);
 	if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
 	const data = await res.json();
 	return data.response as T;
@@ -37,9 +39,12 @@ export async function searchLocations(q: string): Promise<LocationRecord[]> {
 	return data.locations;
 }
 
-export async function getLocationById(id: string): Promise<LocationRecord | null> {
+export async function getLocationById(
+	id: string,
+	fetchImpl: FetchImpl = fetch
+): Promise<LocationRecord | null> {
 	try {
-		const data = await apiGet<{ location: LocationRecord }>(`/api/locations/${id}`);
+		const data = await apiGet<{ location: LocationRecord }>(`/api/locations/${id}`, {}, fetchImpl);
 		return data.location;
 	} catch {
 		return null;
@@ -113,11 +118,9 @@ export interface NearbyCrash {
 	crash_date: string;
 	latitude: number;
 	longitude: number;
-	street_no: string | null;
-	street_direction: string;
-	street_name: string;
-	first_crash_type: string;
-	prim_contributory_cause: string | null;
+	address: string | null;
+	crash_type: string;
+	cause_prim: string | null;
 	injuries_fatal: number;
 	injuries_incapacitating: number;
 	injuries_total: number;
@@ -132,9 +135,12 @@ export interface CrashByIdResult {
 	nearby_crashes: NearbyCrash[];
 }
 
-export async function getCrashById(id: string): Promise<CrashByIdResult | null> {
+export async function getCrashById(
+	id: string,
+	fetchImpl: FetchImpl = fetch
+): Promise<CrashByIdResult | null> {
 	try {
-		return await apiGet<CrashByIdResult>(`/api/crashes/${encodeURIComponent(id)}`);
+		return await apiGet<CrashByIdResult>(`/api/crashes/${encodeURIComponent(id)}`, {}, fetchImpl);
 	} catch {
 		return null;
 	}
@@ -220,17 +226,17 @@ export async function getCrashesList(params: {
 	});
 }
 
-export interface DenseCrashResult {
+export interface BriefCrashResult {
 	total: number;
-	crashes: DenseCrash[];
+	crashes: BriefCrash[];
 }
 
-export async function getCrashesDense(params?: {
+export async function getCrashesBrief(params?: {
 	since?: string;
 	until?: string;
 	locationId?: string;
-}): Promise<DenseCrashResult> {
-	return apiGet<DenseCrashResult>('/api/crashes/dense', {
+}): Promise<BriefCrashResult> {
+	return apiGet<BriefCrashResult>('/api/crashes/brief', {
 		since: params?.since,
 		until: params?.until,
 		location_id: params?.locationId

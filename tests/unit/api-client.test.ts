@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
 	getCrashById,
-	getCrashesDense,
+	getCrashesBrief,
 	getCrashesList,
 	getCrashesNearPoint,
 	getCrashesWithin,
@@ -68,6 +68,19 @@ describe('api client', () => {
 			mockFetchError(404);
 			await expect(getLocationById('missing')).resolves.toBeNull();
 		});
+
+		it('uses an injected fetch implementation when provided', async () => {
+			const customFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({ response: { location: makeLocationRecord({ id: 'loc-custom' }) } })
+			} as Response);
+
+			const location = await getLocationById('loc-custom', customFetch as typeof fetch);
+
+			expect(customFetch).toHaveBeenCalledOnce();
+			expect(fetch).not.toHaveBeenCalled();
+			expect(location?.id).toBe('loc-custom');
+		});
 	});
 
 	describe('getNearbyLocations', () => {
@@ -98,6 +111,27 @@ describe('api client', () => {
 		it('returns null on fetch failure', async () => {
 			mockFetchError(404);
 			await expect(getCrashById('missing')).resolves.toBeNull();
+		});
+
+		it('uses an injected fetch implementation when provided', async () => {
+			const customFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: {
+						crash: makeCrashRecord({ crash_record_id: 'custom-crash' }),
+						neighborhood: null,
+						ward: null,
+						intersections: [],
+						nearby_crashes: []
+					}
+				})
+			} as Response);
+
+			const crash = await getCrashById('custom-crash', customFetch as typeof fetch);
+
+			expect(customFetch).toHaveBeenCalledOnce();
+			expect(fetch).not.toHaveBeenCalled();
+			expect(crash?.crash.crash_record_id).toBe('custom-crash');
 		});
 	});
 
@@ -249,29 +283,37 @@ describe('api client', () => {
 		});
 	});
 
-	describe('getCrashesDense', () => {
-		it('fetches /api/crashes/dense and returns dense crash result', async () => {
-			const mockDense = [
+	describe('getCrashesBrief', () => {
+		it('fetches /api/crashes/brief and returns brief crash result', async () => {
+			const mockBrief = [
 				{
 					crash_record_id: 'CR001',
+					address: '1200 S STATE ST',
 					latitude: 41.88,
 					longitude: -87.62,
 					crash_date: '2025-01-15',
+					crash_type: 'REAR END',
+					hit_and_run_i: false,
 					injuries_fatal: 1,
 					injuries_incapacitating: 0,
-					prim_contributory_cause: 'FAILING TO YIELD'
+					injuries_total: 1,
+					cause_prim: 'FAILING TO YIELD'
 				}
 			];
-			mockFetchOk({ total: 1, crashes: mockDense });
+			mockFetchOk({ total: 1, crashes: mockBrief });
 
-			const result = await getCrashesDense();
+			const result = await getCrashesBrief();
 			const url = lastFetchUrl();
 
-			expect(url.pathname).toBe('/api/crashes/dense');
+			expect(url.pathname).toBe('/api/crashes/brief');
 			expect(result.total).toBe(1);
 			expect(result.crashes).toHaveLength(1);
 			expect(result.crashes[0].latitude).toBe(41.88);
+			expect(result.crashes[0].address).toBe('1200 S STATE ST');
+			expect(result.crashes[0].crash_type).toBe('REAR END');
+			expect(result.crashes[0].hit_and_run_i).toBe(false);
 			expect(result.crashes[0].injuries_fatal).toBe(1);
+			expect(result.crashes[0].injuries_total).toBe(1);
 		});
 	});
 

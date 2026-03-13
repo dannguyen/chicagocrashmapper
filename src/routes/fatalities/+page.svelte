@@ -5,89 +5,67 @@
 	import { getCrashesList } from '$lib/api/client';
 	import { Crash, parseCrashes } from '$lib/models/crash';
 	import type { Person } from '$lib/models/person';
+	import PaginationControls from '$lib/components/PaginationControls.svelte';
+	import {
+		fatalityPeople,
+		fatalityRoleLabel,
+		fmtCause,
+		type FatalityPersonType
+	} from '$lib/models/crashFormat';
+	import { crashSeverity, severityLabel } from '$lib/severity';
 
-	interface FatalityRow {
-		person: Person;
+	interface FatalCrashItem {
 		crash: Crash;
+		killedPeople: Person[];
 	}
 
-	let rows: FatalityRow[] = $state([]);
+	let crashes: Crash[] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let page = $state(0);
 	let totalCrashes = $state(0);
 	const perPage = MAX_CRASH_RESULTS_PER_PAGE;
 
-	type PersonTypeFilter = 'all' | 'pedestrian' | 'cyclist' | 'driver' | 'passenger';
-	let typeFilter: PersonTypeFilter = $state('all');
+	let typeFilter: FatalityPersonType = $state('all');
 
-	let filtered = $derived(
-		typeFilter === 'all'
-			? rows
-			: rows.filter((r) => {
-					const pt = r.person.person_type.toUpperCase();
-					if (typeFilter === 'pedestrian') return pt === 'PEDESTRIAN';
-					if (typeFilter === 'cyclist') return pt === 'BICYCLE';
-					if (typeFilter === 'driver') return pt === 'DRIVER';
-					if (typeFilter === 'passenger') return pt === 'PASSENGER';
-					return true;
-				})
+	let filteredItems = $derived.by<FatalCrashItem[]>(() =>
+		crashes
+			.map((crash) => ({
+				crash,
+				killedPeople: fatalityPeople(crash, typeFilter)
+			}))
+			.filter((item) => item.killedPeople.length > 0)
 	);
 
-	// Counts per type for the filter pills
-	let typeCounts = $derived({
-		all: rows.length,
-		pedestrian: rows.filter((r) => r.person.person_type === 'PEDESTRIAN').length,
-		cyclist: rows.filter((r) => r.person.person_type === 'BICYCLE').length,
-		driver: rows.filter((r) => r.person.person_type === 'DRIVER').length,
-		passenger: rows.filter((r) => r.person.person_type === 'PASSENGER').length
-	});
-
-	function roleLabel(person: Person): string {
-		switch (person.person_type) {
-			case 'PEDESTRIAN':
-				return 'Pedestrian';
-			case 'BICYCLE':
-				return 'Cyclist';
-			case 'DRIVER':
-				return 'Driver';
-			case 'PASSENGER':
-				return 'Passenger';
-			default:
-				return person.person_type;
-		}
-	}
+	let typeCounts = $derived.by(() => ({
+		all: crashes.length,
+		pedestrian: crashes.filter((crash) => fatalityPeople(crash, 'pedestrian').length > 0).length,
+		cyclist: crashes.filter((crash) => fatalityPeople(crash, 'cyclist').length > 0).length,
+		driver: crashes.filter((crash) => fatalityPeople(crash, 'driver').length > 0).length,
+		passenger: crashes.filter((crash) => fatalityPeople(crash, 'passenger').length > 0).length
+	}));
 
 	function shortDate(date: Date): string {
 		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
-	async function loadPage(p: number, scroll = false) {
+	async function loadPage(nextPage: number, scroll = false) {
 		loading = true;
 		error = null;
 		try {
 			const result = await getCrashesList({
 				perPage,
-				page: p,
+				page: nextPage,
 				sort: 'desc',
 				fatalOnly: true
 			});
 			totalCrashes = result.total;
-			const crashes = parseCrashes(result.crashes);
-
-			const fatalities: FatalityRow[] = [];
-			for (const crash of crashes) {
-				for (const person of crash.people) {
-					if (person.isKilled) {
-						fatalities.push({ person, crash });
-					}
-				}
-			}
-			rows = fatalities;
-			page = p;
+			crashes = parseCrashes(result.crashes);
+			page = nextPage;
 			if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
 		} catch {
-			error = 'Failed to load fatality data.';
+			error = 'Failed to load fatal crash data.';
+			crashes = [];
 		} finally {
 			loading = false;
 		}
@@ -96,8 +74,29 @@
 	const totalPages = $derived(Math.ceil(totalCrashes / perPage));
 	const hasNext = $derived(page + 1 < totalPages);
 	const hasPrev = $derived(page > 0);
-	const showingFrom = $derived(page * perPage + 1);
+	const showingFrom = $derived(totalCrashes === 0 ? 0 : page * perPage + 1);
 	const showingTo = $derived(Math.min((page + 1) * perPage, totalCrashes));
+	const pageNumbers = $derived<(number | null)[]>(
+		totalPages <= 6
+			? Array.from({ length: totalPages }, (_, i) => i)
+			: [0, 1, 2, null, totalPages - 3, totalPages - 2, totalPages - 1]
+	);
+
+	function goToPrev() {
+		if (hasPrev) {
+			loadPage(page - 1, true);
+		}
+	}
+
+	function goToNext() {
+		if (hasNext) {
+			loadPage(page + 1, true);
+		}
+	}
+
+	function goToPage(nextPage: number) {
+		loadPage(nextPage, true);
+	}
 
 	onMount(() => loadPage(0));
 </script>
@@ -109,7 +108,7 @@
 <div class="page-header">
 	<h1 class="page-title">Fatalities</h1>
 	<p class="page-subtitle">
-		People killed in Chicago traffic crashes, most recent first{#if !loading && totalCrashes > 0}
+		Fatal crashes in Chicago, most recent first{#if !loading && totalCrashes > 0}
 			· {totalCrashes.toLocaleString()} fatal crashes
 		{/if}
 	</p>
@@ -130,64 +129,112 @@
 		<p class="error-text">{error}</p>
 	</div>
 {:else}
-	<!-- Filter pills -->
 	<div class="filter-bar">
 		{#each [['all', 'All'], ['pedestrian', 'Pedestrians'], ['cyclist', 'Cyclists'], ['driver', 'Drivers'], ['passenger', 'Passengers']] as [value, label]}
 			<button
 				class="filter-pill"
 				class:filter-active={typeFilter === value}
-				onclick={() => (typeFilter = value as PersonTypeFilter)}
+				onclick={() => (typeFilter = value as FatalityPersonType)}
 			>
 				{label}
-				<span class="pill-count">{typeCounts[value as PersonTypeFilter]}</span>
+				<span class="pill-count">{typeCounts[value as FatalityPersonType]}</span>
 			</button>
 		{/each}
 	</div>
 
-	{#if filtered.length === 0}
-		<p class="empty-text">No fatalities match this filter.</p>
+	{#if totalCrashes > 0}
+		<PaginationControls
+			rangeStart={showingFrom}
+			rangeEnd={showingTo}
+			totalItems={totalCrashes}
+			itemLabel="fatal crashes"
+			currentPage={page}
+			{totalPages}
+			{hasPrev}
+			{hasNext}
+			{pageNumbers}
+			onPrev={goToPrev}
+			onNext={goToNext}
+			onPage={goToPage}
+		/>
+	{/if}
+
+	{#if filteredItems.length === 0}
+		<p class="empty-text">No fatal crashes match this filter.</p>
 	{:else}
-		<div class="card fatality-list">
-			{#each filtered as { person, crash }}
-				<a href="{base}/crashes/{crash.crash_record_id}" class="fatality-row">
-					<span class="role-badge role-{person.person_type.toLowerCase()}">{roleLabel(person)}</span
-					>
+		<div class="crash-list">
+			{#each filteredItems as item}
+				{@const severity = crashSeverity(item.crash)}
+				<div class="crash-row">
+					<a href="{base}/crashes/{item.crash.crash_record_id}" class="crash-link">
+						<span
+							class="sev-dot"
+							class:sev-fatal={severity === 'fatal'}
+							class:sev-serious={severity === 'serious'}
+							class:sev-minor={severity === 'minor'}
+							class:sev-none={severity === 'none'}
+							title={severityLabel(severity)}
+						></span>
 
-					<span class="row-body">
-						<span class="person-desc">{person.description}</span>
-						<span class="row-meta">
-							<span class="crash-date">{shortDate(crash.date)}</span>
-							<span class="meta-sep">·</span>
-							<span class="crash-time">{crash.prettyTime}</span>
-							{#if crash.street_address.trim()}
-								<span class="meta-sep">·</span>
-								<span class="crash-addr">{crash.street_address}</span>
+						<span class="row-body">
+							<span class="row-main">
+								<span class="crash-cause">{fmtCause(item.crash.main_cause)}</span>
+								<span class="crash-people"
+									>{item.crash.injuries_fatal}
+									{item.crash.injuries_fatal === 1 ? 'person killed' : 'people killed'}</span
+								>
+							</span>
+
+							{#if item.killedPeople.length === 1}
+								<span class="fatality-line">
+									<span class="role-badge role-{item.killedPeople[0].person_type.toLowerCase()}"
+										>{fatalityRoleLabel(item.killedPeople[0])}</span
+									>
+									<span class="person-desc">{item.killedPeople[0].description}</span>
+								</span>
+							{:else}
+								<ul class="fatality-subitems">
+									{#each item.killedPeople as person (person.person_id)}
+										<li class="fatality-subitem">
+											<span class="role-badge role-{person.person_type.toLowerCase()}"
+												>{fatalityRoleLabel(person)}</span
+											>
+											<span class="person-desc">{person.description}</span>
+										</li>
+									{/each}
+								</ul>
 							{/if}
-						</span>
-						{#if crash.hasKnownCause}
-							<span class="crash-cause">{crash.primary_cause}</span>
-						{/if}
-					</span>
 
-					<span class="detail-arrow">→</span>
-				</a>
+							<span class="row-meta">
+								<span class="crash-date">{shortDate(item.crash.date)}</span>
+								<span class="meta-sep">·</span>
+								<span class="crash-time">{item.crash.prettyTime}</span>
+								{#if item.crash.address.trim()}
+									<span class="meta-sep">·</span>
+									<span class="crash-addr">{item.crash.address}</span>
+								{/if}
+							</span>
+						</span>
+
+						<span class="detail-link" aria-hidden="true">→</span>
+					</a>
+				</div>
 			{/each}
 		</div>
 	{/if}
 
-	<!-- Pagination -->
 	{#if totalPages > 1}
-		<div class="pagination">
-			<button class="page-btn" disabled={!hasPrev} onclick={() => loadPage(page - 1, true)}>
-				← Previous
-			</button>
-			<span class="page-info">
-				{showingFrom}–{showingTo} of {totalCrashes.toLocaleString()} crashes
-			</span>
-			<button class="page-btn" disabled={!hasNext} onclick={() => loadPage(page + 1, true)}>
-				Next →
-			</button>
-		</div>
+		<PaginationControls
+			variant="footer"
+			currentPage={page}
+			{totalPages}
+			{hasPrev}
+			{hasNext}
+			{pageNumbers}
+			onPrev={goToPrev}
+			onNext={goToNext}
+			onPage={goToPage}
+		/>
 	{/if}
 {/if}
 
@@ -208,7 +255,6 @@
 		color: #6b7280;
 	}
 
-	/* ── Filter pills ── */
 	.filter-bar {
 		display: flex;
 		flex-wrap: wrap;
@@ -250,34 +296,137 @@
 		opacity: 0.7;
 	}
 
-	/* ── Card / List ── */
-	.card {
+	.card,
+	.crash-list {
 		background: #fff;
 		border: 1px solid #e5e7eb;
 		border-radius: 0.75rem;
 		overflow: hidden;
 	}
 
-	.fatality-row {
+	.skeleton-row {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid #f3f4f6;
+	}
+
+	.skeleton-line {
+		height: 1rem;
+		border-radius: 0.375rem;
+		background: #e5e7eb;
+		animation: pulse 1.2s ease-in-out infinite;
+	}
+
+	.skeleton-wide {
+		width: 10rem;
+	}
+
+	.skeleton-medium {
+		width: 6rem;
+	}
+
+	.skeleton-narrow {
+		width: 4rem;
+		margin-left: auto;
+	}
+
+	.crash-row {
+		display: flex;
+		align-items: stretch;
+		border-bottom: 1px solid #f3f4f6;
+	}
+
+	.crash-row:last-child {
+		border-bottom: none;
+	}
+
+	.crash-link {
 		display: flex;
 		align-items: flex-start;
 		gap: 0.625rem;
+		flex: 1;
 		padding: 0.625rem 0.75rem;
-		border-bottom: 1px solid #f3f4f6;
 		text-decoration: none;
 		color: inherit;
 		transition: background-color 100ms ease;
 	}
 
-	.fatality-row:last-child {
-		border-bottom: none;
-	}
-
-	.fatality-row:hover {
+	.crash-link:hover,
+	.crash-link:focus-visible {
 		background-color: #fef2f2;
+		outline: none;
 	}
 
-	/* ── Role badge ── */
+	.sev-dot {
+		flex-shrink: 0;
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: #d1d5db;
+		margin-top: 0.3rem;
+	}
+
+	.sev-fatal {
+		background: var(--color-fatal);
+	}
+
+	.sev-serious {
+		background: var(--color-serious);
+	}
+
+	.sev-minor {
+		background: var(--color-minor);
+	}
+
+	.sev-none {
+		background: var(--color-none);
+	}
+
+	.row-body {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.row-main {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.25rem 0.5rem;
+	}
+
+	.crash-cause {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #111827;
+	}
+
+	.crash-people {
+		font-size: 0.75rem;
+		color: #991b1b;
+		font-weight: 600;
+	}
+
+	.fatality-line,
+	.fatality-subitem {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+	}
+
+	.fatality-subitems {
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
 	.role-badge {
 		flex-shrink: 0;
 		font-size: 0.6875rem;
@@ -310,15 +459,6 @@
 		color: #3730a3;
 	}
 
-	/* ── Row body ── */
-	.row-body {
-		flex: 1;
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-	}
-
 	.person-desc {
 		font-size: 0.875rem;
 		font-weight: 600;
@@ -347,87 +487,17 @@
 		color: #d1d5db;
 	}
 
-	.crash-cause {
-		font-size: 0.6875rem;
-		color: #9ca3af;
-	}
-
-	.detail-arrow {
+	.detail-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
 		color: #dc2626;
 		font-weight: 600;
 		font-size: 0.875rem;
-		padding: 0.25rem;
-		align-self: center;
+		padding-top: 0.125rem;
 	}
 
-	/* ── Pagination ── */
-	.pagination {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		margin-top: 1rem;
-	}
-
-	.page-btn {
-		padding: 0.375rem 0.75rem;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: #2563eb;
-		background: #fff;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
-		cursor: pointer;
-		transition:
-			background-color 120ms ease,
-			border-color 120ms ease;
-	}
-
-	.page-btn:hover:not(:disabled) {
-		background: #eff6ff;
-		border-color: #93c5fd;
-	}
-
-	.page-btn:disabled {
-		color: #d1d5db;
-		cursor: default;
-	}
-
-	.page-info {
-		font-size: 0.8125rem;
-		color: #6b7280;
-	}
-
-	/* ── Skeleton ── */
-	.skeleton-row {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 0.75rem;
-		border-bottom: 1px solid #f3f4f6;
-	}
-
-	.skeleton-line {
-		height: 1rem;
-		border-radius: 0.375rem;
-		background: #e5e7eb;
-		animation: pulse 1.2s ease-in-out infinite;
-	}
-
-	.skeleton-wide {
-		width: 5rem;
-	}
-
-	.skeleton-medium {
-		width: 10rem;
-	}
-
-	.skeleton-narrow {
-		width: 6rem;
-	}
-
-	/* ── Error / Empty ── */
 	.error-card {
 		border-radius: 0.75rem;
 		border: 1px solid #fecaca;
@@ -435,27 +505,21 @@
 		padding: 0.75rem 1rem;
 	}
 
-	.error-text {
-		font-size: 0.875rem;
-		color: #b91c1c;
-	}
-
+	.error-text,
 	.empty-text {
-		padding: 2rem 0;
-		text-align: center;
 		font-size: 0.875rem;
 		color: #6b7280;
 	}
 
 	@keyframes pulse {
 		0% {
-			opacity: 0.85;
+			opacity: 0.8;
 		}
 		50% {
 			opacity: 0.4;
 		}
 		100% {
-			opacity: 0.85;
+			opacity: 0.8;
 		}
 	}
 </style>

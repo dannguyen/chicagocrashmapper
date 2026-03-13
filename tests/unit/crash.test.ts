@@ -74,16 +74,14 @@ describe('Crash', () => {
 
 	describe('cause fields', () => {
 		it('identifies known primary causes', () => {
-			const crash = new Crash(
-				makeCrashRecord({ prim_contributory_cause: 'FOLLOWING TOO CLOSELY' })
-			);
+			const crash = new Crash(makeCrashRecord({ cause_prim: 'FOLLOWING TOO CLOSELY' }));
 			expect(crash.hasKnownCause).toBe(true);
 			expect(crash.main_cause).toBe('FOLLOWING TOO CLOSELY');
 		});
 
 		it('falls back to UNKNOWN CAUSE for unresolved causes', () => {
 			for (const cause of ['UNABLE TO DETERMINE', 'NOT APPLICABLE', undefined]) {
-				const crash = new Crash(makeCrashRecord({ prim_contributory_cause: cause }));
+				const crash = new Crash(makeCrashRecord({ cause_prim: cause }));
 				expect(crash.hasKnownCause).toBe(false);
 				expect(crash.main_cause).toBe('UNKNOWN CAUSE');
 			}
@@ -92,8 +90,8 @@ describe('Crash', () => {
 		it('includes secondary cause in fullCause when both are known', () => {
 			const crash = new Crash(
 				makeCrashRecord({
-					prim_contributory_cause: 'SPEEDING',
-					sec_contributory_cause: 'IMPROPER LANE CHANGE'
+					cause_prim: 'SPEEDING',
+					cause_sec: 'IMPROPER LANE CHANGE'
 				})
 			);
 			expect(crash.fullCause).toBe('SPEEDING (IMPROPER LANE CHANGE)');
@@ -102,8 +100,8 @@ describe('Crash', () => {
 		it('omits secondary cause from fullCause when secondary is unknown', () => {
 			const crash = new Crash(
 				makeCrashRecord({
-					prim_contributory_cause: 'SPEEDING',
-					sec_contributory_cause: 'UNABLE TO DETERMINE'
+					cause_prim: 'SPEEDING',
+					cause_sec: 'UNABLE TO DETERMINE'
 				})
 			);
 			expect(crash.fullCause).toBe('SPEEDING');
@@ -112,32 +110,28 @@ describe('Crash', () => {
 		it('omits secondary cause from fullCause when it matches primary', () => {
 			const crash = new Crash(
 				makeCrashRecord({
-					prim_contributory_cause: 'SPEEDING',
-					sec_contributory_cause: 'SPEEDING'
+					cause_prim: 'SPEEDING',
+					cause_sec: 'SPEEDING'
 				})
 			);
 			expect(crash.fullCause).toBe('SPEEDING');
 		});
 
 		it('returns UNKNOWN CAUSE for fullCause when primary is unknown', () => {
-			const crash = new Crash(makeCrashRecord({ prim_contributory_cause: 'UNABLE TO DETERMINE' }));
+			const crash = new Crash(makeCrashRecord({ cause_prim: 'UNABLE TO DETERMINE' }));
 			expect(crash.fullCause).toBe('UNKNOWN CAUSE');
 		});
 	});
 
-	describe('street_address', () => {
-		it('joins street_no, direction, and name', () => {
-			const crash = new Crash(
-				makeCrashRecord({ street_no: '1200', street_direction: 'S', street_name: 'State' })
-			);
-			expect(crash.street_address).toBe('1200 S State');
+	describe('address', () => {
+		it('uses the provided address field', () => {
+			const crash = new Crash(makeCrashRecord({ address: '1200 S State' }));
+			expect(crash.address).toBe('1200 S State');
 		});
 
-		it('handles missing street_no gracefully', () => {
-			const noNumber = new Crash(
-				makeCrashRecord({ street_no: null, street_direction: 'N', street_name: 'Michigan' })
-			);
-			expect(noNumber.street_address).toBe('N Michigan');
+		it('falls back to empty string when address is missing', () => {
+			const noAddress = new Crash(makeCrashRecord({ address: undefined }));
+			expect(noAddress.address).toBe('');
 		});
 	});
 
@@ -149,9 +143,7 @@ describe('Crash', () => {
 					injuries_fatal: 1,
 					injuries_incapacitating: 0,
 					crash_date: crashDate,
-					street_no: '1200',
-					street_direction: 'S',
-					street_name: 'State'
+					address: '1200 S State'
 				})
 			);
 			expect(crash.title).toBe(
@@ -166,9 +158,7 @@ describe('Crash', () => {
 					injuries_fatal: 0,
 					injuries_incapacitating: 2,
 					crash_date: crashDate,
-					street_no: '500',
-					street_direction: 'W',
-					street_name: 'Madison'
+					address: '500 W Madison'
 				})
 			);
 			expect(crash.title).toContain('2 seriously injured near 500 W Madison');
